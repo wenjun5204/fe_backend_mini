@@ -94,7 +94,7 @@ public class RankService {
             item.setFamilyName(f.getName());
             item.setBless(f.getTotalBless());
             item.setPlateLevel(f.getPlateLevel());
-            item.setMine(f.getId().equals(me.getFamilyId()));
+            item.setIsMine(f.getId().equals(me.getFamilyId()));
             items.add(item);
         }
         items.sort(Comparator.comparingLong(FriendRankItem::getBless).reversed());

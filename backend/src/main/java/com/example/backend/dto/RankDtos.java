@@ -55,8 +55,8 @@ public final class RankDtos {
         public void setBless(long bless) { this.bless = bless; }
         public FortuneDtos.PlateLevel getPlateLevel() { return plateLevel; }
         public void setPlateLevel(FortuneDtos.PlateLevel plateLevel) { this.plateLevel = plateLevel; }
-        public boolean isMine() { return isMine; }
-        public void setMine(boolean mine) { isMine = mine; }
+        public boolean getIsMine() { return isMine; }
+        public void setIsMine(boolean mine) { isMine = mine; }
     }
 
     public static class FriendRankResponse {
