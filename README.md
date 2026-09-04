@@ -37,3 +37,14 @@ npm run dev
 |---|---|
 | 前端 | React 19、Vite |
 | 后端 | Spring Boot、Java 21、Maven |
+
+## 微信小程序客户端
+
+`miniprogram/` 目录是一个原生微信小程序，同样对接本仓库的后端。
+
+```bash
+# 启动后端（端口 8080）
+cd backend && ./mvnw spring-boot:run
+```
+
+用[微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)导入 `miniprogram/` 目录即可预览；完整的上线步骤见 [miniprogram/README.md](miniprogram/README.md)。

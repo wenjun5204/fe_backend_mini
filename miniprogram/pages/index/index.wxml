@@ -1,0 +1,18 @@
+<view class="container">
+  <view class="card">
+    <view class="badge">微信小程序</view>
+    <view class="title">小程序 → Spring Boot</view>
+    <view class="desc">点击下方按钮，请求后端 /api/hello 接口</view>
+
+    <button class="btn" type="primary" loading="{{loading}}" bindtap="fetchHello">
+      请求后端
+    </button>
+
+    <view wx:if="{{error}}" class="error">{{error}}</view>
+
+    <view wx:elif="{{message}}" class="result">
+      <view class="ok">✅ 后端返回：{{message}}</view>
+      <view class="time">服务器时间：{{serverTime}}</view>
+    </view>
+  </view>
+</view>
