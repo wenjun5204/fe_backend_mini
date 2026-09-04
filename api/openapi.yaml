@@ -1,0 +1,416 @@
+openapi: 3.0.3
+info:
+  title: 全家福·接福气 API
+  version: 1.0.0
+  description: |
+    中老年家庭祈福互动小程序「全家福·接福气」MVP 接口契约(唯一事实源)。
+    合规约束:文案禁用迷信词(见 .agents/docs/conventions.md),错误 message 面向用户须过合规词表。
+paths:
+  /api/auth/login:
+    post:
+      operationId: login
+      summary: 微信登录(MVP 用 code 换取用户身份,返回 token)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+  /api/family:
+    get:
+      operationId: getMyFamily
+      summary: 我的家(家族详情+成员今日状态墙)
+      responses:
+        '200':
+          description: 家族详情;未加入家族时返回 notJoined=true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyDetail'
+    post:
+      operationId: createFamily
+      summary: 创建家族(每人限 1 个,创建者即户主)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFamilyRequest'
+      responses:
+        '200':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyDetail'
+  /api/family/join:
+    post:
+      operationId: joinFamily
+      summary: 通过邀请码加入家族(上限 8 人,每人限加入 1 个)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinFamilyRequest'
+      responses:
+        '200':
+          description: 加入成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyDetail'
+  /api/fortune/today:
+    get:
+      operationId: getTodayFortune
+      summary: 今日福签(含我的抽签/分享/任务状态)
+      responses:
+        '200':
+          description: 今日福签
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FortuneTodayResponse'
+  /api/fortune/draw:
+    post:
+      operationId: drawFortune
+      summary: 抽取今日福签(每家族每日同签,每人每日 1 次)
+      responses:
+        '200':
+          description: 抽签成功,返回福签与最新福值
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FortuneDrawResponse'
+  /api/fortune/share:
+    post:
+      operationId: shareFortune
+      summary: 标记福签已转发(软引导奖励,+10 福值,每日 1 次)
+      responses:
+        '200':
+          description: 分享奖励发放
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlessResult'
+  /api/fortune/task-done:
+    post:
+      operationId: completeFortuneTask
+      summary: 完成今日宜事项(+15 福值,每日 1 次)
+      responses:
+        '200':
+          description: 任务奖励发放
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlessResult'
+  /api/interact/tianfu:
+    post:
+      operationId: tianfu
+      summary: 给家人添福(+8,每人每天对每位家人 1 次)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TargetUserRequest'
+      responses:
+        '200':
+          description: 添福成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlessResult'
+  /api/interact/cuifu:
+    post:
+      operationId: cuifu
+      summary: 催福(提醒未接福的家人,对同一人每日≤3 次)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TargetUserRequest'
+      responses:
+        '200':
+          description: 催福已送达
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuifuResult'
+  /api/rank/family:
+    get:
+      operationId: getFamilyRank
+      summary: 家内榜(本周成员福值排名)
+      responses:
+        '200':
+          description: 家内榜
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyRankResponse'
+  /api/rank/friends:
+    get:
+      operationId: getFriendFamilyRank
+      summary: 好友家族榜(好友关系内家族福值对比,MVP 互关家族模拟)
+      responses:
+        '200':
+          description: 好友家族榜
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FriendRankResponse'
+  /api/invite/info:
+    get:
+      operationId: getInviteInfo
+      summary: 邀请卡片信息(分享落地页,未登录可用)
+      parameters:
+        - name: inviteCode
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 邀请信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InviteInfo'
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          description: 微信登录凭证;开发态允许直接传 openid
+    LoginResponse:
+      type: object
+      required: [token, userId, nickname]
+      properties:
+        token:
+          type: string
+        userId:
+          type: integer
+        nickname:
+          type: string
+        avatarUrl:
+          type: string
+    CreateFamilyRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: 家族名,1-10 字
+    JoinFamilyRequest:
+      type: object
+      required: [inviteCode]
+      properties:
+        inviteCode:
+          type: string
+    TargetUserRequest:
+      type: object
+      required: [targetUserId]
+      properties:
+        targetUserId:
+          type: integer
+    PlateLevel:
+      type: string
+      enum: [NONE, BRONZE, SILVER, GOLD, JADE]
+      description: 门牌等级:无/勤俭之家(500)/和睦之家(2000)/满门福气(5000)/福泽满堂(20000),只升不降
+    FortuneLevel:
+      type: string
+      enum: [PINGAN, RUYI, HONGFU]
+      description: 福签等级:平安(70%)/如意(25%)/鸿福(5%),纯稀有度玩法,不影响福值
+    MemberStatus:
+      type: object
+      required: [userId, nickname, role, personalBless, streakDays, drawnToday]
+      properties:
+        userId:
+          type: integer
+        nickname:
+          type: string
+        avatarUrl:
+          type: string
+        remark:
+          type: string
+          description: 家庭称谓(儿子/孙子等),用户自选
+        role:
+          type: string
+          enum: [OWNER, MEMBER]
+        personalBless:
+          type: integer
+        streakDays:
+          type: integer
+          description: 连续接福天数
+        drawnToday:
+          type: boolean
+    FamilyDetail:
+      type: object
+      required: [notJoined]
+      properties:
+        notJoined:
+          type: boolean
+          description: true=当前用户未加入任何家族
+        familyId:
+          type: integer
+        familyName:
+          type: string
+        inviteCode:
+          type: string
+        totalBless:
+          type: integer
+          description: 家族福池累计值
+        plateLevel:
+          $ref: '#/components/schemas/PlateLevel'
+        nextPlateBless:
+          type: integer
+          description: 距下一级门牌还差的福值
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberStatus'
+    FortuneCard:
+      type: object
+      required: [familyId, date, level, yiItems, blessText]
+      properties:
+        familyId:
+          type: integer
+        date:
+          type: string
+          description: 日期 yyyy-MM-dd
+        level:
+          $ref: '#/components/schemas/FortuneLevel'
+        yiItems:
+          type: array
+          items:
+            type: string
+          description: 今日宜 2-3 项,生活化正面建议,永不出现忌
+        blessText:
+          type: string
+          description: 祝福语,过合规词表
+    FortuneTodayResponse:
+      type: object
+      required: [card, drawn, shared, taskDone]
+      properties:
+        card:
+          $ref: '#/components/schemas/FortuneCard'
+        drawn:
+          type: boolean
+        shared:
+          type: boolean
+        taskDone:
+          type: boolean
+        personalBless:
+          type: integer
+    FortuneDrawResponse:
+      type: object
+      required: [card, personalBless, familyTotalBless]
+      properties:
+        card:
+          $ref: '#/components/schemas/FortuneCard'
+        personalBless:
+          type: integer
+        familyTotalBless:
+          type: integer
+        praiseText:
+          type: string
+          description: 抽签吉祥话(如:坚持第N天,越活越年轻)
+    BlessResult:
+      type: object
+      required: [amount, personalBless, familyTotalBless, plateLevel]
+      properties:
+        amount:
+          type: integer
+          description: 本次获得福值
+        personalBless:
+          type: integer
+        familyTotalBless:
+          type: integer
+        plateLevel:
+          $ref: '#/components/schemas/PlateLevel'
+    CuifuResult:
+      type: object
+      required: [sent, remainCount]
+      properties:
+        sent:
+          type: boolean
+        remainCount:
+          type: integer
+          description: 今日对该家人剩余催福次数(0-3)
+    FamilyRankItem:
+      type: object
+      required: [rank, userId, nickname, bless]
+      properties:
+        rank:
+          type: integer
+        userId:
+          type: integer
+        nickname:
+          type: string
+        bless:
+          type: integer
+          description: 本周攒福值
+        streakDays:
+          type: integer
+    FamilyRankResponse:
+      type: object
+      required: [weekStart, items]
+      properties:
+        weekStart:
+          type: string
+          description: 本周起始日期 yyyy-MM-dd
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/FamilyRankItem'
+    FriendRankItem:
+      type: object
+      required: [rank, familyId, familyName, bless, isMine]
+      properties:
+        rank:
+          type: integer
+        familyId:
+          type: integer
+        familyName:
+          type: string
+        bless:
+          type: integer
+        plateLevel:
+          $ref: '#/components/schemas/PlateLevel'
+        isMine:
+          type: boolean
+    FriendRankResponse:
+      type: object
+      required: [items, chaseText]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/FriendRankItem'
+        chaseText:
+          type: string
+          description: 追赶文案(如:就差60福值追上老李家,今天全家接福就能反超)
+    InviteInfo:
+      type: object
+      required: [familyName, familyId, memberCount, inviteText]
+      properties:
+        familyName:
+          type: string
+        familyId:
+          type: integer
+        memberCount:
+          type: integer
+        inviteText:
+          type: string
+          description: 邀请文案,如:王家庄邀请您一起接福气,全家福值榜见!

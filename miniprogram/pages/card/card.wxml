@@ -1,0 +1,87 @@
+<view class="page-card">
+
+  <!-- 加载中 -->
+  <view wx:if="{{pageState === 'loading'}}" class="loading-box">
+    <text class="loading-text">福气加载中…</text>
+  </view>
+
+  <!-- 未加入家族:一键建家(零键盘输入) -->
+  <view wx:elif="{{pageState === 'notJoined'}}" class="join-box">
+    <view class="join-title kaiti">建一个您的「家」</view>
+    <view class="join-sub">全家人一起接福气、攒福值、上榜单</view>
+    <view class="join-emoji">🏮</view>
+    <button class="btn-main join-btn" bindtap="onCreateFamily">一键建家</button>
+    <view class="join-hint">家人分享卡片给您时,点开就能直接进家</view>
+  </view>
+
+  <!-- 福签主流程 -->
+  <block wx:else>
+    <view class="top-bar">今天，<text class="top-family">{{familyName}}</text> 的福签已送到</view>
+
+    <!-- 未抽:签筒 -->
+    <view wx:if="{{phase === 'idle'}}" class="tube-area">
+      <view class="tube {{phase === 'shaking' ? 'shaking' : ''}}">🎋</view>
+      <button class="btn-main draw-btn" bindtap="onDraw" disabled="{{phase === 'shaking'}}">
+        {{phase === 'shaking' ? '福气抽取中…' : '摇一摇 · 接福签'}}
+      </button>
+      <view class="sub-hint">点按钮或摇手机，效果一样</view>
+    </view>
+
+    <!-- 摇签中 -->
+    <view wx:elif="{{phase === 'shaking'}}" class="tube-area">
+      <view class="tube shaking">🎋</view>
+      <view class="sub-hint">福气抽取中…</view>
+    </view>
+
+    <!-- 已抽:完成态 -->
+    <view wx:else class="done-area">
+      <view class="done-emoji">🏮</view>
+      <view class="done-text">今日福签已接好</view>
+      <view wx:if="{{praiseText}}" class="done-praise">{{praiseText}}</view>
+      <view class="done-bless">我的福值 {{personalBless}}</view>
+
+      <view class="todo-box">
+        <view wx:if="{{!taskDone}}" class="todo-row">
+          <text class="todo-text">完成今日「宜」的事</text>
+          <button class="mini-btn mini-gold" bindtap="onTaskDone">事已完成 +15</button>
+        </view>
+        <view wx:if="{{!shared}}" class="todo-row">
+          <text class="todo-text">把福气带给家人</text>
+          <button class="mini-btn mini-red" open-type="share" bindtap="onShareTap">转给家人 +10</button>
+        </view>
+        <view wx:if="{{taskDone && shared}}" class="todo-all">今天的福气都接满啦，明早 7:30 再来 🎉</view>
+      </view>
+
+      <!-- 再看一眼今日福签 -->
+      <button class="btn-sub review-btn" bindtap="refreshToday">再看一眼福签</button>
+    </view>
+  </block>
+
+  <!-- 黄历福签弹层 -->
+  <view wx:if="{{showCard && card}}" class="card-mask" bindtap="closeCard">
+    <view class="fcard" catchtap="">
+      <view class="f-lunar">农历今日 · {{card.date}}</view>
+      <view class="f-family">{{familyName}} · 全家同签</view>
+      <view class="f-type-row">
+        <view class="f-seal kaiti">全家\n之福</view>
+        <view class="f-type kaiti">{{levelName}}</view>
+      </view>
+      <view class="f-rare">{{levelTag}}</view>
+      <view class="yi-box">
+        <view class="yi-title">今 日 宜</view>
+        <view class="yi-items">
+          <view wx:for="{{card.yiItems}}" wx:key="*this" class="yi-item">{{item}}</view>
+        </view>
+      </view>
+      <view class="f-bless">{{card.blessText}}</view>
+      <view class="f-btn-row">
+        <button class="f-btn f-btn-sub" bindtap="onTaskDone" disabled="{{taskDone}}">
+          {{taskDone ? '事已完成' : '事已完成 +15'}}
+        </button>
+        <button class="f-btn f-btn-main" open-type="share" bindtap="onShareTap" disabled="{{shared}}">
+          {{shared ? '已带给家人' : '转给家人 +10'}}
+        </button>
+      </view>
+    </view>
+  </view>
+</view>

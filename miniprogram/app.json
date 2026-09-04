@@ -1,10 +1,25 @@
 {
-  "pages": ["pages/index/index"],
+  "pages": [
+    "pages/card/card",
+    "pages/home/home",
+    "pages/rank/rank"
+  ],
   "window": {
-    "navigationBarTitleText": "全栈联调 Demo",
-    "navigationBarBackgroundColor": "#07c160",
+    "navigationBarTitleText": "全家福·接福气",
+    "navigationBarBackgroundColor": "#b01f24",
     "navigationBarTextStyle": "white",
-    "backgroundColor": "#f6f6f6"
+    "backgroundColor": "#fff8ec"
+  },
+  "tabBar": {
+    "color": "#b8a585",
+    "selectedColor": "#b01f24",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/card/card", "text": "福签" },
+      { "pagePath": "pages/home/home", "text": "我的家" },
+      { "pagePath": "pages/rank/rank", "text": "家族榜" }
+    ]
   },
   "sitemapLocation": "sitemap.json"
 }

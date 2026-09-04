@@ -1,0 +1,64 @@
+.page-home { min-height: 100vh; background: #fff8ec; padding-bottom: 40rpx; }
+
+.empty-box { padding-top: 240rpx; text-align: center; }
+.empty-emoji { font-size: 160rpx; }
+.empty-text { color: #7a1f18; font-size: 40rpx; font-weight: 800; margin-top: 30rpx; }
+.empty-sub { color: #b8a585; font-size: 28rpx; margin-top: 16rpx; }
+
+/* 福值池 */
+.pool-card {
+  margin: 24rpx 32rpx; background: linear-gradient(150deg, #c8342e, #8f1717);
+  border: 4rpx solid #d4463a; border-radius: 36rpx; padding: 40rpx;
+  display: flex; justify-content: space-between; align-items: center;
+  box-shadow: 0 12rpx 40rpx rgba(140, 25, 20, 0.3);
+}
+.pool-label { color: #ffefc2; font-size: 28rpx; letter-spacing: 2rpx; }
+.pool-val { color: #ffd76e; font-size: 72rpx; font-weight: 900; margin-top: 12rpx; }
+.pool-unit { font-size: 32rpx; font-weight: 600; }
+
+.plate {
+  background: linear-gradient(160deg, #8f1717, #6b0f0f); border: 3rpx solid #ffd76e;
+  color: #ffd76e; padding: 20rpx 26rpx; border-radius: 20rpx; text-align: center; max-width: 320rpx;
+}
+.plate-name { font-size: 38rpx; font-weight: 900; letter-spacing: 6rpx; }
+.plate-sub { font-size: 22rpx; opacity: 0.9; margin-top: 8rpx; }
+.plate-next { font-size: 22rpx; color: #ffe3b8; opacity: 0.85; margin-top: 6rpx; }
+
+.section-title {
+  padding: 10rpx 40rpx 20rpx; font-size: 34rpx; font-weight: 800; color: #7a1f18;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.section-count { font-size: 26rpx; font-weight: 400; color: #b8a585; }
+
+.member-list { padding: 0 32rpx; display: flex; flex-direction: column; gap: 20rpx; }
+.member {
+  background: #ffffff; border: 1rpx solid #f0e3c4; border-radius: 32rpx;
+  padding: 28rpx 30rpx; display: flex; align-items: center; gap: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(140, 90, 40, 0.08);
+}
+.m-ava {
+  width: 100rpx; height: 100rpx; border-radius: 50%;
+  background: linear-gradient(160deg, #ffe3ae, #e8c06a); border: 3rpx solid #c9982f;
+  display: flex; align-items: center; justify-content: center; font-size: 52rpx; flex-shrink: 0;
+}
+.m-ava-add { background: #fdeec9; }
+.m-info { flex: 1; min-width: 0; }
+.m-name { font-size: 36rpx; font-weight: 800; color: #5a2018; display: flex; align-items: center; gap: 12rpx; }
+.m-name-add { color: #a3511f; }
+.m-tag {
+  font-size: 20rpx; background: #fdeec9; color: #a3511f; border: 1rpx solid #e8c06a;
+  border-radius: 12rpx; padding: 2rpx 14rpx; font-weight: 500;
+}
+.m-tag-plain { background: #fff; }
+.m-status { font-size: 26rpx; margin-top: 8rpx; }
+.m-status.done { color: #2e7d4f; }
+.m-status.wait { color: #b8a585; }
+.m-bless { font-size: 24rpx; color: #b8a585; margin-top: 4rpx; }
+.m-actions { flex-shrink: 0; }
+.mini-btn {
+  height: 80rpx; line-height: 80rpx; border-radius: 40rpx; font-size: 28rpx;
+  font-weight: 800; padding: 0 30rpx; margin: 0;
+}
+.mini-red { background: linear-gradient(180deg, #d4463a, #b01f24); color: #fff3d6; }
+.mini-gold { background: #fdeec9; color: #a3511f; border: 1rpx solid #e8c06a; }
+.invite-row { border: 3rpx dashed #d9c9a8; background: #fffdf6; }
