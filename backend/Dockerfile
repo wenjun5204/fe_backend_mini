@@ -16,4 +16,4 @@ ENV PORT=80 \
     JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 80
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar --server.port=${PORT}"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar --server.port=${PORT} --spring.profiles.active=cloud"]
