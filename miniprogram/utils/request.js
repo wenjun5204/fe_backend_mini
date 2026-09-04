@@ -6,10 +6,10 @@
  * - USE_CLOUD=false:wx.request 直连本地后端(开发者工具需勾选「不校验合法域名」)
  * - USE_CLOUD=true(当前):wx.cloud.callContainer 走微信云托管(无需配置合法域名,
  *   平台自动注入 X-WX-OPENID,后端据此识别用户身份)
- * 云托管环境 ID 从服务默认域名中获取(reganmini-<环境ID>-xxxx):308286-6
+ * 云托管环境 ID:控制台「环境信息」页获取
  */
 const USE_CLOUD = true
-const CLOUD_ENV = '308286-6'
+const CLOUD_ENV = 'prod-d5g1qs6gjdabafaf6'
 const SERVICE_NAME = 'reganmini'
 
 const BASE_URL = 'http://127.0.0.1:8080'
@@ -67,6 +67,7 @@ function requestViaCloud(path, options) {
     }
     wx.cloud.callContainer({
       config: { env: CLOUD_ENV },
+      name: SERVICE_NAME,
       path: path,
       method: options.method || 'GET',
       data: options.data,
