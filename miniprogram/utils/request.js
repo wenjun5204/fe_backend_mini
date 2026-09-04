@@ -3,14 +3,14 @@
  * 错误 toast 文案已过合规词表(.agents/docs/conventions.md)
  *
  * 双通道:
- * - USE_CLOUD=false(默认):wx.request 直连本地后端(开发者工具需勾选「不校验合法域名」)
- * - USE_CLOUD=true:wx.cloud.callContainer 走微信云托管(无需配置合法域名,
+ * - USE_CLOUD=false:wx.request 直连本地后端(开发者工具需勾选「不校验合法域名」)
+ * - USE_CLOUD=true(当前):wx.cloud.callContainer 走微信云托管(无需配置合法域名,
  *   平台自动注入 X-WX-OPENID,后端据此识别用户身份)
- * 切换到云托管时,请把 CLOUD_ENV 换成你的云托管环境 ID,并确认 SERVICE_NAME 一致
+ * 云托管环境 ID 从服务默认域名中获取(reganmini-<环境ID>-xxxx):308286-6
  */
-const USE_CLOUD = false
-const CLOUD_ENV = '' // TODO: 云托管环境 ID,如 'prod-xxxxx'
-const SERVICE_NAME = 'backend'
+const USE_CLOUD = true
+const CLOUD_ENV = '308286-6'
+const SERVICE_NAME = 'reganmini'
 
 const BASE_URL = 'http://127.0.0.1:8080'
 const TOKEN_KEY = 'qjf_token'
