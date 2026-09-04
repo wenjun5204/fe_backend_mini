@@ -18,6 +18,8 @@ import com.example.backend.service.FamilyService;
 import com.example.backend.service.FortuneService;
 import com.example.backend.service.InteractService;
 import com.example.backend.service.RankService;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -49,8 +51,14 @@ public class ApiController {
     }
 
     @PostMapping("/auth/login")
-    public LoginResponse login(@RequestBody LoginRequest request) {
-        return authService.login(request);
+    public LoginResponse login(@RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        return authService.login(request, httpRequest);
+    }
+
+    /** 云托管/负载均衡探活端点(免鉴权,不入契约,仅部署健康检查) */
+    @GetMapping("/ping")
+    public Map<String, String> ping() {
+        return Map.of("status", "ok");
     }
 
     @GetMapping("/family")
