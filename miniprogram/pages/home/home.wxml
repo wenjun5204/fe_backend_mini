@@ -1,0 +1,59 @@
+<view class="page-home">
+
+  <view wx:if="{{notJoined}}" class="empty-box">
+    <view class="empty-emoji">🏠</view>
+    <view class="empty-text">您还没有加入「家」</view>
+    <view class="empty-sub">去福签页一键建家,或等家人发邀请卡片给您</view>
+  </view>
+
+  <block wx:else>
+    <!-- 福值池 + 门牌 -->
+    <view class="pool-card">
+      <view class="pool-left">
+        <view class="pool-label">{{familyName}} · 全家福值池</view>
+        <view class="pool-val">{{totalBless}}<text class="pool-unit"> 福</text></view>
+      </view>
+      <view class="plate">
+        <view class="plate-name kaiti">{{plate.name}}</view>
+        <view class="plate-sub">{{plate.sub}}</view>
+        <view class="plate-next">{{plate.next}}</view>
+      </view>
+    </view>
+
+    <!-- 今日接福 -->
+    <view class="section-title">
+      <text>今日接福</text>
+      <text class="section-count">{{drawnCount}}/{{memberCount}} 人已接</text>
+    </view>
+
+    <view class="member-list">
+      <view wx:for="{{members}}" wx:key="userId" class="member">
+        <view class="m-ava">{{item.drawnToday ? '🏮' : '💤'}}</view>
+        <view class="m-info">
+          <view class="m-name">
+            {{item.nickname}}
+            <text wx:if="{{item.role === 'OWNER'}}" class="m-tag">户主</text>
+            <text wx:if="{{item.remark}}" class="m-tag m-tag-plain">{{item.remark}}</text>
+          </view>
+          <view class="m-status {{item.drawnToday ? 'done' : 'wait'}}">
+            {{item.drawnToday ? '✓ 已接福' : '还未接福'}}{{item.drawnToday && item.streakDays > 0 ? ' · 连续 ' + item.streakDays + ' 天 🔥' : ''}}
+          </view>
+          <view class="m-bless">个人福值 {{item.personalBless}}</view>
+        </view>
+        <view class="m-actions">
+          <button wx:if="{{item.drawnToday}}" class="mini-btn mini-red" data-userid="{{item.userId}}" bindtap="onTianfu">添福 +8</button>
+          <button wx:else class="mini-btn mini-gold" data-userid="{{item.userId}}" bindtap="onCuifu">催福</button>
+        </view>
+      </view>
+
+      <!-- 邀请家人 -->
+      <view class="member invite-row" bindtap="onInvite">
+        <view class="m-ava m-ava-add">➕</view>
+        <view class="m-info">
+          <view class="m-name m-name-add">邀请家人进「家」</view>
+          <view class="m-status wait">新家人加入,全家 +30 福值</view>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

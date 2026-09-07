@@ -1,0 +1,38 @@
+<view class="page-rank">
+  <!-- 双榜切换 -->
+  <view class="rank-tabs">
+    <view class="rank-tab {{tab === 'in' ? 'active' : ''}}" data-tab="in" bindtap="onSwitchTab">家内榜</view>
+    <view class="rank-tab {{tab === 'friend' ? 'active' : ''}}" data-tab="friend" bindtap="onSwitchTab">好友家族榜</view>
+  </view>
+
+  <!-- 家内榜 -->
+  <block wx:if="{{tab === 'in'}}">
+    <view wx:if="{{inRank && inRank.items.length}}" class="rank-list">
+      <view wx:for="{{inRank.items}}" wx:key="userId" class="rank-row">
+        <view class="rank-no {{item.rank === 1 ? 'top1' : item.rank === 2 ? 'top2' : item.rank === 3 ? 'top3' : ''}}">{{item.rank}}</view>
+        <view class="rank-info">
+          <view class="rank-name">{{item.nickname}}</view>
+          <view class="rank-sub">本周攒福 {{item.bless}}{{item.streakDays > 0 ? ' · 连续 ' + item.streakDays + ' 天🔥' : ''}}</view>
+        </view>
+        <view class="rank-val">{{item.bless}}<text class="rank-unit"> 福</text></view>
+      </view>
+    </view>
+    <view wx:else class="empty-tip">本周还没有福值记录,快去接福签吧</view>
+  </block>
+
+  <!-- 好友家族榜 -->
+  <block wx:else>
+    <view wx:if="{{chaseText}}" class="chase-banner">{{chaseText}}</view>
+    <view wx:if="{{friendItems.length}}" class="rank-list">
+      <view wx:for="{{friendItems}}" wx:key="familyId" class="rank-row {{item.isMine ? 'me' : ''}}">
+        <view class="rank-no {{item.rank === 1 ? 'top1' : item.rank === 2 ? 'top2' : item.rank === 3 ? 'top3' : ''}}">{{item.rank}}</view>
+        <view class="rank-info">
+          <view class="rank-name">{{item.familyName}}{{item.isMine ? ' 👑' : ''}}</view>
+          <view class="rank-sub">{{item.plateName || '还没门牌'}}</view>
+        </view>
+        <view class="rank-val">{{item.bless}}<text class="rank-unit"> 福</text></view>
+      </view>
+    </view>
+    <view wx:else class="empty-tip">还没有家族上榜,快建一个家吧</view>
+  </block>
+</view>

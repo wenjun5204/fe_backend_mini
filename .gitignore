@@ -12,3 +12,7 @@ frontend/dist/
 .vscode/
 *.iml
 .DS_Store
+
+# harness 运行产物与本地数据(不入库)
+.harness/
+backend/data/
