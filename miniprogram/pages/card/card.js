@@ -95,6 +95,8 @@ Page({
       taskDone: today.taskDone,
       personalBless: today.personalBless || 0,
       praiseText: '',
+      // 已接签时直接展示福签卡片(「再看一眼」即重新弹出)
+      showCard: !!today.drawn && !!card,
     })
   },
 
