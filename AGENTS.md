@@ -1,7 +1,7 @@
-# AGENTS.md — 全家福·接福气 项目 Agent 规范
+# AGENTS.md — 别点这个签 项目 Agent 规范
 
 > 本文件是所有 AI Agent / 开发者在本仓库工作的**第一入口**。
-> 项目 = 「全家福·接福气」微信小程序（中老年家庭祈福互动产品）+ Spring Boot 后端。
+> 项目 = 「别点这个签」（原名全家福·接福气，中老年家庭祈福互动产品）：微信小程序 + Spring Boot 后端，部署于微信云托管。
 > 相关文档：`docs/PRD-全家福接福气.md`（产品）、`docs/prototype/index.html`（交互原型）。
 
 ## ⚠️ 合规红线（最高优先级，任何代码/文案/接口设计不得违背）
@@ -29,8 +29,17 @@ fe_backend_mini/
 ```
 
 - 产品主前端是 `miniprogram/`（原生小程序），不是 `frontend/`
-- 后端接口统一前缀 `/api`，端口 8080
-- 数据库：MVP 用 Spring Boot 内嵌 H2（文件模式），预留 MySQL 迁移路径
+- 后端接口统一前缀 `/api`，本地端口 8080；云托管容器监听 80（`server.port=${PORT:8080}`）
+- 数据库：本地开发/测试用 H2（测试为内存库）；生产走微信云托管 MySQL（`cloud` profile，环境变量 `MYSQL_ADDRESS`/`MYSQL_USERNAME`/`MYSQL_PASSWORD`，由 `CloudEnvPostProcessor` 拆分注入，缺失时 fail-fast）
+
+## 部署与鉴权（微信云托管）
+
+- `backend/Dockerfile`：多阶段构建，`ENV PORT=80`，ENTRYPOINT 激活 `--spring.profiles.active=cloud`
+- 登录身份链路：小程序 `wx.cloud.callContainer` → 平台注入 `X-WX-OPENID`（不可伪造）→ `AuthService` 落库建用户 → 后续请求 `Authorization: Bearer {userId}`
+- **服务不得开启公网访问路径**，否则 `X-WX-OPENID` 可被外部伪造
+- 小程序网络层双通道：`miniprogram/utils/request.js` 的 `USE_CLOUD` 开关（true=云托管/false=本地 wx.request），环境 ID/服务名同文件顶部常量
+- 部署后验证：`curl <服务域名>/api/ping` 返回 `{"status":"ok"}`；契约校验用 harness 的 `contract cli live`（`/api/ping` 已默认豁免）
+- **踩坑教训**：MySQL 严格拒绝只读事务内写库（H2 不拒绝，本地测试发现不了）——`@Transactional(readOnly=true)` 的方法内不得调用任何兜底 save；兑底异常处理器必须打全量堆栈日志，禁止吞异常
 
 ## 开发规范摘要
 
@@ -40,6 +49,7 @@ fe_backend_mini/
 - **福值规则**：福值只涨不跌，**永不惩罚用户**（扣分 = 中老年用户流失）
 - 后端分层：controller → service → repository，DTO 与实体分离，接口出入参以契约为准
 - 提交规范：`feat/fix/docs/refactor` 前缀 + 中文描述
+- 隐私合规：实际仅采集 openid（静默注入）与业务数据存储，无位置/相册/头像等高敏接口；接入新采集能力前必须同步更新微信后台「用户隐私保护指引」
 
 ## 详细知识
 
