@@ -55,7 +55,7 @@ public class FortuneService {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public FortuneTodayResponse getTodayFortune() {
         Long userId = CurrentUser.get();
         FamilyMemberEntity member = requireMember(userId);
