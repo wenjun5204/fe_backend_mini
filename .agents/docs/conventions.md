@@ -45,15 +45,17 @@
 - 分层：controller（DTO + 参数校验）→ service（业务）→ repository（数据）
 - 接口出入参一律 DTO，字段命名 camelCase，与 OpenAPI 契约一致；改接口先改契约
 - 错误返回统一结构 `{code, message, data}`；message 面向用户，须过合规词表
+- 兑底异常处理器（50000）必须打全量堆栈日志，禁止吞异常（前端只见错误码，真相在日志）
 - 频控类逻辑（催福 3 次/人/天、通知 4 条/人/天）在 service 层实现，写单测
 - 福值变更必须走「福值事件」路径，禁止直接 update 余额字段（保证可审计、只增不减）
+- **事务注解铁律**：`@Transactional(readOnly=true)` 方法内禁止任何写库（含 orElseGet 兜底 save）——H2 不报错但 MySQL 生产必炸；需要兜底写的方法不加 readOnly
 
 ## 五、小程序规范
 
 - 原生框架，不引入 UI 库（保持包体小、低端机流畅）
 - 页面间传参用家族邀请码（inviteCode），onLoad 里处理分享进入场景
-- 网络层统一封装 `utils/request.js`，错误 toast 文案过合规词表
-- 分享卡片标题模板：「{家族名}邀请您：一起接福气，全家福值榜见！」
+- 网络层统一封装 `utils/request.js`，双通道开关 USE_CLOUD（true=云托管 callContainer/false=本地 wx.request），环境 ID/服务名在文件顶部常量；错误 toast 文案过合规词表
+- 分享卡片标题模板：「别点这个签…点开就有福!来自{家族名}的家人」（反向好奇钩子，与产品名形成传播闭环）；分享 title 属用户可见文案，同样须过合规词表
 
 ## 六、Git 与提交
 
