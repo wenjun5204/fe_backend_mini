@@ -30,10 +30,14 @@ public class BlessService {
         this.familyMemberRepository = familyMemberRepository;
     }
 
-    /** 发放福值(事务内);返回发放后的结果快照 */
+    /**
+     * 发放福值(事务内);返回发放后的结果快照。
+     * 并发安全:累计字段用数据库原子自增(UPDATE x = x + ?),不经过实体读-改-写,
+     * 多人同时添福不会丢更新;门牌只升不降用条件更新保护。
+     */
     @Transactional
     public GrantResult grant(Long userId, Long familyId, BlessEventEntity.Type type, Long targetUserId) {
-        // 1. 写事件(唯一福值变更路径)
+        // 1. 写事件(唯一福值变更路径,可审计)
         BlessEventEntity event = new BlessEventEntity();
         event.setUserId(userId);
         event.setFamilyId(familyId);
@@ -42,19 +46,25 @@ public class BlessService {
         event.setTargetUserId(targetUserId);
         blessEventRepository.save(event);
 
-        // 2. 同步个人累计(被添福时累计到目标用户)
+        // 2. 原子累加个人福值(被添福时累计到目标用户),重读快照
         Long blessOwner = targetUserId != null ? targetUserId : userId;
+        familyMemberRepository.findByUserId(blessOwner)
+                .orElseThrow(() -> new IllegalStateException("成员不存在: " + blessOwner));
+        familyMemberRepository.incrementPersonalBless(blessOwner, type.amount());
         FamilyMemberEntity member = familyMemberRepository.findByUserId(blessOwner)
                 .orElseThrow(() -> new IllegalStateException("成员不存在: " + blessOwner));
-        member.setPersonalBless(member.getPersonalBless() + type.amount());
-        familyMemberRepository.save(member);
 
-        // 3. 同步家族福池 + 门牌升级(只升不降)
+        // 3. 原子累加家族福池,重读后条件升级门牌(只升不降)
+        familyRepository.findById(familyId)
+                .orElseThrow(() -> new IllegalStateException("家族不存在: " + familyId));
+        familyRepository.incrementTotalBless(familyId, type.amount());
         FamilyEntity family = familyRepository.findById(familyId)
                 .orElseThrow(() -> new IllegalStateException("家族不存在: " + familyId));
-        family.setTotalBless(family.getTotalBless() + type.amount());
-        family.setPlateLevel(upgradePlate(family.getTotalBless()));
-        familyRepository.save(family);
+        PlateLevel newLevel = upgradePlate(family.getTotalBless());
+        if (newLevel != family.getPlateLevel() && newLevel.ordinal() > family.getPlateLevel().ordinal()) {
+            family.setPlateLevel(newLevel);
+            familyRepository.save(family);
+        }
 
         return new GrantResult(type.amount(), member.getPersonalBless(),
                 family.getTotalBless(), family.getPlateLevel());
