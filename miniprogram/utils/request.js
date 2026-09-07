@@ -67,7 +67,7 @@ function requestViaCloud(path, options) {
     }
     wx.cloud.callContainer({
       config: { env: CLOUD_ENV },
-      name: SERVICE_NAME,
+      service: SERVICE_NAME,
       path: path,
       method: options.method || 'GET',
       data: options.data,
@@ -115,6 +115,12 @@ function handleResponse(res, resolve, reject) {
     }
     resolve(body)
   } else {
+    // 排查云托管 404/502 时,响应体通常包含网关或后端的明确错误信息
+    console.error('[request] HTTP ' + res.statusCode, {
+      path,
+      service: USE_CLOUD ? SERVICE_NAME : undefined,
+      body: res.data,
+    })
     toastError('服务开小差了,请您稍后再试')
     reject(new Error('HTTP ' + res.statusCode))
   }

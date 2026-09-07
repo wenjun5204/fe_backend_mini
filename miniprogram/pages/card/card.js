@@ -187,7 +187,7 @@ Page({
   /** 分享卡片:家人群/好友 */
   onShareAppMessage() {
     return {
-      title: (this.data.familyName || '您') + '邀请您：一起接福气，全家福值榜见！',
+      title: '别点这个签…点开就有福!来自' + (this.data.familyName || '您的家人'),
       path: '/pages/card/card?inviteCode=' + (this.data.inviteCode || ''),
       imageUrl: '',
     }

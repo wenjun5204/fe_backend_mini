@@ -2,7 +2,7 @@
   "compileType": "miniprogram",
   "miniprogramRoot": "./",
   "appid": "wx5e93c2b8cd8ef2bc",
-  "projectname": "fe-backend-mini",
+  "projectname": "bie-dian-zhe-ge-qian",
   "setting": {
     "es6": true,
     "enhance": true,
