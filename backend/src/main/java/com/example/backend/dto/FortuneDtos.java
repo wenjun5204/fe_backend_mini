@@ -20,6 +20,8 @@ public final class FortuneDtos {
         private FortuneLevel level;
         private List<String> yiItems;
         private String blessText;
+        /** 节日限定标记(如「新春」「中秋」),非节日日为 null */
+        private String festival;
 
         public Long getFamilyId() { return familyId; }
         public void setFamilyId(Long familyId) { this.familyId = familyId; }
@@ -31,6 +33,8 @@ public final class FortuneDtos {
         public void setYiItems(List<String> yiItems) { this.yiItems = yiItems; }
         public String getBlessText() { return blessText; }
         public void setBlessText(String blessText) { this.blessText = blessText; }
+        public String getFestival() { return festival; }
+        public void setFestival(String festival) { this.festival = festival; }
     }
 
     public static class FortuneTodayResponse {

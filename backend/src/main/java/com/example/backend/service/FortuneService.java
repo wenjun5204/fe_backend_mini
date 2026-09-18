@@ -150,15 +150,17 @@ public class FortuneService {
         return resp;
     }
 
-    /** 兜底生成:当日无签则即时补 */
+    /** 兜底生成:当日无签则即时补;节日日使用节日限定文案池 */
     private DailyFortuneCardEntity ensureCard(Long familyId, LocalDate date) {
         return cardRepository.findByFamilyIdAndDate(familyId, date).orElseGet(() -> {
+            FortuneTextLib.FestivalPool festival = FortuneTextLib.festivalOf(date);
             DailyFortuneCardEntity card = new DailyFortuneCardEntity();
             card.setFamilyId(familyId);
             card.setDate(date);
+            card.setFestival(festival != null ? festival.name() : null);
             card.setLevel(FortuneTextLib.drawLevel());
-            card.setYiItems(String.join(",", FortuneTextLib.randomYiItems()));
-            card.setBlessText(FortuneTextLib.randomBlessText());
+            card.setYiItems(String.join(",", FortuneTextLib.randomYiItems(date)));
+            card.setBlessText(FortuneTextLib.randomBlessText(date));
             return cardRepository.save(card);
         });
     }
@@ -170,6 +172,7 @@ public class FortuneService {
         card.setLevel(entity.getLevel());
         card.setYiItems(Arrays.asList(entity.getYiItems().split(",")));
         card.setBlessText(entity.getBlessText());
+        card.setFestival(entity.getFestival());
         return card;
     }
 

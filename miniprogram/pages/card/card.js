@@ -184,10 +184,14 @@ Page({
     wx.showToast({ title: '点右下角「转发」邀请家人', icon: 'none' })
   },
 
-  /** 分享卡片:家人群/好友 */
+  /** 分享卡片:家人群/好友;节日日使用限定文案提升传播点 */
   onShareAppMessage() {
+    const festival = (this.data.card && this.data.card.festival) || ''
+    const title = festival
+      ? '「' + festival + '限定」福签送给您!来自' + (this.data.familyName || '您的家人')
+      : '别点这个签…点开就有福!来自' + (this.data.familyName || '您的家人')
     return {
-      title: '别点这个签…点开就有福!来自' + (this.data.familyName || '您的家人'),
+      title,
       path: '/pages/card/card?inviteCode=' + (this.data.inviteCode || ''),
       imageUrl: '',
     }

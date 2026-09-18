@@ -299,6 +299,11 @@ components:
         blessText:
           type: string
           description: 祝福语,过合规词表
+        festival:
+          type: string
+          nullable: true
+          maxLength: 16
+          description: 节日限定标记(如「新春」「中秋」),非节日日为 null
     FortuneTodayResponse:
       type: object
       required: [card, drawn, shared, taskDone]

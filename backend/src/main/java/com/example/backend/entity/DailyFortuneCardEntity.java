@@ -40,6 +40,10 @@ public class DailyFortuneCardEntity {
     @Column(nullable = false, length = 50)
     private String blessText;
 
+    /** 节日限定标记(如「新春」「中秋」),非节日日为 null */
+    @Column(length = 16)
+    private String festival;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getFamilyId() { return familyId; }
@@ -52,4 +56,6 @@ public class DailyFortuneCardEntity {
     public void setYiItems(String yiItems) { this.yiItems = yiItems; }
     public String getBlessText() { return blessText; }
     public void setBlessText(String blessText) { this.blessText = blessText; }
+    public String getFestival() { return festival; }
+    public void setFestival(String festival) { this.festival = festival; }
 }

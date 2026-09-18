@@ -61,6 +61,7 @@
   <view wx:if="{{showCard && card}}" class="card-mask" bindtap="closeCard">
     <view class="fcard" catchtap="">
       <view class="f-lunar">农历今日 · {{card.date}}</view>
+      <view wx:if="{{card.festival}}" class="f-festival kaiti">{{card.festival}} · 限定福签</view>
       <view class="f-family">{{familyName}} · 全家同签</view>
       <view class="f-type-row">
         <view class="f-seal kaiti">全家\n之福</view>

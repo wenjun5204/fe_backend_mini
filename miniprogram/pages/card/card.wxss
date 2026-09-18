@@ -82,6 +82,11 @@
   box-shadow: 0 0 0 10rpx #b01f24, 0 0 0 16rpx #ffd76e, 0 30rpx 60rpx rgba(0,0,0,0.5);
 }
 .f-lunar { color: #8f6a1f; font-size: 26rpx; letter-spacing: 4rpx; }
+.f-festival {
+display: inline-block; margin-top: 12rpx; padding: 4rpx 28rpx;
+font-size: 30rpx; font-weight: 800; color: #b01f24; letter-spacing: 4rpx;
+border: 2rpx solid #ffd76e; border-radius: 24rpx; background: rgba(255,255,255,0.5);
+}
 .f-family { color: #7a1f18; font-size: 30rpx; font-weight: 700; margin-top: 8rpx; letter-spacing: 4rpx; }
 .f-type-row { display: flex; align-items: center; justify-content: center; gap: 36rpx; margin: 30rpx 0 10rpx; }
 .f-seal {
