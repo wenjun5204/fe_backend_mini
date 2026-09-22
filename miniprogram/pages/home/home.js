@@ -19,6 +19,7 @@ Page({
     drawnCount: 0,
     memberCount: 0,
     members: [],
+    upcomingBirthday: null,
   },
 
   async onLoad() {
@@ -36,6 +37,9 @@ Page({
         this.setData({ notJoined: true })
         return
       }
+      const [upcomingResult] = await Promise.all([
+        api.getUpcomingBirthday().catch(() => ({ upcoming: null })),
+      ])
       const members = family.members || []
       const plate = PLATES[family.plateLevel] || PLATES.NONE
       this.setData({
@@ -51,6 +55,7 @@ Page({
           next: family.nextPlateBless > 0 ? '还差 ' + family.nextPlateBless + ' 福值升级门牌' : '最高门牌已达成',
         },
         members,
+        upcomingBirthday: upcomingResult.upcoming,
       })
     } catch (e) {
       this.setData({ notJoined: true })
@@ -83,6 +88,11 @@ Page({
     } catch (err) {
       // 频控/已接福提示由网络层统一 toast
     }
+  },
+
+  /** 打开家庭生日簿 */
+  onBirthdayBook() {
+    wx.navigateTo({ url: '/pages/birthday/birthday' })
   },
 
   /** 邀请家人 */

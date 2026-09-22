@@ -21,6 +21,6 @@ public class WebConfig implements WebMvcConfigurer {
         // frontend/ React 演示端联调用;小程序无跨域问题
         registry.addMapping("/api/**")
                 .allowedOrigins("http://localhost:5173")
-                .allowedMethods("GET", "POST", "OPTIONS");
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
     }
 }

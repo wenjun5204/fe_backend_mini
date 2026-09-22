@@ -37,6 +37,12 @@
 			<artifactId>mysql-connector-j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<!-- 农历换算：服务端是唯一计算来源，前端只展示结果 -->
+		<dependency>
+			<groupId>net.time4j</groupId>
+			<artifactId>time4j-calendar</artifactId>
+			<version>4.38</version>
+		</dependency>
 		<!-- 运行时契约导出:/v3/api-docs 供 harness live-check 比对,抓序列化漂移 -->
 		<dependency>
 			<groupId>org.springdoc</groupId>

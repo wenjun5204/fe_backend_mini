@@ -24,6 +24,16 @@
 .plate-sub { font-size: 22rpx; opacity: 0.9; margin-top: 8rpx; }
 .plate-next { font-size: 22rpx; color: #ffe3b8; opacity: 0.85; margin-top: 6rpx; }
 
+.birthday-card {
+  margin: 24rpx 32rpx 14rpx; padding: 24rpx 28rpx; display: flex; align-items: center; gap: 18rpx;
+  border: 2rpx solid #ebcc85; border-radius: 28rpx; background: linear-gradient(135deg, #fff6de, #ffe7af);
+}
+.birthday-icon { width: 74rpx; height: 74rpx; display: flex; align-items: center; justify-content: center; border-radius: 20rpx; background: #fff9ed; font-size: 42rpx; }
+.birthday-main { flex: 1; }
+.birthday-title { color: #7b141a; font-size: 36rpx; font-family: KaiTi, STKaiti, serif; font-weight: 900; }
+.birthday-sub { margin-top: 4rpx; color: #896f4e; font-size: 26rpx; }
+.birthday-go { color: #b01f24; font-size: 27rpx; font-weight: 800; }
+
 .section-title {
   padding: 10rpx 40rpx 20rpx; font-size: 34rpx; font-weight: 800; color: #7a1f18;
   display: flex; justify-content: space-between; align-items: center;

@@ -20,6 +20,17 @@
       </view>
     </view>
 
+    <!-- 近期生日 -->
+    <view class="birthday-card" bindtap="onBirthdayBook">
+      <view class="birthday-icon">🎂</view>
+      <view class="birthday-main">
+        <view class="birthday-title">家庭生日簿</view>
+        <view wx:if="{{upcomingBirthday}}" class="birthday-sub">{{upcomingBirthday.displayName}}的生日 {{upcomingBirthday.daysUntil === 0 ? '就是今天' : '还有 ' + upcomingBirthday.daysUntil + ' 天'}}</view>
+        <view wx:else class="birthday-sub">把重要的日子记在心上</view>
+      </view>
+      <view class="birthday-go">查看 ›</view>
+    </view>
+
     <!-- 今日接福 -->
     <view class="section-title">
       <text>今日接福</text>

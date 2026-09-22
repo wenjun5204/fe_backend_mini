@@ -184,6 +184,123 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InviteInfo'
+  /api/calendar/convert:
+    post:
+      operationId: convertCalendar
+      summary: 公历农历日期换算(只计算不保存)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalendarConvertRequest'
+      responses:
+        '200':
+          description: 日期换算结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarConvertResponse'
+  /api/birthdays:
+    get:
+      operationId: getBirthdays
+      summary: 获取本人可见的家庭生日簿(按下一次生日由近到远)
+      responses:
+        '200':
+          description: 生日簿列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayListResponse'
+    post:
+      operationId: createBirthday
+      summary: 新增一条家人或亲友生日记录
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BirthdayUpsertRequest'
+      responses:
+        '200':
+          description: 已保存的生日记录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayRecord'
+  /api/birthdays/upcoming:
+    get:
+      operationId: getUpcomingBirthday
+      summary: 获取最近一位本人可见的生日(供我的家卡片使用)
+      responses:
+        '200':
+          description: 近期生日;没有记录时 upcoming 为 null
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpcomingBirthdayResponse'
+  /api/birthdays/{id}:
+    put:
+      operationId: updateBirthday
+      summary: 编辑一条生日记录(录入人或户主可编辑家庭共享记录)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BirthdayUpsertRequest'
+      responses:
+        '200':
+          description: 已更新的生日记录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayRecord'
+    delete:
+      operationId: deleteBirthday
+      summary: 删除生日记录及当前用户的关联提醒
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 删除结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteBirthdayResponse'
+  /api/birthdays/{id}/reminder:
+    put:
+      operationId: updateBirthdayReminder
+      summary: 设置当前用户的生日提醒时点(默认关闭)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BirthdayReminderRequest'
+      responses:
+        '200':
+          description: 当前用户的提醒设置
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayReminder'
 components:
   schemas:
     LoginRequest:
@@ -419,3 +536,160 @@ components:
         inviteText:
           type: string
           description: 邀请文案,如:王家庄邀请您一起接福气,全家福值榜见!
+    CalendarType:
+      type: string
+      enum: [SOLAR, LUNAR]
+      description: 日期口径：公历或农历
+    BirthdaySubjectType:
+      type: string
+      enum: [MEMBER, CONTACT]
+      description: MEMBER 为家族成员，CONTACT 为亲友
+    BirthdayVisibility:
+      type: string
+      enum: [PRIVATE, FAMILY]
+      description: PRIVATE 仅录入人可见，FAMILY 家人可见
+    CalendarConvertRequest:
+      type: object
+      required: [calendarType]
+      properties:
+        calendarType:
+          $ref: '#/components/schemas/CalendarType'
+        solarDate:
+          type: string
+          description: 完整公历日期 yyyy-MM-dd；只查不保存时使用，范围 1900-01-01 至当天
+        month:
+          type: integer
+          description: 按日期口径填写的生日月份；与 day 一起用于计算下一次日期
+        day:
+          type: integer
+          description: 按日期口径填写的生日日期；与 month 一起使用
+        isLeapMonth:
+          type: boolean
+          default: false
+          description: 仅农历有效，是否为闰月
+    CalendarConvertResponse:
+      type: object
+      required: [solarDate, lunarText, lunarMonth, lunarDay, isLeapMonth]
+      properties:
+        solarDate:
+          type: string
+          description: 对应或下一次的公历日期 yyyy-MM-dd
+        lunarText:
+          type: string
+          description: 农历显示文本，如农历八月十五
+        lunarMonth:
+          type: integer
+        lunarDay:
+          type: integer
+        isLeapMonth:
+          type: boolean
+    BirthdayUpsertRequest:
+      type: object
+      required: [subjectType, displayName, calendarType, month, day, isLeapMonth, visibility]
+      properties:
+        subjectType:
+          $ref: '#/components/schemas/BirthdaySubjectType'
+        subjectUserId:
+          type: integer
+          nullable: true
+          description: subjectType=MEMBER 时必填，且必须属于当前家族
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 12
+          description: 家人的称呼或亲友姓名
+        calendarType:
+          $ref: '#/components/schemas/CalendarType'
+        month:
+          type: integer
+        day:
+          type: integer
+        isLeapMonth:
+          type: boolean
+        visibility:
+          $ref: '#/components/schemas/BirthdayVisibility'
+    BirthdayReminderRequest:
+      type: object
+      required: [reminderDays]
+      properties:
+        reminderDays:
+          type: array
+          maxItems: 3
+          uniqueItems: true
+          items:
+            type: integer
+            enum: [7, 3, 0]
+          description: 提前天数，空数组表示关闭提醒
+    BirthdayReminder:
+      type: object
+      required: [birthdayId, reminderDays]
+      properties:
+        birthdayId:
+          type: integer
+        reminderDays:
+          type: array
+          items:
+            type: integer
+    BirthdayRecord:
+      type: object
+      required: [id, familyId, subjectType, displayName, calendarType, month, day, isLeapMonth, visibility, createdBy, nextBirthdayDate, nextBirthdayLunarText, reminderDays]
+      properties:
+        id:
+          type: integer
+        familyId:
+          type: integer
+        subjectType:
+          $ref: '#/components/schemas/BirthdaySubjectType'
+        subjectUserId:
+          type: integer
+          nullable: true
+        displayName:
+          type: string
+        calendarType:
+          $ref: '#/components/schemas/CalendarType'
+        month:
+          type: integer
+        day:
+          type: integer
+        isLeapMonth:
+          type: boolean
+        visibility:
+          $ref: '#/components/schemas/BirthdayVisibility'
+        createdBy:
+          type: integer
+        nextBirthdayDate:
+          type: string
+          description: 下一次生日对应公历日期 yyyy-MM-dd
+        nextBirthdayLunarText:
+          type: string
+          description: 下一次生日农历显示文本
+        daysUntil:
+          type: integer
+          description: 距下一次生日的天数
+        reminderDays:
+          type: array
+          items:
+            type: integer
+          description: 当前用户设置的提醒提前天数
+    BirthdayListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BirthdayRecord'
+    UpcomingBirthdayResponse:
+      type: object
+      required: [upcoming]
+      properties:
+        upcoming:
+          allOf:
+            - $ref: '#/components/schemas/BirthdayRecord'
+          nullable: true
+    DeleteBirthdayResponse:
+      type: object
+      required: [deleted]
+      properties:
+        deleted:
+          type: boolean

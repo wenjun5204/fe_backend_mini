@@ -2,6 +2,15 @@ package com.example.backend.controller;
 
 import com.example.backend.dto.AuthDtos.LoginRequest;
 import com.example.backend.dto.AuthDtos.LoginResponse;
+import com.example.backend.dto.BirthdayDtos.BirthdayListResponse;
+import com.example.backend.dto.BirthdayDtos.BirthdayRecord;
+import com.example.backend.dto.BirthdayDtos.BirthdayReminder;
+import com.example.backend.dto.BirthdayDtos.BirthdayReminderRequest;
+import com.example.backend.dto.BirthdayDtos.BirthdayUpsertRequest;
+import com.example.backend.dto.BirthdayDtos.CalendarConvertRequest;
+import com.example.backend.dto.BirthdayDtos.CalendarConvertResponse;
+import com.example.backend.dto.BirthdayDtos.DeleteBirthdayResponse;
+import com.example.backend.dto.BirthdayDtos.UpcomingBirthdayResponse;
 import com.example.backend.dto.FamilyDtos.CreateFamilyRequest;
 import com.example.backend.dto.FamilyDtos.FamilyDetail;
 import com.example.backend.dto.FamilyDtos.InviteInfo;
@@ -14,14 +23,18 @@ import com.example.backend.dto.FortuneDtos.FortuneTodayResponse;
 import com.example.backend.dto.RankDtos.FamilyRankResponse;
 import com.example.backend.dto.RankDtos.FriendRankResponse;
 import com.example.backend.service.AuthService;
+import com.example.backend.service.BirthdayService;
 import com.example.backend.service.FamilyService;
 import com.example.backend.service.FortuneService;
 import com.example.backend.service.InteractService;
 import com.example.backend.service.RankService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -33,17 +46,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class ApiController {
 
     private final AuthService authService;
+    private final BirthdayService birthdayService;
     private final FamilyService familyService;
     private final FortuneService fortuneService;
     private final InteractService interactService;
     private final RankService rankService;
 
     public ApiController(AuthService authService,
+                         BirthdayService birthdayService,
                          FamilyService familyService,
                          FortuneService fortuneService,
                          InteractService interactService,
                          RankService rankService) {
         this.authService = authService;
+        this.birthdayService = birthdayService;
         this.familyService = familyService;
         this.fortuneService = fortuneService;
         this.interactService = interactService;
@@ -119,5 +135,41 @@ public class ApiController {
     @GetMapping("/invite/info")
     public InviteInfo getInviteInfo(@RequestParam("inviteCode") String inviteCode) {
         return familyService.getInviteInfo(inviteCode);
+    }
+
+    @PostMapping("/calendar/convert")
+    public CalendarConvertResponse convertCalendar(@RequestBody CalendarConvertRequest request) {
+        return birthdayService.convert(request);
+    }
+
+    @GetMapping("/birthdays")
+    public BirthdayListResponse getBirthdays() {
+        return birthdayService.getBirthdays();
+    }
+
+    @PostMapping("/birthdays")
+    public BirthdayRecord createBirthday(@RequestBody BirthdayUpsertRequest request) {
+        return birthdayService.create(request);
+    }
+
+    @GetMapping("/birthdays/upcoming")
+    public UpcomingBirthdayResponse getUpcomingBirthday() {
+        return birthdayService.getUpcomingBirthday();
+    }
+
+    @PutMapping("/birthdays/{id}")
+    public BirthdayRecord updateBirthday(@PathVariable Long id, @RequestBody BirthdayUpsertRequest request) {
+        return birthdayService.update(id, request);
+    }
+
+    @DeleteMapping("/birthdays/{id}")
+    public DeleteBirthdayResponse deleteBirthday(@PathVariable Long id) {
+        return birthdayService.delete(id);
+    }
+
+    @PutMapping("/birthdays/{id}/reminder")
+    public BirthdayReminder updateBirthdayReminder(@PathVariable Long id,
+                                                   @RequestBody BirthdayReminderRequest request) {
+        return birthdayService.updateReminder(id, request);
     }
 }

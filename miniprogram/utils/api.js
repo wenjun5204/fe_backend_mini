@@ -24,8 +24,19 @@ const cuifu = (targetUserId) => request('/api/interact/cuifu', { method: 'POST',
 const getFamilyRank = () => request('/api/rank/family')
 const getFriendFamilyRank = () => request('/api/rank/friends')
 
+// 家庭生日簿
+const convertCalendar = (data) => request('/api/calendar/convert', { method: 'POST', data })
+const getBirthdays = () => request('/api/birthdays')
+const getUpcomingBirthday = () => request('/api/birthdays/upcoming')
+const createBirthday = (data) => request('/api/birthdays', { method: 'POST', data })
+const updateBirthday = (id, data) => request('/api/birthdays/' + id, { method: 'PUT', data })
+const deleteBirthday = (id) => request('/api/birthdays/' + id, { method: 'DELETE' })
+const updateBirthdayReminder = (id, reminderDays) => request('/api/birthdays/' + id + '/reminder', { method: 'PUT', data: { reminderDays } })
+
 module.exports = {
   login, getMyFamily, createFamily, joinFamily, getInviteInfo,
   getTodayFortune, drawFortune, shareFortune, completeFortuneTask,
   tianfu, cuifu, getFamilyRank, getFriendFamilyRank,
+  convertCalendar, getBirthdays, getUpcomingBirthday, createBirthday, updateBirthday,
+  deleteBirthday, updateBirthdayReminder,
 }
