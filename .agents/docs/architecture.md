@@ -13,7 +13,8 @@
 云托管 MySQL(生产,MYSQL_ADDRESS 注入) / H2(本地与测试)
 ```
 
-- 前端为原生微信小程序（非框架），3 个 Tab：福签页 / 我的家 / 家族榜
+- 前端为原生微信小程序（非框架），3 个 Tab：福签(card, 含转罗盘+入口条) / 解忧册(jieyou, 中部) / 家(home, 我家|家族榜子 Tab)
+- 页面全景（8 页）：card / jieyou / home / rank(深链兼容) / birthday / bagua(集福阵) / pendant(挂件) / awards(奖状墙)
 - 后端单服务，接口前缀 `/api`；本地端口 8080（`server.port=${PORT:8080}`），云托管容器 80
 - 网络层双通道：`utils/request.js` 的 `USE_CLOUD` 开关（true=callContainer / false=本地 wx.request）
 - `frontend/`（React + Vite）仅作为契约验证的演示端，不承载产品功能
@@ -36,6 +37,9 @@ com.example.backend
 2. **福值结算**：行为产生福值事件 → 个人福值 + 家族福池同时累加；只加不减
 3. **门牌解锁**：家族福池累计达标（500/2000/5000/20000）触发解锁事件，全员通知
 4. **分享链路**：小程序卡片分享 → 新用户带家族邀请码进入 → 直接落地「我的家」页
+5. **八卦集福阵（v1.5）**：8 卦进度服务端从既有数据实时推导（无进度表、无写入接口），GET /api/bagua/status 只读；圆满庆祝 celebrate 幂等落 family_milestone
+6. **解忧册（v1.5）**：宽心话服务端纯随机下发、同日幂等；不采集问题内容，「册子的记忆」仅本地存储
+7. **挂件佩戴（v1.5.1）**：达标解锁制，POST /api/me/pendant 服务端校验解锁条件（不信客户端），持久化于 UserEntity.pendant，成员列表透传全家可见
 
 ## 部署与运行
 
