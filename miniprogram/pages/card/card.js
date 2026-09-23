@@ -11,8 +11,6 @@ Page({
     defaultFamilyName: '',
     familyName: '',
     inviteCode: '',
-    // 首页生日横幅(仅临近生日 ≤7 天或当天显示;未建家/无记录/失败均不渲染)
-    birthdayBanner: null,
     // draw state
     phase: 'idle', // idle | shaking | drawn
     card: null,
@@ -54,7 +52,6 @@ Page({
       if (this.data.pageState === 'ready') {
         await this.refreshToday()
       }
-      this.refreshBirthdayBanner()
     } catch (e) {
       this.setData({ pageState: 'ready' })
     }
@@ -86,41 +83,6 @@ Page({
     }
   },
 
-  /** 首页生日事件横幅:静默拉取,失败不渲染(不干扰接福主流程) */
-  async refreshBirthdayBanner() {
-    if (this.data.pageState !== 'ready') {
-      this.setData({ birthdayBanner: null })
-      return
-    }
-    try {
-      const result = await api.getUpcomingBirthday()
-      const upcoming = result && result.upcoming
-      if (!upcoming || upcoming.daysUntil > 7) {
-        this.setData({ birthdayBanner: null })
-        return
-      }
-      this.setData({
-        birthdayBanner: {
-          name: upcoming.displayName,
-          daysUntil: upcoming.daysUntil,
-          today: upcoming.daysUntil === 0,
-        },
-      })
-    } catch (e) {
-      this.setData({ birthdayBanner: null })
-    }
-  },
-
-  /** 横幅点击:直达生日簿 */
-  onBirthdayBanner() {
-    wx.navigateTo({ url: '/pages/birthday/birthday' })
-  },
-
-  /** 完成态入口：直达生日簿并自动打开新增表单(省一次点击) */
-  onAddBirthday() {
-    wx.navigateTo({ url: '/pages/birthday/birthday?add=1' })
-  },
-
   applyToday(today) {
     const card = today.card || {}
     this.setData({
@@ -133,9 +95,19 @@ Page({
       taskDone: today.taskDone,
       personalBless: today.personalBless || 0,
       praiseText: '',
-      // 已接签时直接展示福签卡片(「再看一眼」即重新弹出)
-      showCard: !!today.drawn && !!card,
+      // 已接签时不自动弹层:弹层是打断性 UI,改为点「再看一眼福签」主动查看;
+      // 抽签成功的开奖时刻仍由 onDraw 主动弹出
+      showCard: false,
     })
+  },
+
+  /** 再看一眼:主动弹出今日福签(数据已在页面内,不重新请求) */
+  onReviewCard() {
+    if (this.data.card) {
+      this.setData({ showCard: true })
+    } else {
+      this.refreshToday()
+    }
   },
 
   /** 一键建家(零键盘输入:用默认名) */

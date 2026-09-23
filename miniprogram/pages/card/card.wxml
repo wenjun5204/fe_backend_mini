@@ -62,8 +62,8 @@
         <view wx:if="{{taskDone && shared}}" class="todo-all">今天的福气都接满啦，明早 7:30 再来 🎉</view>
       </view>
 
-      <!-- 再看一眼今日福签 -->
-      <button class="btn-sub review-btn" bindtap="refreshToday">再看一眼福签</button>
+      <!-- 再看一眼今日福签(点击才弹出,不再自动弹层) -->
+      <button class="btn-sub review-btn" bindtap="onReviewCard">再看一眼福签</button>
 
       <!-- 完成态弱入口：为家人记一位生日(米黄底弱化,不与主流程争注意力) -->
       <button class="btn-sub add-birthday-btn" bindtap="onAddBirthday">＋ 记一位家人的生日</button>
