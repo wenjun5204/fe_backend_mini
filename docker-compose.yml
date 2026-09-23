@@ -1,0 +1,37 @@
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-quanjiafu}
+      MYSQL_USER: ${MYSQL_USERNAME:-quanjiafu}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      PORT: ${APP_PORT:-8080}
+      TZ: ${TZ:-Asia/Shanghai}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-cloud}
+      MYSQL_ADDRESS: ${MYSQL_ADDRESS:-mysql:3306}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-quanjiafu}
+      MYSQL_USERNAME: ${MYSQL_USERNAME:-quanjiafu}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75.0}
+    ports:
+      - "${APP_PORT:-8080}:${APP_PORT:-8080}"
+
+volumes:
+  mysql-data:

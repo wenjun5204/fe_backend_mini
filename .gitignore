@@ -17,3 +17,4 @@ frontend/dist/
 .harness/
 .harness-run/
 backend/data/
+.env
