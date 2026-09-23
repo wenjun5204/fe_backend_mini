@@ -6,8 +6,11 @@ const LEVEL_TAG = { PINGAN: '平安签 · 全家共享', RUYI: '如意签 · 全
 
 Page({
   data: {
-    // page state: loading | notJoined | ready
+    // page state: loading | notJoined | ready | loadFailed
+    // loadFailed:网络失败 ≠ 没有家,绝不能误显示「一键建家」(会建出重复的家)
     pageState: 'loading',
+    // 生日事件横幅:临近生日 ≤7 天或当天展示
+    birthdayBanner: null,
     defaultFamilyName: '',
     familyName: '',
     inviteCode: '',
@@ -29,9 +32,14 @@ Page({
   },
 
   onShow() {
-    if (this._inited) {
-      this.refreshToday()
+    if (!this._inited) {
+      return
     }
+    this.refreshToday()
+    // 从生日簿增删改回来:强制刷新横幅;普通 tab 切换走 30s 节流
+    const forceBanner = !!this._birthdayVisitAt
+    this._birthdayVisitAt = null
+    this.refreshBirthdayBanner(forceBanner)
   },
 
   async init() {
@@ -50,10 +58,12 @@ Page({
       await this.refreshFamily()
       this._inited = true
       if (this.data.pageState === 'ready') {
-        await this.refreshToday()
+        // 首屏两路请求并发,不串行等待
+        await Promise.all([this.refreshToday(), this.refreshBirthdayBanner(true)])
       }
     } catch (e) {
-      this.setData({ pageState: 'ready' })
+      // 登录失败等:给重试入口,而不是伪装成「可建家」
+      this.setData({ pageState: 'loadFailed' })
     }
   },
 
@@ -70,8 +80,54 @@ Page({
         })
       }
     } catch (e) {
-      this.setData({ pageState: 'notJoined' })
+      // 请求失败 ≠ 未加入家族:误判会诱导重复建家,改为给出重试入口
+      this.setData({ pageState: 'loadFailed' })
     }
+  },
+
+  /** 加载失败重试:回到 loading 态重新走 init */
+  onRetryLoad() {
+    this.setData({ pageState: 'loading' })
+    this.init()
+  },
+
+  /** 拉取临近生日事件(当天/≤7天),用于首页横幅;30s 节流,force 可绕过 */
+  async refreshBirthdayBanner(force) {
+    const now = Date.now()
+    if (!force && this._bannerLastAt && now - this._bannerLastAt < 30 * 1000) {
+      return
+    }
+    this._bannerLastAt = now
+    try {
+      const result = await api.getUpcomingBirthday()
+      const upcoming = result && result.upcoming
+      if (upcoming && upcoming.displayName) {
+        // 接口字段是 displayName/daysUntil,映射为横幅展示字段
+        this.setData({
+          birthdayBanner: {
+            name: upcoming.displayName,
+            today: upcoming.daysUntil === 0,
+            daysUntil: upcoming.daysUntil,
+          },
+        })
+      } else {
+        this.setData({ birthdayBanner: null })
+      }
+    } catch (e) {
+      // 无生日记录/未加入家族等场景静默,不影响主流程
+    }
+  },
+
+  /** 点击横幅:直达生日簿 */
+  onBirthdayBanner() {
+    this._birthdayVisitAt = Date.now()
+    wx.navigateTo({ url: '/pages/birthday/birthday' })
+  },
+
+  /** 完成态弱入口:去生日簿新增(自动打开表单) */
+  onAddBirthday() {
+    this._birthdayVisitAt = Date.now()
+    wx.navigateTo({ url: '/pages/birthday/birthday?add=1' })
   },
 
   async refreshToday() {

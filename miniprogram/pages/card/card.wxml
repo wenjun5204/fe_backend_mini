@@ -5,6 +5,14 @@
     <text class="loading-text">福气加载中…</text>
   </view>
 
+  <!-- 网络失败:给重试入口,绝不能误显示「一键建家」造成重复建家 -->
+  <view wx:elif="{{pageState === 'loadFailed'}}" class="join-box">
+    <view class="join-title kaiti">福气堵在路上了</view>
+    <view class="join-sub">网络不太顺畅,您稍后再试试</view>
+    <view class="join-emoji">🏮</view>
+    <button class="btn-main join-btn" bindtap="onRetryLoad">重新加载</button>
+  </view>
+
   <!-- 未加入家族:一键建家(零键盘输入) -->
   <view wx:elif="{{pageState === 'notJoined'}}" class="join-box">
     <view class="join-title kaiti">建一个您的「家」</view>
