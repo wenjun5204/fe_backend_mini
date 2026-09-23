@@ -95,7 +95,7 @@ function requestViaCloud(path, options) {
       method: options.method || 'GET',
       data: options.data,
       header,
-      success: (res) => handleResponse(res, resolve, reject),
+      success: (res) => handleResponse(res, path, resolve, reject),
       fail: () => {
         toastError('网络不太好,请您稍后再试')
         reject(new Error('network error'))
@@ -117,7 +117,7 @@ function requestViaHttp(path, options) {
       method: options.method || 'GET',
       data: options.data,
       header,
-      success: (res) => handleResponse(res, resolve, reject),
+      success: (res) => handleResponse(res, path, resolve, reject),
       fail: () => {
         toastError('网络不太好,请您稍后再试')
         reject(new Error('network error'))
@@ -127,7 +127,7 @@ function requestViaHttp(path, options) {
 }
 
 /** 两个通道的响应结构一致(wx.request 与 callContainer 均返回 statusCode/data) */
-function handleResponse(res, resolve, reject) {
+function handleResponse(res, path, resolve, reject) {
   if (res.statusCode >= 200 && res.statusCode < 300) {
     const body = res.data
     // 统一错误结构 {code, message}
