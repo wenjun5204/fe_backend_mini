@@ -18,4 +18,7 @@ public interface BlessEventRepository extends JpaRepository<BlessEventEntity, Lo
     long countByTypeAndTargetUserIdAndCreatedAtAfter(BlessEventEntity.Type type,
                                                      Long targetUserId,
                                                      LocalDateTime since);
+
+    /** 家族某类事件累计条数:八卦集福阵「兑」口径(分享福签满 30 次) */
+    long countByFamilyIdAndType(Long familyId, BlessEventEntity.Type type);
 }

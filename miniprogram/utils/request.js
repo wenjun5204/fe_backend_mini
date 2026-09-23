@@ -14,6 +14,7 @@ const SERVICE_NAME = 'reganmini'
 
 const BASE_URL = 'http://127.0.0.1:8080'
 const TOKEN_KEY = 'qjf_token'
+const USER_KEY = 'qjf_user'
 
 function getToken() {
   return wx.getStorageSync(TOKEN_KEY) || ''
@@ -21,6 +22,23 @@ function getToken() {
 
 function setToken(token) {
   wx.setStorageSync(TOKEN_KEY, token)
+}
+
+/** 当前用户信息(v1.5:「家」页个人卡片/成员列表中定位自己;仅登录成功时写入) */
+function getUser() {
+  try {
+    return wx.getStorageSync(USER_KEY) || null
+  } catch (e) {
+    return null
+  }
+}
+
+function setUser(user) {
+  try {
+    wx.setStorageSync(USER_KEY, user)
+  } catch (e) {
+    // 存储失败不阻塞登录
+  }
 }
 
 /**
@@ -45,6 +63,11 @@ function ensureLogin() {
   return request('/api/auth/login', options)
     .then((data) => {
       setToken(data.token)
+      setUser({
+        userId: data.userId,
+        nickname: data.nickname || '',
+        avatarUrl: data.avatarUrl || '',
+      })
       return data.token
     })
 }
@@ -130,4 +153,4 @@ function toastError(message) {
   wx.showToast({ title: message, icon: 'none', duration: 2200 })
 }
 
-module.exports = { request, ensureLogin, getToken, setToken, BASE_URL, USE_CLOUD }
+module.exports = { request, ensureLogin, getToken, setToken, getUser, setUser, BASE_URL, USE_CLOUD }

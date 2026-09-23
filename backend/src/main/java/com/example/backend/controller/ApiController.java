@@ -2,6 +2,8 @@ package com.example.backend.controller;
 
 import com.example.backend.dto.AuthDtos.LoginRequest;
 import com.example.backend.dto.AuthDtos.LoginResponse;
+import com.example.backend.dto.BaguaDtos.BaguaCelebrateResponse;
+import com.example.backend.dto.BaguaDtos.BaguaStatusResponse;
 import com.example.backend.dto.BirthdayDtos.BirthdayListResponse;
 import com.example.backend.dto.BirthdayDtos.BirthdayRecord;
 import com.example.backend.dto.BirthdayDtos.BirthdayReminder;
@@ -19,14 +21,22 @@ import com.example.backend.dto.FamilyDtos.TargetUserRequest;
 import com.example.backend.dto.FortuneDtos.BlessResult;
 import com.example.backend.dto.FortuneDtos.CuifuResult;
 import com.example.backend.dto.FortuneDtos.FortuneDrawResponse;
+import com.example.backend.dto.FortuneDtos.FortuneTaskDoneRequest;
 import com.example.backend.dto.FortuneDtos.FortuneTodayResponse;
+import com.example.backend.dto.JieyouDtos.JieyouQuoteResponse;
+import com.example.backend.dto.NotifyDtos.NotifyStatusResponse;
+import com.example.backend.dto.NotifyDtos.NotifySubscribeRequest;
+import com.example.backend.dto.NotifyDtos.NotifySubscribeResponse;
 import com.example.backend.dto.RankDtos.FamilyRankResponse;
 import com.example.backend.dto.RankDtos.FriendRankResponse;
 import com.example.backend.service.AuthService;
+import com.example.backend.service.BaguaService;
 import com.example.backend.service.BirthdayService;
 import com.example.backend.service.FamilyService;
 import com.example.backend.service.FortuneService;
 import com.example.backend.service.InteractService;
+import com.example.backend.service.JieyouService;
+import com.example.backend.service.NotifyService;
 import com.example.backend.service.RankService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
@@ -40,29 +50,38 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 契约路由(与 api/openapi.yaml 一一对应,13 个 operationId) */
+/** 契约路由(与 api/openapi.yaml 一一对应,25 个 operationId;/api/ping 为部署探活,不入契约) */
 @RestController
 @RequestMapping("/api")
 public class ApiController {
 
     private final AuthService authService;
+    private final BaguaService baguaService;
     private final BirthdayService birthdayService;
     private final FamilyService familyService;
     private final FortuneService fortuneService;
     private final InteractService interactService;
+    private final JieyouService jieyouService;
+    private final NotifyService notifyService;
     private final RankService rankService;
 
     public ApiController(AuthService authService,
+                         BaguaService baguaService,
                          BirthdayService birthdayService,
                          FamilyService familyService,
                          FortuneService fortuneService,
                          InteractService interactService,
+                         JieyouService jieyouService,
+                         NotifyService notifyService,
                          RankService rankService) {
         this.authService = authService;
+        this.baguaService = baguaService;
         this.birthdayService = birthdayService;
         this.familyService = familyService;
         this.fortuneService = fortuneService;
         this.interactService = interactService;
+        this.jieyouService = jieyouService;
+        this.notifyService = notifyService;
         this.rankService = rankService;
     }
 
@@ -108,8 +127,8 @@ public class ApiController {
     }
 
     @PostMapping("/fortune/task-done")
-    public BlessResult completeFortuneTask() {
-        return fortuneService.completeFortuneTask();
+    public BlessResult completeFortuneTask(@RequestBody(required = false) FortuneTaskDoneRequest request) {
+        return fortuneService.completeFortuneTask(request);
     }
 
     @PostMapping("/interact/tianfu")
@@ -171,5 +190,30 @@ public class ApiController {
     public BirthdayReminder updateBirthdayReminder(@PathVariable Long id,
                                                    @RequestBody BirthdayReminderRequest request) {
         return birthdayService.updateReminder(id, request);
+    }
+
+    @GetMapping("/bagua/status")
+    public BaguaStatusResponse getBaguaStatus() {
+        return baguaService.getStatus();
+    }
+
+    @PostMapping("/bagua/celebrate")
+    public BaguaCelebrateResponse celebrateBaguaComplete() {
+        return baguaService.celebrate();
+    }
+
+    @GetMapping("/jieyou/quote")
+    public JieyouQuoteResponse getJieyouQuote() {
+        return jieyouService.getQuote();
+    }
+
+    @PostMapping("/notify/subscribe")
+    public NotifySubscribeResponse registerNotifySubscription(@RequestBody NotifySubscribeRequest request) {
+        return notifyService.subscribe(request);
+    }
+
+    @GetMapping("/notify/status")
+    public NotifyStatusResponse getNotifyStatus() {
+        return notifyService.getStatus();
     }
 }

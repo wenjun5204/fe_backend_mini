@@ -2,7 +2,7 @@ package com.example.backend.dto;
 
 import java.util.List;
 
-/** 福签契约模型:PlateLevel / FortuneLevel / FortuneCard / FortuneTodayResponse / FortuneDrawResponse / BlessResult / CuifuResult */
+/** 福签契约模型:PlateLevel / FortuneLevel / Gua / FortuneCard / FortuneTodayResponse / FortuneDrawResponse / BlessResult / CuifuResult / FortuneTaskDoneRequest */
 public final class FortuneDtos {
 
     private FortuneDtos() {
@@ -14,6 +14,9 @@ public final class FortuneDtos {
     /** 福签等级:平安(70%)/如意(25%)/鸿福(5%),纯稀有度玩法,不影响福值 */
     public enum FortuneLevel { PINGAN, RUYI, HONGFU }
 
+    /** 八卦卦位;家族+日期唯一确定,全家同卦,每日变化;只影响卡面主题 */
+    public enum Gua { QIAN, DUI, LI, ZHEN, XUN, KAN, GEN, KUN }
+
     public static class FortuneCard {
         private Long familyId;
         private String date;
@@ -22,6 +25,10 @@ public final class FortuneDtos {
         private String blessText;
         /** 节日限定标记(如「新春」「中秋」),非节日日为 null */
         private String festival;
+        /** 卦位(确定性映射,全家同卦,每日轮换;只影响卡面主题) */
+        private Gua gua;
+        /** 卦位对应卡面主题(乾=云鹤/兑=锦鲤/离=灯笼/震=春雷/巽=风铃/坎=锦鲤戏水/艮=山景/坤=花开) */
+        private String cardTheme;
 
         public Long getFamilyId() { return familyId; }
         public void setFamilyId(Long familyId) { this.familyId = familyId; }
@@ -35,6 +42,10 @@ public final class FortuneDtos {
         public void setBlessText(String blessText) { this.blessText = blessText; }
         public String getFestival() { return festival; }
         public void setFestival(String festival) { this.festival = festival; }
+        public Gua getGua() { return gua; }
+        public void setGua(Gua gua) { this.gua = gua; }
+        public String getCardTheme() { return cardTheme; }
+        public void setCardTheme(String cardTheme) { this.cardTheme = cardTheme; }
     }
 
     public static class FortuneTodayResponse {
@@ -96,5 +107,14 @@ public final class FortuneDtos {
         public void setSent(boolean sent) { this.sent = sent; }
         public int getRemainCount() { return remainCount; }
         public void setRemainCount(int remainCount) { this.remainCount = remainCount; }
+    }
+
+    /** 完成今日宜事项请求:taskItem 可选(须属于当日卡面 yiItems;缺省兼容旧行为) */
+    public static class FortuneTaskDoneRequest {
+        /** 完成的今日宜事项文本(用于八卦阵早睡/喝水/打电话类进度统计) */
+        private String taskItem;
+
+        public String getTaskItem() { return taskItem; }
+        public void setTaskItem(String taskItem) { this.taskItem = taskItem; }
     }
 }

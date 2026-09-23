@@ -1,9 +1,11 @@
 {
   "pages": [
     "pages/card/card",
+    "pages/jieyou/jieyou",
     "pages/home/home",
     "pages/rank/rank",
-    "pages/birthday/birthday"
+    "pages/birthday/birthday",
+    "pages/bagua/bagua"
   ],
   "window": {
     "navigationBarTitleText": "别点这个签",
@@ -18,8 +20,8 @@
     "borderStyle": "white",
     "list": [
       { "pagePath": "pages/card/card", "text": "福签" },
-      { "pagePath": "pages/home/home", "text": "我的家" },
-      { "pagePath": "pages/rank/rank", "text": "家族榜" }
+      { "pagePath": "pages/jieyou/jieyou", "text": "解忧册" },
+      { "pagePath": "pages/home/home", "text": "家" }
     ]
   },
   "sitemapLocation": "sitemap.json"

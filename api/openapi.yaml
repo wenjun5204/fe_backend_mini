@@ -1,10 +1,11 @@
 openapi: 3.0.3
 info:
   title: 全家福·接福气 API
-  version: 1.0.0
+  version: 1.5.0
   description: |
-    中老年家庭祈福互动小程序「全家福·接福气」MVP 接口契约(唯一事实源)。
-    合规约束:文案禁用迷信词(见 .agents/docs/conventions.md),错误 message 面向用户须过合规词表。
+    中老年家庭祈福互动小程序「全家福·接福气」接口契约(唯一事实源)。
+    v1.5.0 增量:八卦集福阵(只读进度)/转罗盘卦位(仅卡面主题)/解忧册文案下发(幂等)/订阅消息授权登记。
+    合规约束:文案禁用迷信词(见 .agents/docs/conventions.md,含 v1.5 追加:卦象/卦运/宜忌/生门/吉位/凶位/能成/不行/会有/注定/天意/预示/破财/有灾),错误 message 面向用户须过合规词表。
 paths:
   /api/auth/login:
     post:
@@ -103,7 +104,13 @@ paths:
   /api/fortune/task-done:
     post:
       operationId: completeFortuneTask
-      summary: 完成今日宜事项(+15 福值,每日 1 次)
+      summary: 完成今日宜事项(+15 福值,每日 1 次;v1.5 增加可选事项文本用于八卦阵任务型进度统计)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FortuneTaskDoneRequest'
       responses:
         '200':
           description: 任务奖励发放
@@ -301,6 +308,67 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BirthdayReminder'
+  /api/bagua/status:
+    get:
+      operationId: getBaguaStatus
+      summary: 家族八卦集福阵进度(8 卦,服务端推导,只读;无任何客户端写入接口)
+      responses:
+        '200':
+          description: 八卦阵进度
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaguaStatusResponse'
+  /api/bagua/celebrate:
+    post:
+      operationId: celebrateBaguaComplete
+      summary: 八卦圆满庆祝标记(一次性,幂等;前端圆满庆祝动效结束后调用)
+      responses:
+        '200':
+          description: 标记结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaguaCelebrateResponse'
+  /api/jieyou/quote:
+    get:
+      operationId: getJieyouQuote
+      summary: 解忧册当日宽心话(每人每日一翻,服务端幂等:同日重复请求返回同条;纯随机,不采集问题内容)
+      responses:
+        '200':
+          description: 当日宽心话
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JieyouQuoteResponse'
+  /api/notify/subscribe:
+    post:
+      operationId: registerNotifySubscription
+      summary: 登记订阅消息授权(抽卡成功后嵌入的正向时刻授权;拒绝不影响任何功能,静默降级)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotifySubscribeRequest'
+      responses:
+        '200':
+          description: 登记结果与剩余可发送额度
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotifySubscribeResponse'
+  /api/notify/status:
+    get:
+      operationId: getNotifyStatus
+      summary: 查询订阅授权状态与剩余额度(设置页「提醒」分组展示,频率透明)
+      responses:
+        '200':
+          description: 订阅状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotifyStatusResponse'
 components:
   schemas:
     LoginRequest:
@@ -399,7 +467,7 @@ components:
             $ref: '#/components/schemas/MemberStatus'
     FortuneCard:
       type: object
-      required: [familyId, date, level, yiItems, blessText]
+      required: [familyId, date, level, yiItems, blessText, gua, cardTheme]
       properties:
         familyId:
           type: integer
@@ -416,6 +484,11 @@ components:
         blessText:
           type: string
           description: 祝福语,过合规词表
+        gua:
+          $ref: '#/components/schemas/Gua'
+        cardTheme:
+          type: string
+          description: 卦位对应卡面主题(乾=云鹤/兑=锦鲤/离=灯笼/震=春雷/巽=风铃/坎=锦鲤戏水/艮=山景/坤=花开);只影响卡面,不影响等级/概率/福值
         festival:
           type: string
           nullable: true
@@ -693,3 +766,108 @@ components:
       properties:
         deleted:
           type: boolean
+    Gua:
+      type: string
+      description: 八卦卦位;家族+日期唯一确定,全家同卦,每日变化;只影响卡面主题
+      enum: [QIAN, DUI, LI, ZHEN, XUN, KAN, GEN, KUN]
+    FortuneTaskDoneRequest:
+      type: object
+      properties:
+        taskItem:
+          type: string
+          maxLength: 24
+          description: 完成的今日宜事项文本(须属于当日卡面 yiItems;用于八卦阵早睡/喝水/打电话类进度统计;缺省时兼容旧行为)
+    BaguaTrigramProgress:
+      type: object
+      required: [gua, lit, current, target, hint]
+      properties:
+        gua:
+          $ref: '#/components/schemas/Gua'
+        lit:
+          type: boolean
+          description: 是否已点亮;只涨不跌,永不熄灭
+        current:
+          type: integer
+          description: 当前进度(服务端从事件/任务数据推导,≥0)
+        target:
+          type: integer
+          description: 点亮阈值(>0)
+        hint:
+          type: string
+          maxLength: 24
+          description: 进度提示文案,过合规词表(禁卦象/卦运/吉位等)
+    BaguaStatusResponse:
+      type: object
+      required: [trigrams, litCount, complete]
+      properties:
+        trigrams:
+          type: array
+          description: 8 卦进度(固定顺序:乾兑离震巽坎艮坤)
+          items:
+            $ref: '#/components/schemas/BaguaTrigramProgress'
+        litCount:
+          type: integer
+          description: 已点亮卦数 0-8
+        complete:
+          type: boolean
+          description: 八卦圆满(8 卦全亮)
+        celebrated:
+          type: boolean
+          description: 圆满大阵图庆祝是否已触发(一次性,服务端标记防重复);未圆满时为 false
+    BaguaCelebrateResponse:
+      type: object
+      required: [celebrated]
+      properties:
+        celebrated:
+          type: boolean
+          description: true=本次标记成功或此前已标记(幂等)
+    JieyouQuoteType:
+      type: string
+      description: 宽心话三型:促成(推一把)/缓行(等一等)/放下(松一松)
+      enum: [CU_CHENG, HUAN_XING, FANG_XIA]
+    JieyouQuoteResponse:
+      type: object
+      required: [quoteId, type, text, pageNo]
+      properties:
+        quoteId:
+          type: integer
+        type:
+          $ref: '#/components/schemas/JieyouQuoteType'
+        text:
+          type: string
+          maxLength: 16
+          description: 宽心话正文,≤16 字,指向行动,禁吉凶与承诺结果词汇
+        pageNo:
+          type: integer
+          description: 册页码(1-120,前端展示用)
+    NotifySubscribeRequest:
+      type: object
+      required: [templateId, accepted]
+      properties:
+        templateId:
+          type: string
+          description: 订阅消息模板 ID(微信后台申请;开发期占位联调)
+        accepted:
+          type: boolean
+          description: 本次授权是否接受(拒绝也登记,用于频率透明展示)
+    NotifySubscribeResponse:
+      type: object
+      required: [registered, remainingQuotaToday]
+      properties:
+        registered:
+          type: boolean
+        remainingQuotaToday:
+          type: integer
+          description: 今日剩余可发送条数(频控≤4 条/人/天)
+    NotifyStatusResponse:
+      type: object
+      required: [subscribed, remainingQuotaToday, dailyLimit]
+      properties:
+        subscribed:
+          type: boolean
+          description: 是否存在有效授权额度
+        remainingQuotaToday:
+          type: integer
+        dailyLimit:
+          type: integer
+          description: 每日上限(4);设置页展示「您每天最多收到 4 条提醒,不会多打扰」

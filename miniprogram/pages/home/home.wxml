@@ -15,65 +15,188 @@
     </view>
 
     <block wx:else>
-    <!-- 福值池 + 门牌 -->
-    <view class="pool-card">
-      <view class="pool-left">
-        <view class="pool-label">{{familyName}} · 全家福值池</view>
-        <view class="pool-val">{{totalBless}}<text class="pool-unit"> 福</text></view>
+    <!-- 右上角设置入口(触达区 ≥88rpx) -->
+    <view class="home-topbar">
+      <view class="set-btn" bindtap="onOpenSettings">⚙️ 设置</view>
+    </view>
+
+    <!-- 个人卡片:头像/昵称/连续接福天数/挂件/奖状 -->
+    <view class="person-card">
+      <view class="pc-ava">
+        <image wx:if="{{me && me.avatarUrl}}" class="pc-img" src="{{me.avatarUrl}}" mode="aspectFill" />
+        <text wx:else class="pc-ava-txt kaiti">{{me ? me.avatarText : '福'}}</text>
       </view>
-      <view class="plate">
-        <view class="plate-name kaiti">{{plate.name}}</view>
-        <view class="plate-sub">{{plate.sub}}</view>
-        <view class="plate-next">{{plate.next}}</view>
+      <view class="pc-mid">
+        <view class="pc-name">{{me ? me.nickname : '您'}}</view>
+        <view class="pc-sub">连续接福 {{me ? me.streakDays : 0}} 天 🔥 · 个人福值 {{me ? me.personalBless : 0}}</view>
+      </view>
+      <view class="pc-links">
+        <view class="pc-link" bindtap="onPendant">🎋 挂件</view>
+        <view class="pc-link" bindtap="onAward">🏅 奖状</view>
       </view>
     </view>
 
-    <!-- 近期生日 -->
-    <view class="birthday-card" bindtap="onBirthdayBook">
-      <view class="birthday-icon">🎂</view>
-      <view class="birthday-main">
-        <view class="birthday-title">家庭生日簿</view>
-        <view wx:if="{{upcomingBirthday}}" class="birthday-sub">{{upcomingBirthday.displayName}}的生日 {{upcomingBirthday.daysUntil === 0 ? '就是今天' : '还有 ' + upcomingBirthday.daysUntil + ' 天'}}</view>
-        <view wx:else class="birthday-sub">把重要的日子记在心上</view>
+    <!-- 「我家 | 家族榜」分段子 Tab -->
+    <view class="subtabs">
+      <view class="subtab {{subTab === 'home' ? 'active' : ''}}" data-tab="home" bindtap="onSwitchSub">我家</view>
+      <view class="subtab {{subTab === 'rank' ? 'active' : ''}}" data-tab="rank" bindtap="onSwitchSub">家族榜</view>
+    </view>
+
+    <!-- 我家 子页 -->
+    <block wx:if="{{subTab === 'home'}}">
+      <!-- 福值池 + 门牌 -->
+      <view class="pool-card">
+        <view class="pool-left">
+          <view class="pool-label">{{familyName}} · 全家福值池</view>
+          <view class="pool-val">{{totalBless}}<text class="pool-unit"> 福</text></view>
+        </view>
+        <view class="plate">
+          <view class="plate-name kaiti">{{plate.name}}</view>
+          <view class="plate-sub">{{plate.sub}}</view>
+          <view class="plate-next">{{plate.next}}</view>
+        </view>
       </view>
-      <view class="birthday-go">查看 ›</view>
-    </view>
 
-    <!-- 今日接福 -->
-    <view class="section-title">
-      <text>今日接福</text>
-      <text class="section-count">{{drawnCount}}/{{memberCount}} 人已接</text>
-    </view>
+      <!-- 今日接福 -->
+      <view class="section-title">
+        <text>今日接福</text>
+        <text class="section-count">{{drawnCount}}/{{memberCount}} 人已接</text>
+      </view>
 
-    <view class="member-list">
-      <view wx:for="{{members}}" wx:key="userId" class="member">
-        <view class="m-ava">{{item.drawnToday ? '🏮' : '💤'}}</view>
-        <view class="m-info">
-          <view class="m-name">
-            {{item.nickname}}
-            <text wx:if="{{item.role === 'OWNER'}}" class="m-tag">户主</text>
-            <text wx:if="{{item.remark}}" class="m-tag m-tag-plain">{{item.remark}}</text>
+      <view class="member-list">
+        <view wx:for="{{members}}" wx:key="userId" class="member">
+          <view class="m-ava">{{item.drawnToday ? '🏮' : '💤'}}</view>
+          <view class="m-info">
+            <view class="m-name">
+              {{item.nickname}}
+              <text wx:if="{{item.role === 'OWNER'}}" class="m-tag">户主</text>
+              <text wx:if="{{item.remark}}" class="m-tag m-tag-plain">{{item.remark}}</text>
+            </view>
+            <view class="m-status {{item.drawnToday ? 'done' : 'wait'}}">
+              {{item.drawnToday ? '✓ 已接福' : '还未接福'}}{{item.drawnToday && item.streakDays > 0 ? ' · 连续 ' + item.streakDays + ' 天 🔥' : ''}}
+            </view>
+            <view class="m-bless">个人福值 {{item.personalBless}}</view>
           </view>
-          <view class="m-status {{item.drawnToday ? 'done' : 'wait'}}">
-            {{item.drawnToday ? '✓ 已接福' : '还未接福'}}{{item.drawnToday && item.streakDays > 0 ? ' · 连续 ' + item.streakDays + ' 天 🔥' : ''}}
+          <view class="m-actions">
+            <button wx:if="{{item.drawnToday}}" class="mini-btn mini-red" data-userid="{{item.userId}}" bindtap="onTianfu">添福 +8</button>
+            <button wx:else class="mini-btn mini-gold" data-userid="{{item.userId}}" bindtap="onCuifu">催福</button>
           </view>
-          <view class="m-bless">个人福值 {{item.personalBless}}</view>
         </view>
-        <view class="m-actions">
-          <button wx:if="{{item.drawnToday}}" class="mini-btn mini-red" data-userid="{{item.userId}}" bindtap="onTianfu">添福 +8</button>
-          <button wx:else class="mini-btn mini-gold" data-userid="{{item.userId}}" bindtap="onCuifu">催福</button>
+
+        <!-- 邀请家人 -->
+        <view class="member invite-row" bindtap="onInvite">
+          <view class="m-ava m-ava-add">➕</view>
+          <view class="m-info">
+            <view class="m-name m-name-add">邀请家人进「家」</view>
+            <view class="m-status wait">新家人加入,全家 +30 福值</view>
+          </view>
         </view>
       </view>
 
-      <!-- 邀请家人 -->
-      <view class="member invite-row" bindtap="onInvite">
-        <view class="m-ava m-ava-add">➕</view>
-        <view class="m-info">
-          <view class="m-name m-name-add">邀请家人进「家」</view>
-          <view class="m-status wait">新家人加入,全家 +30 福值</view>
+      <!-- 集福阵入口卡 -->
+      <view class="entry-card" bindtap="onGoBagua">
+        <view class="entry-ico">☰</view>
+        <view class="entry-main">
+          <view class="entry-title">八卦集福阵 <text class="entry-count">{{baguaLitText}}</text></view>
+          <view class="entry-sub">八方善行点亮八方卦位，集满成阵</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+
+      <!-- 生日簿入口卡(原有入口保留) -->
+      <view class="entry-card birthday-entry" bindtap="onBirthdayBook">
+        <view class="entry-ico">🎂</view>
+        <view class="entry-main">
+          <view class="entry-title">家庭生日簿</view>
+          <view wx:if="{{upcomingBirthday}}" class="entry-sub">{{upcomingBirthday.displayName}}的生日 {{upcomingBirthday.daysUntil === 0 ? '就是今天' : '还有 ' + upcomingBirthday.daysUntil + ' 天'}}</view>
+          <view wx:else class="entry-sub">把重要的日子记在心上</view>
+        </view>
+        <view class="entry-arrow">›</view>
+      </view>
+    </block>
+
+    <!-- 家族榜 子页(复用 /api/rank/family,样式参考 pages/rank) -->
+    <block wx:else>
+      <view wx:if="{{inRank && inRank.items.length}}" class="rank-list">
+        <view wx:for="{{inRank.items}}" wx:key="userId" class="rank-row">
+          <view class="rank-no {{item.rank === 1 ? 'top1' : item.rank === 2 ? 'top2' : item.rank === 3 ? 'top3' : ''}}">{{item.rank}}</view>
+          <view class="rank-info">
+            <view class="rank-name">{{item.nickname}}</view>
+            <view class="rank-sub">本周攒福 {{item.bless}}{{item.streakDays > 0 ? ' · 连续 ' + item.streakDays + ' 天🔥' : ''}}</view>
+          </view>
+          <view class="rank-val">{{item.bless}}<text class="rank-unit"> 福</text></view>
         </view>
       </view>
-    </view>
+      <view wx:else class="empty-tip">本周还没有福值记录,快去接福签吧</view>
+      <view class="rank-more" bindtap="onGoFullRank">查看好友家族榜 ›</view>
+    </block>
     </block>
   </block>
+
+  <!-- ============ 设置弹层(半屏,右上角齿轮进入) ============ -->
+  <view wx:if="{{showSettings}}" class="settings-mask" bindtap="onCloseSettings">
+    <view class="settings-sheet" catchtap="">
+      <view class="sheet-handle"></view>
+      <view class="sheet-title">设置</view>
+      <scroll-view class="sheet-body" scroll-y>
+
+        <!-- 提醒:频控透明化 -->
+        <view class="sp-group">
+          <view class="sp-group-title">提醒</view>
+          <view class="sp-row">
+            <text>今日剩余提醒</text>
+            <text class="sp-value">{{notifyStatus ? (notifyStatus.subscribed ? '还可收到 ' + notifyStatus.remainingQuotaToday + ' 条' : '暂未开启') : '加载中…'}}</text>
+          </view>
+          <view class="sp-note">您每天最多收到 4 条提醒，不会多打扰</view>
+        </view>
+
+        <!-- 隐私 -->
+        <view class="sp-group">
+          <view class="sp-group-title">隐私</view>
+          <view class="sp-row">
+            <text>隐身榜外(家族榜不显示我家)</text>
+            <switch checked="{{hideInRank}}" color="#b01f24" bindchange="onHideInRankChange" />
+          </view>
+          <view class="sp-row sp-row-link" bindtap="onBirthdayVisibility">
+            <text>生日记录可见范围</text>
+            <text class="sp-arrow">›</text>
+          </view>
+        </view>
+
+        <!-- 家庭关系(占位) -->
+        <view class="sp-group">
+          <view class="sp-group-title">家庭关系</view>
+          <view class="sp-row sp-row-link" bindtap="onFamilyRelation">
+            <text>退出家庭</text>
+            <text class="sp-arrow">›</text>
+          </view>
+          <view class="sp-row sp-row-link" bindtap="onFamilyRelation">
+            <text>转让户主</text>
+            <text class="sp-arrow">›</text>
+          </view>
+          <view class="sp-row sp-row-link" bindtap="onFamilyRelation">
+            <text>解散家庭</text>
+            <text class="sp-arrow">›</text>
+          </view>
+          <view class="sp-note">退出、转让与解散均需家人二次确认，正在准备中</view>
+        </view>
+
+        <!-- 动画与声音 -->
+        <view class="sp-group">
+          <view class="sp-group-title">动画与声音</view>
+          <view class="sp-row">
+            <text>金光动画</text>
+            <switch checked="{{animEnabled}}" color="#b01f24" bindchange="onAnimChange" />
+          </view>
+          <view class="sp-row">
+            <text>罗盘触感与提示</text>
+            <switch checked="{{soundEnabled}}" color="#b01f24" bindchange="onSoundChange" />
+          </view>
+          <view class="sp-note">关闭后动效更简洁，适合用着更省心的手机</view>
+        </view>
+
+      </scroll-view>
+      <button class="btn-main sheet-close" bindtap="onCloseSettings">完成</button>
+    </view>
+  </view>
 </view>

@@ -1,0 +1,90 @@
+<view class="page-bagua">
+
+  <!-- 加载失败 -->
+  <view wx:if="{{loadFailed}}" class="failed-box">
+    <view class="failed-emoji">☰</view>
+    <view class="failed-text">阵图的信息没加载出来</view>
+    <view class="failed-sub">多半是网络波动，再试一次就好</view>
+    <button class="retry-btn" bindtap="onRetry">再试一次</button>
+  </view>
+
+  <block wx:else>
+    <!-- 标题区 -->
+    <view class="board-title">
+      <view class="bt-main kaiti">八卦集福阵</view>
+      <view class="bt-sub">八方卦位对应八类家庭善行 · 点亮卦位，集满成阵</view>
+    </view>
+
+    <view class="board-progress">已点亮 <text class="bp-strong">{{litCount}}</text> / 8 卦</view>
+
+    <!-- 八边形阵图:8 卦节点环绕 + 中央全家福位 -->
+    <view class="board-zone">
+      <view class="board-ring"></view>
+      <view
+        wx:for="{{nodes}}"
+        wx:key="key"
+        class="bnode {{item.lit ? 'lit' : 'dim'}}"
+        style="{{item.style}}"
+        data-index="{{index}}"
+        bindtap="onNodeTap"
+      >
+        <view class="b-char">{{item.char}}</view>
+        <view class="b-name">{{item.name}}</view>
+        <view wx:if="{{item.lit}}" class="b-star">✦</view>
+      </view>
+      <view class="center-photo">
+        <view class="cp-emoji">👨‍👩‍👦</view>
+        <view class="cp-txt">{{familyName}} · 全家福</view>
+      </view>
+    </view>
+
+    <view class="board-legend">卦位只看「做没做」</view>
+    <view class="board-legend board-legend-sub">点亮后永久保留 · 全家任一人完成即点亮</view>
+  </block>
+
+  <!-- 卦位详情弹层:进度条 + 提示 -->
+  <view wx:if="{{detail}}" class="detail-mask" bindtap="closeDetail">
+    <view class="detail-pop" catchtap="">
+      <view class="dp-head">
+        <view class="dp-gua {{detail.lit ? 'lit' : 'dim'}}">{{detail.char}}</view>
+        <view class="dp-title-wrap">
+          <view class="dp-title">{{detail.name}}卦<text wx:if="{{detail.lit}}" class="dp-lit-tag"> · 已点亮</text></view>
+          <view class="dp-sub">{{detail.lit ? '这一卦已为家里点亮，永久保留' : '还差一点，全家一起加油'}}</view>
+        </view>
+      </view>
+      <view wx:if="{{detail.hint}}" class="dp-hint">{{detail.hint}}</view>
+      <view wx:if="{{!detail.lit}}" class="dp-bar-wrap">
+        <view class="dp-bar-label">
+          <text>点亮进度</text>
+          <text class="dp-bar-num">{{detail.current}} / {{detail.target}} · 还差 {{detail.remain}}</text>
+        </view>
+        <view class="dp-bar">
+          <view class="dp-bar-fill" style="width: {{detail.pct}}%"></view>
+        </view>
+      </view>
+      <view wx:else class="dp-done-note">✓ 这一卦已经为家里点亮了，永久保留，不因断签熄灭</view>
+      <button class="btn-main dp-close" bindtap="closeDetail">知道啦</button>
+    </view>
+  </view>
+
+  <!-- 圆满庆祝:旋转光环 + 粒子(原型移植) -->
+  <view wx:if="{{showGrand}}" class="grand-overlay" bindtap="closeGrand">
+    <view class="grand-scene" catchtap="">
+      <view class="grand-ring"></view>
+      <view class="grand-ring r2"></view>
+      <view wx:for="{{grandNodes}}" wx:key="key" class="gnode" style="{{item.style}}">{{item.char}}</view>
+      <view wx:for="{{sparks}}" wx:key="id" class="spark" style="left: {{item.left}}%; top: {{item.top}}%; animation-delay: {{item.delay}}s"></view>
+      <view class="grand-center">
+        <view class="gc-emoji">👨‍👩‍👦</view>
+        <view class="gc-txt">{{familyName}} · 全家福</view>
+        <view class="gc-date">{{grandDate}}</view>
+      </view>
+    </view>
+    <view class="go-title kaiti">集福圆满</view>
+    <view class="go-sub">满门福气 · 阵图已成</view>
+    <view class="go-actions">
+      <button class="btn-main go-btn" bindtap="closeGrand">收下圆满</button>
+      <button class="btn-sub go-btn" open-type="share">分享给家人</button>
+    </view>
+  </view>
+</view>

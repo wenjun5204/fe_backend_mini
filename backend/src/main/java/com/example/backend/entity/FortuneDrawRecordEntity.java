@@ -35,6 +35,10 @@ public class FortuneDrawRecordEntity {
     @Column(nullable = false)
     private boolean taskDone = false;
 
+    /** 完成的今日宜事项文本(须属于当日卡面 yiItems;历史行 NULL 兼容;八卦阵任务型进度口径) */
+    @Column(length = 24)
+    private String taskItem;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getUserId() { return userId; }
@@ -47,4 +51,6 @@ public class FortuneDrawRecordEntity {
     public void setShared(boolean shared) { this.shared = shared; }
     public boolean isTaskDone() { return taskDone; }
     public void setTaskDone(boolean taskDone) { this.taskDone = taskDone; }
+    public String getTaskItem() { return taskItem; }
+    public void setTaskItem(String taskItem) { this.taskItem = taskItem; }
 }

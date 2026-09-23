@@ -44,6 +44,15 @@ public class DailyFortuneCardEntity {
     @Column(length = 16)
     private String festival;
 
+    /** 卦位冗余列(生成当日卡时由 GuaService 写入,读取免计算;历史行为 NULL,读取时兜底现算) */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 8)
+    private FortuneDtos.Gua gua;
+
+    /** 卦位对应卡面主题冗余列(乾=云鹤/兑=锦鲤/离=灯笼/震=春雷/巽=风铃/坎=锦鲤戏水/艮=山景/坤=花开) */
+    @Column(length = 16)
+    private String cardTheme;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getFamilyId() { return familyId; }
@@ -58,4 +67,8 @@ public class DailyFortuneCardEntity {
     public void setBlessText(String blessText) { this.blessText = blessText; }
     public String getFestival() { return festival; }
     public void setFestival(String festival) { this.festival = festival; }
+    public FortuneDtos.Gua getGua() { return gua; }
+    public void setGua(FortuneDtos.Gua gua) { this.gua = gua; }
+    public String getCardTheme() { return cardTheme; }
+    public void setCardTheme(String cardTheme) { this.cardTheme = cardTheme; }
 }

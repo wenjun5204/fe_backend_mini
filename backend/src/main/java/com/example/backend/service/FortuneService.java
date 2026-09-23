@@ -2,6 +2,7 @@ package com.example.backend.service;
 
 import com.example.backend.common.ApiException;
 import com.example.backend.common.CurrentUser;
+import com.example.backend.dto.FortuneDtos;
 import com.example.backend.dto.FortuneDtos.BlessResult;
 import com.example.backend.dto.FortuneDtos.FortuneCard;
 import com.example.backend.dto.FortuneDtos.FortuneDrawResponse;
@@ -112,12 +113,42 @@ public class FortuneService {
         return oneShotDailyAction(true);
     }
 
+    /** 完成今日宜事项:+15 福值,每日 1 次;taskItem 可选(须属于当日卡面 yiItems,写入 task_item) */
     @Transactional
-    public BlessResult completeFortuneTask() {
-        return oneShotDailyAction(false);
+    public BlessResult completeFortuneTask(FortuneDtos.FortuneTaskDoneRequest request) {
+        Long userId = CurrentUser.get();
+        FamilyMemberEntity member = requireMember(userId);
+        LocalDate today = LocalDate.now();
+        FortuneDrawRecordEntity record = drawRepository.findByUserIdAndDate(userId, today)
+                .orElseThrow(() -> ApiException.conflict("请您先接今日福签"));
+
+        if (record.isTaskDone()) {
+            throw ApiException.conflict("今天的事已经完成啦,您真棒");
+        }
+
+        String taskItem = request != null ? request.getTaskItem() : null;
+        if (taskItem != null && !taskItem.isBlank()) {
+            DailyFortuneCardEntity card = ensureCard(member.getFamilyId(), today);
+            if (!Arrays.asList(card.getYiItems().split(",")).contains(taskItem)) {
+                throw ApiException.param("请选择今日卡面上的宜事项");
+            }
+            record.setTaskItem(taskItem);
+        }
+        record.setTaskDone(true);
+        drawRepository.save(record);
+
+        BlessService.GrantResult result = blessService.grant(userId, member.getFamilyId(),
+                BlessEventEntity.Type.TASK_DONE, null);
+
+        BlessResult resp = new BlessResult();
+        resp.setAmount(result.amount());
+        resp.setPersonalBless(result.personalBless());
+        resp.setFamilyTotalBless(result.familyTotalBless());
+        resp.setPlateLevel(result.plateLevel());
+        return resp;
     }
 
-    /** 分享/完成任务共用:每日 1 次,幂等防重 */
+    /** 分享福签:每日 1 次,幂等防重 */
     private BlessResult oneShotDailyAction(boolean share) {
         Long userId = CurrentUser.get();
         FamilyMemberEntity member = requireMember(userId);
@@ -128,19 +159,12 @@ public class FortuneService {
         if (share && record.isShared()) {
             throw ApiException.conflict("今天的福已经带给家人啦");
         }
-        if (!share && record.isTaskDone()) {
-            throw ApiException.conflict("今天的事已经完成啦,您真棒");
-        }
 
-        if (share) {
-            record.setShared(true);
-        } else {
-            record.setTaskDone(true);
-        }
+        record.setShared(true);
         drawRepository.save(record);
 
         BlessService.GrantResult result = blessService.grant(userId, member.getFamilyId(),
-                share ? BlessEventEntity.Type.SHARE_CARD : BlessEventEntity.Type.TASK_DONE, null);
+                BlessEventEntity.Type.SHARE_CARD, null);
 
         BlessResult resp = new BlessResult();
         resp.setAmount(result.amount());
@@ -150,7 +174,7 @@ public class FortuneService {
         return resp;
     }
 
-    /** 兜底生成:当日无签则即时补;节日日使用节日限定文案池 */
+    /** 兜底生成:当日无签则即时补;节日日使用节日限定文案池;卦位/卡面主题随卡写入 */
     private DailyFortuneCardEntity ensureCard(Long familyId, LocalDate date) {
         return cardRepository.findByFamilyIdAndDate(familyId, date).orElseGet(() -> {
             FortuneTextLib.FestivalPool festival = FortuneTextLib.festivalOf(date);
@@ -161,6 +185,8 @@ public class FortuneService {
             card.setLevel(FortuneTextLib.drawLevel());
             card.setYiItems(String.join(",", FortuneTextLib.randomYiItems(date)));
             card.setBlessText(FortuneTextLib.randomBlessText(date));
+            card.setGua(GuaService.guaOfDate(familyId, date));
+            card.setCardTheme(GuaService.cardThemeOf(card.getGua()));
             return cardRepository.save(card);
         });
     }
@@ -173,6 +199,12 @@ public class FortuneService {
         card.setYiItems(Arrays.asList(entity.getYiItems().split(",")));
         card.setBlessText(entity.getBlessText());
         card.setFestival(entity.getFestival());
+        // 卦位冗余列历史行为 NULL(升级前的旧卡),读取时兜底现算,保证契约字段始终有值
+        FortuneDtos.Gua gua = entity.getGua() != null
+                ? entity.getGua() : GuaService.guaOfDate(entity.getFamilyId(), entity.getDate());
+        card.setGua(gua);
+        card.setCardTheme(entity.getCardTheme() != null
+                ? entity.getCardTheme() : GuaService.cardThemeOf(gua));
         return card;
     }
 
