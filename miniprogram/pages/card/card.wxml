@@ -125,10 +125,15 @@
     </view>
   </block>
 
-  <!-- 福卡结果弹层:3D 翻卡 + 主题卡面 + 订阅勾选 -->
+  <!-- 福卡结果弹层:3D 翻卡 + 主题卡面 + 订阅勾选(限高 + 内部可滚动,小屏不超出屏幕) -->
   <view wx:if="{{showCard && card}}" class="card-mask" bindtap="closeCard">
     <view class="card-scene" catchtap="">
-      <view class="fcard {{animEnabled ? 'anim' : 'no-anim'}} {{themeClass}}">
+      <scroll-view
+        class="fcard {{animEnabled ? 'anim' : 'no-anim'}} {{themeClass}}"
+        scroll-y
+        enhanced
+        show-scrollbar="{{false}}"
+      >
         <view class="f-level-row">
           <view class="f-level {{card.level === 'HONGFU' ? 'lv-hongfu' : card.level === 'RUYI' ? 'lv-ruyi' : 'lv-pingan'}}">{{levelName}}卡</view>
           <view class="f-gua">今日停驻 · <text class="f-gua-strong">{{guaName}}卦</text></view>
@@ -166,7 +171,7 @@
           <text class="notify-text">明天提醒我来接福</text>
         </view>
         <view class="f-close" catchtap="closeCard">先不转发</view>
-      </view>
+      </scroll-view>
     </view>
   </view>
 </view>
