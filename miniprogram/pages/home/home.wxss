@@ -28,6 +28,14 @@
   margin: 24rpx 32rpx 14rpx; padding: 24rpx 28rpx; display: flex; align-items: center; gap: 18rpx;
   border: 2rpx solid #ebcc85; border-radius: 28rpx; background: linear-gradient(135deg, #fff6de, #ffe7af);
 }
+
+/* 加载失败重试卡片(请求异常 ≠ 没有家,不能误显示一键建家) */
+.load-failed-box { margin: 120rpx 32rpx 0; padding: 60rpx 40rpx; text-align: center; background: #ffffff; border: 1rpx solid #f0e3c4; border-radius: 32rpx; }
+.load-failed-emoji { font-size: 110rpx; }
+.load-failed-text { margin-top: 24rpx; color: #5a2018; font-size: 38rpx; font-weight: 800; }
+.load-failed-sub { margin-top: 12rpx; color: #b8a585; font-size: 28rpx; }
+.retry-btn { height: 88rpx; line-height: 88rpx; margin-top: 36rpx; border-radius: 44rpx; color: #fff3d6; background: linear-gradient(180deg, #d4463a, #b01f24); font-size: 32rpx; font-weight: 800; }
+.retry-btn::after { border: 0; }
 .birthday-icon { width: 74rpx; height: 74rpx; display: flex; align-items: center; justify-content: center; border-radius: 20rpx; background: #fff9ed; font-size: 42rpx; }
 .birthday-main { flex: 1; }
 .birthday-title { color: #7b141a; font-size: 36rpx; font-family: KaiTi, STKaiti, serif; font-weight: 900; }

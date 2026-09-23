@@ -18,6 +18,16 @@
   <block wx:else>
     <view class="top-bar">今天，<text class="top-family">{{familyName}}</text> 的福签已送到</view>
 
+    <!-- 生日事件横幅:仅临近生日 ≤7 天或当天显示,点击直达生日簿 -->
+    <view wx:if="{{birthdayBanner}}" class="birthday-banner {{birthdayBanner.today ? 'today' : ''}}" bindtap="onBirthdayBanner">
+      <view class="bb-emoji">🎂</view>
+      <view class="bb-main">
+        <view class="bb-text kaiti">{{birthdayBanner.today ? '今天是' + birthdayBanner.name + '的生日' : birthdayBanner.name + '的生日快到了'}}</view>
+        <view class="bb-sub">{{birthdayBanner.today ? '去送一句祝福吧' : '还有 ' + birthdayBanner.daysUntil + ' 天'}}</view>
+      </view>
+      <view class="bb-go">查看 ›</view>
+    </view>
+
     <!-- 未抽:签筒 -->
     <view wx:if="{{phase === 'idle'}}" class="tube-area">
       <view class="tube {{phase === 'shaking' ? 'shaking' : ''}}">🎋</view>

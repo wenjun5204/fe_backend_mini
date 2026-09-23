@@ -11,6 +11,8 @@ Page({
     defaultFamilyName: '',
     familyName: '',
     inviteCode: '',
+    // 首页生日横幅(仅临近生日 ≤7 天或当天显示;未建家/无记录/失败均不渲染)
+    birthdayBanner: null,
     // draw state
     phase: 'idle', // idle | shaking | drawn
     card: null,
@@ -52,6 +54,7 @@ Page({
       if (this.data.pageState === 'ready') {
         await this.refreshToday()
       }
+      this.refreshBirthdayBanner()
     } catch (e) {
       this.setData({ pageState: 'ready' })
     }
@@ -81,6 +84,36 @@ Page({
     } catch (e) {
       // 未加入家族等场景静默
     }
+  },
+
+  /** 首页生日事件横幅:静默拉取,失败不渲染(不干扰接福主流程) */
+  async refreshBirthdayBanner() {
+    if (this.data.pageState !== 'ready') {
+      this.setData({ birthdayBanner: null })
+      return
+    }
+    try {
+      const result = await api.getUpcomingBirthday()
+      const upcoming = result && result.upcoming
+      if (!upcoming || upcoming.daysUntil > 7) {
+        this.setData({ birthdayBanner: null })
+        return
+      }
+      this.setData({
+        birthdayBanner: {
+          name: upcoming.displayName,
+          daysUntil: upcoming.daysUntil,
+          today: upcoming.daysUntil === 0,
+        },
+      })
+    } catch (e) {
+      this.setData({ birthdayBanner: null })
+    }
+  },
+
+  /** 横幅点击:直达生日簿 */
+  onBirthdayBanner() {
+    wx.navigateTo({ url: '/pages/birthday/birthday' })
   },
 
   applyToday(today) {

@@ -24,6 +24,25 @@
 }
 .top-family { color: #ffd76e; font-size: 36rpx; font-weight: 700; }
 
+/* 首页生日事件横幅:红底描金轻提示,与接福主按钮不争夺视觉重心 */
+.birthday-banner {
+  margin: 16rpx 32rpx 0; padding: 20rpx 26rpx; display: flex; align-items: center; gap: 18rpx;
+  border: 2rpx solid rgba(255, 215, 110, .55); border-radius: 24rpx;
+  background: rgba(255, 255, 255, .12);
+}
+.birthday-banner.today {
+  background: linear-gradient(135deg, #ffd76e, #f2b53f);
+  border-color: #ffe9b5;
+}
+.bb-emoji { font-size: 44rpx; flex-shrink: 0; }
+.bb-main { flex: 1; min-width: 0; }
+.bb-text { color: #fff8e9; font-size: 34rpx; font-weight: 800; }
+.birthday-banner.today .bb-text { color: #7b141a; }
+.bb-sub { margin-top: 4rpx; color: #f3c98e; font-size: 26rpx; }
+.birthday-banner.today .bb-sub { color: #8a5a12; }
+.bb-go { color: #ffd76e; font-size: 27rpx; font-weight: 700; flex-shrink: 0; }
+.birthday-banner.today .bb-go { color: #7b141a; }
+
 /* 签筒 */
 .tube-area {
   flex: 1; display: flex; flex-direction: column;

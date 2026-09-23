@@ -7,6 +7,14 @@
   </view>
 
   <block wx:else>
+    <view wx:if="{{loadFailed}}" class="load-failed-box">
+      <view class="load-failed-emoji">🏮</view>
+      <view class="load-failed-text">家里的信息没加载出来</view>
+      <view class="load-failed-sub">多半是网络波动，再试一次就好</view>
+      <button class="retry-btn" bindtap="onRetry">再试一次</button>
+    </view>
+
+    <block wx:else>
     <!-- 福值池 + 门牌 -->
     <view class="pool-card">
       <view class="pool-left">
@@ -66,5 +74,6 @@
         </view>
       </view>
     </view>
+    </block>
   </block>
 </view>

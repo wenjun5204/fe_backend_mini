@@ -1,4 +1,4 @@
-const { ensureLogin } = require('../../utils/request')
+const { ensureLogin, getToken } = require('../../utils/request')
 const api = require('../../utils/api')
 
 const PLATES = {
@@ -12,6 +12,7 @@ const PLATES = {
 Page({
   data: {
     notJoined: false,
+    loadFailed: false,
     familyName: '',
     inviteCode: '',
     totalBless: 0,
@@ -24,13 +25,23 @@ Page({
 
   async onLoad() {
     await ensureLogin()
+    this.refresh()
   },
 
   onShow() {
+    // 首次进入时 onShow 会先于 ensureLogin 完成:登录态未就绪不刷新,由 onLoad 登录后触发
+    if (getToken()) {
+      this.refresh()
+    }
+  },
+
+  async onRetry() {
+    await ensureLogin().catch(() => {})
     this.refresh()
   },
 
   async refresh() {
+    this.setData({ loadFailed: false })
     try {
       const family = await api.getMyFamily()
       if (family.notJoined) {
@@ -58,7 +69,9 @@ Page({
         upcomingBirthday: upcomingResult.upcoming,
       })
     } catch (e) {
-      this.setData({ notJoined: true })
+      // 请求失败 ≠ 没有家:不能误显示「一键建家」,保留当前内容并给出重试入口;
+      // 具体错误提示由网络层统一 toast
+      this.setData({ loadFailed: true })
     }
   },
 
