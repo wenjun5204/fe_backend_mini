@@ -15,16 +15,14 @@
     </view>
 
     <block wx:else>
-    <!-- 右上角设置入口(触达区 ≥88rpx) -->
-    <view class="home-topbar">
-      <view class="set-btn" bindtap="onOpenSettings">⚙️ 设置</view>
-    </view>
-
-    <!-- 个人卡片:头像/昵称/连续接福天数/挂件/奖状 -->
+    <!-- 个人卡片:头像(佩戴挂件)/昵称/连续接福天数/挂件/奖状/设置 -->
     <view class="person-card">
-      <view class="pc-ava">
-        <image wx:if="{{me && me.avatarUrl}}" class="pc-img" src="{{me.avatarUrl}}" mode="aspectFill" />
-        <text wx:else class="pc-ava-txt kaiti">{{me ? me.avatarText : '福'}}</text>
+      <view class="pc-ava-wrap">
+        <view class="pc-ava">
+          <image wx:if="{{me && me.avatarUrl}}" class="pc-img" src="{{me.avatarUrl}}" mode="aspectFill" />
+          <text wx:else class="pc-ava-txt kaiti">{{me ? me.avatarText : '福'}}</text>
+        </view>
+        <view wx:if="{{me && me.pendantEmoji}}" class="ava-pendant">{{me.pendantEmoji}}</view>
       </view>
       <view class="pc-mid">
         <view class="pc-name">{{me ? me.nickname : '您'}}</view>
@@ -33,6 +31,7 @@
       <view class="pc-links">
         <view class="pc-link" bindtap="onPendant">🎋 挂件</view>
         <view class="pc-link" bindtap="onAward">🏅 奖状</view>
+        <view class="pc-link" bindtap="onOpenSettings">⚙️ 设置</view>
       </view>
     </view>
 
@@ -40,6 +39,26 @@
     <view class="subtabs">
       <view class="subtab {{subTab === 'home' ? 'active' : ''}}" data-tab="home" bindtap="onSwitchSub">我家</view>
       <view class="subtab {{subTab === 'rank' ? 'active' : ''}}" data-tab="rank" bindtap="onSwitchSub">家族榜</view>
+    </view>
+
+    <!-- 入口卡:集福阵+生日簿(置于子 Tab 之下,两个子页都可见) -->
+    <view class="entry-card" bindtap="onGoBagua">
+      <view class="entry-ico">☰</view>
+      <view class="entry-main">
+        <view class="entry-title">八卦集福阵 <text class="entry-count">{{baguaLitText}}</text></view>
+        <view class="entry-sub">八方善行点亮八方卦位，集满成阵</view>
+      </view>
+      <view class="entry-arrow">›</view>
+    </view>
+
+    <view class="entry-card birthday-entry" bindtap="onBirthdayBook">
+      <view class="entry-ico">🎂</view>
+      <view class="entry-main">
+        <view class="entry-title">家庭生日簿</view>
+        <view wx:if="{{upcomingBirthday}}" class="entry-sub">{{upcomingBirthday.displayName}}的生日 {{upcomingBirthday.daysUntil === 0 ? '就是今天' : '还有 ' + upcomingBirthday.daysUntil + ' 天'}}</view>
+        <view wx:else class="entry-sub">把重要的日子记在心上</view>
+      </view>
+      <view class="entry-arrow">›</view>
     </view>
 
     <!-- 我家 子页 -->
@@ -65,13 +84,15 @@
 
       <view class="member-list">
         <view wx:for="{{members}}" wx:key="userId" class="member">
-          <view class="m-ava">{{item.drawnToday ? '🏮' : '💤'}}</view>
+          <view class="m-ava-wrap">
+            <view class="m-ava">{{item.drawnToday ? '🏮' : '💤'}}</view>
+            <view wx:if="{{item.pendantEmoji}}" class="ava-pendant">{{item.pendantEmoji}}</view>
+          </view>
           <view class="m-info">
             <view class="m-name">
               {{item.nickname}}
               <text wx:if="{{item.role === 'OWNER'}}" class="m-tag">户主</text>
               <text wx:if="{{item.remark}}" class="m-tag m-tag-plain">{{item.remark}}</text>
-              <text wx:if="{{item.pendantEmoji}}" class="m-pendant">{{item.pendantEmoji}}</text>
             </view>
             <view class="m-status {{item.drawnToday ? 'done' : 'wait'}}">
               {{item.drawnToday ? '✓ 已接福' : '还未接福'}}{{item.drawnToday && item.streakDays > 0 ? ' · 连续 ' + item.streakDays + ' 天 🔥' : ''}}
@@ -92,27 +113,6 @@
             <view class="m-status wait">新家人加入,全家 +30 福值</view>
           </view>
         </view>
-      </view>
-
-      <!-- 集福阵入口卡 -->
-      <view class="entry-card" bindtap="onGoBagua">
-        <view class="entry-ico">☰</view>
-        <view class="entry-main">
-          <view class="entry-title">八卦集福阵 <text class="entry-count">{{baguaLitText}}</text></view>
-          <view class="entry-sub">八方善行点亮八方卦位，集满成阵</view>
-        </view>
-        <view class="entry-arrow">›</view>
-      </view>
-
-      <!-- 生日簿入口卡(原有入口保留) -->
-      <view class="entry-card birthday-entry" bindtap="onBirthdayBook">
-        <view class="entry-ico">🎂</view>
-        <view class="entry-main">
-          <view class="entry-title">家庭生日簿</view>
-          <view wx:if="{{upcomingBirthday}}" class="entry-sub">{{upcomingBirthday.displayName}}的生日 {{upcomingBirthday.daysUntil === 0 ? '就是今天' : '还有 ' + upcomingBirthday.daysUntil + ' 天'}}</view>
-          <view wx:else class="entry-sub">把重要的日子记在心上</view>
-        </view>
-        <view class="entry-arrow">›</view>
       </view>
     </block>
 

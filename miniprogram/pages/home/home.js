@@ -116,6 +116,7 @@ Page({
       avatarText: nickname.slice(0, 1),
       streakDays: member ? member.streakDays : 0,
       personalBless: member ? member.personalBless : 0,
+      pendantEmoji: member ? (PENDANT_EMOJI[member.pendant] || '') : '',
     }
   },
 
