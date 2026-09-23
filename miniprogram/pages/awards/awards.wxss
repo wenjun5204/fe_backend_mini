@@ -1,0 +1,99 @@
+.page-awards {
+  min-height: 100vh;
+  background: #fff8ec;
+  padding: 32rpx 32rpx 48rpx;
+  box-sizing: border-box;
+}
+
+.aw-summary {
+  text-align: center;
+  margin-bottom: 32rpx;
+}
+
+.aw-count {
+  display: block;
+  font-size: 44rpx;
+  color: #b01f24;
+  font-family: 'Kaiti SC', 'STKaiti', serif;
+}
+
+.aw-tip {
+  display: block;
+  font-size: 30rpx;
+  color: #8a6f4d;
+  margin-top: 8rpx;
+}
+
+.aw-card {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 4rpx solid #f3e3c3;
+  border-radius: 24rpx;
+  padding: 28rpx 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.aw-pending {
+  opacity: 0.65;
+}
+
+.aw-emoji {
+  font-size: 72rpx;
+  margin-right: 24rpx;
+}
+
+.aw-mid {
+  flex: 1;
+}
+
+.aw-name {
+  font-size: 36rpx;
+  color: #4a3b2a;
+  font-family: 'Kaiti SC', 'STKaiti', serif;
+}
+
+.aw-desc {
+  font-size: 30rpx;
+  color: #8a6f4d;
+  margin-top: 6rpx;
+}
+
+.aw-progress {
+  font-size: 28rpx;
+  color: #b01f24;
+  margin-top: 6rpx;
+}
+
+.aw-stamp {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  border: 6rpx solid #d8c9a8;
+  color: #d8c9a8;
+  font-size: 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Kaiti SC', 'STKaiti', serif;
+  transform: rotate(-12deg);
+}
+
+.aw-stamp-on {
+  border-color: #b01f24;
+  color: #b01f24;
+  background: rgba(176, 31, 36, 0.06);
+}
+
+.btn-main {
+  background: #b01f24;
+  color: #ffffff;
+  font-size: 36rpx;
+  height: 96rpx;
+  line-height: 96rpx;
+  border-radius: 48rpx;
+}
+
+.aw-back {
+  margin-top: 24rpx;
+}

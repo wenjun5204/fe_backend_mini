@@ -71,6 +71,7 @@
               {{item.nickname}}
               <text wx:if="{{item.role === 'OWNER'}}" class="m-tag">户主</text>
               <text wx:if="{{item.remark}}" class="m-tag m-tag-plain">{{item.remark}}</text>
+              <text wx:if="{{item.pendantEmoji}}" class="m-pendant">{{item.pendantEmoji}}</text>
             </view>
             <view class="m-status {{item.drawnToday ? 'done' : 'wait'}}">
               {{item.drawnToday ? '✓ 已接福' : '还未接福'}}{{item.drawnToday && item.streakDays > 0 ? ' · 连续 ' + item.streakDays + ' 天 🔥' : ''}}
@@ -163,23 +164,7 @@
           </view>
         </view>
 
-        <!-- 家庭关系(占位) -->
-        <view class="sp-group">
-          <view class="sp-group-title">家庭关系</view>
-          <view class="sp-row sp-row-link" bindtap="onFamilyRelation">
-            <text>退出家庭</text>
-            <text class="sp-arrow">›</text>
-          </view>
-          <view class="sp-row sp-row-link" bindtap="onFamilyRelation">
-            <text>转让户主</text>
-            <text class="sp-arrow">›</text>
-          </view>
-          <view class="sp-row sp-row-link" bindtap="onFamilyRelation">
-            <text>解散家庭</text>
-            <text class="sp-arrow">›</text>
-          </view>
-          <view class="sp-note">退出、转让与解散均需家人二次确认，正在准备中</view>
-        </view>
+        <!-- 家庭关系(退出/转让/解散为破坏性不可逆操作,功能上线前先隐藏入口,不做占位假按钮) -->
 
         <!-- 动画与声音 -->
         <view class="sp-group">

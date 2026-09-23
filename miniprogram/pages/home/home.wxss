@@ -101,6 +101,8 @@
   border-radius: 12rpx; padding: 2rpx 14rpx; font-weight: 500;
 }
 .m-tag-plain { background: #fff; }
+/* 佩戴挂件(达标解锁后家人可见) */
+.m-pendant { font-size: 30rpx; }
 .m-status { font-size: 26rpx; margin-top: 8rpx; }
 .m-status.done { color: #2e7d4f; }
 .m-status.wait { color: #b8a585; }

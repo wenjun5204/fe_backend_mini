@@ -1,0 +1,21 @@
+<view class="page-pendant">
+  <view class="pd-tip">挂件随接福攒福点亮，戴上了家人都看得见</view>
+
+  <view class="pd-grid">
+    <view
+      wx:for="{{items}}"
+      wx:key="key"
+      class="pd-card {{item.unlocked ? '' : 'pd-locked'}} {{wearing === item.key ? 'pd-wearing' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="onPick"
+    >
+      <view class="pd-emoji">{{item.unlocked ? item.emoji : '🔒'}}</view>
+      <view class="pd-name">{{item.name}}</view>
+      <view class="pd-cond">{{item.cond}}</view>
+      <view class="pd-progress">{{item.current}}</view>
+      <view wx:if="{{wearing === item.key}}" class="pd-badge">戴着呢</view>
+    </view>
+  </view>
+
+  <button class="btn-main pd-back" bindtap="onBack">回我家看看</button>
+</view>

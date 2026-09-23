@@ -155,6 +155,7 @@ public class FamilyService {
             status.setPersonalBless(m.getPersonalBless());
             status.setStreakDays(m.getStreakDays());
             status.setDrawnToday(today.equals(m.getLastDrawDate()));
+            status.setPendant(user != null ? user.getPendant() : null);
             members.add(status);
         }
         detail.setMembers(members);

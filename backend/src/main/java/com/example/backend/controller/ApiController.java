@@ -4,6 +4,8 @@ import com.example.backend.dto.AuthDtos.LoginRequest;
 import com.example.backend.dto.AuthDtos.LoginResponse;
 import com.example.backend.dto.BaguaDtos.BaguaCelebrateResponse;
 import com.example.backend.dto.BaguaDtos.BaguaStatusResponse;
+import com.example.backend.dto.MeDtos.PendantWearRequest;
+import com.example.backend.dto.MeDtos.PendantWearResponse;
 import com.example.backend.dto.BirthdayDtos.BirthdayListResponse;
 import com.example.backend.dto.BirthdayDtos.BirthdayRecord;
 import com.example.backend.dto.BirthdayDtos.BirthdayReminder;
@@ -37,6 +39,7 @@ import com.example.backend.service.FortuneService;
 import com.example.backend.service.InteractService;
 import com.example.backend.service.JieyouService;
 import com.example.backend.service.NotifyService;
+import com.example.backend.service.PendantService;
 import com.example.backend.service.RankService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
@@ -63,6 +66,7 @@ public class ApiController {
     private final InteractService interactService;
     private final JieyouService jieyouService;
     private final NotifyService notifyService;
+    private final PendantService pendantService;
     private final RankService rankService;
 
     public ApiController(AuthService authService,
@@ -73,6 +77,7 @@ public class ApiController {
                          InteractService interactService,
                          JieyouService jieyouService,
                          NotifyService notifyService,
+                         PendantService pendantService,
                          RankService rankService) {
         this.authService = authService;
         this.baguaService = baguaService;
@@ -82,6 +87,7 @@ public class ApiController {
         this.interactService = interactService;
         this.jieyouService = jieyouService;
         this.notifyService = notifyService;
+        this.pendantService = pendantService;
         this.rankService = rankService;
     }
 
@@ -205,6 +211,11 @@ public class ApiController {
     @GetMapping("/jieyou/quote")
     public JieyouQuoteResponse getJieyouQuote() {
         return jieyouService.getQuote();
+    }
+
+    @PostMapping("/me/pendant")
+    public PendantWearResponse wearPendant(@RequestBody PendantWearRequest request) {
+        return pendantService.wear(request);
     }
 
     @PostMapping("/notify/subscribe")

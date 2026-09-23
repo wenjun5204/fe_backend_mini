@@ -2,6 +2,11 @@ const { ensureLogin, getToken, getUser } = require('../../utils/request')
 const api = require('../../utils/api')
 const prefs = require('../../utils/prefs')
 
+/** 挂件佩戴展示(与 pages/pendant 目录一致,家人可见) */
+const PENDANT_EMOJI = {
+  BAMBOO: '🎋', FLAME: '🔥', LANTERN: '🏮', KOI: '🐟', BAGUA: '☯️', FUBAO: '🧧',
+}
+
 const PLATES = {
   NONE: { name: '还没门牌', sub: '攒满 500 福值解锁' },
   BRONZE: { name: '勤俭之家', sub: '青铜门牌 · 已解锁' },
@@ -67,7 +72,10 @@ Page({
         api.getUpcomingBirthday().catch(() => ({ upcoming: null })),
         api.getBaguaStatus().catch(() => null), // 集福阵入口卡数据,失败静默
       ])
-      const members = family.members || []
+      const members = (family.members || []).map((m) => ({
+        ...m,
+        pendantEmoji: PENDANT_EMOJI[m.pendant] || '',
+      }))
       const plate = PLATES[family.plateLevel] || PLATES.NONE
       this.setData({
         familyName: family.familyName,
@@ -177,18 +185,14 @@ Page({
     wx.navigateTo({ url: '/pages/birthday/birthday' })
   },
 
-  /** 家庭关系分组占位(退出/转让/解散:服务端能力上线前仅占位样式) */
-  onFamilyRelation() {
-    wx.showToast({ title: '这个功能正在准备中', icon: 'none' })
-  },
-
-  /** 挂件/奖状入口(占位) */
+  /** 挂件页:达标解锁+佩戴(家人可见) */
   onPendant() {
-    wx.showToast({ title: '挂件正在准备中', icon: 'none' })
+    wx.navigateTo({ url: '/pages/pendant/pendant' })
   },
 
+  /** 奖状墙:身份/火焰/福值/门牌/卦数推导 */
   onAward() {
-    wx.showToast({ title: '奖状正在准备中', icon: 'none' })
+    wx.navigateTo({ url: '/pages/awards/awards' })
   },
 
   /* ============ 原有功能 ============ */

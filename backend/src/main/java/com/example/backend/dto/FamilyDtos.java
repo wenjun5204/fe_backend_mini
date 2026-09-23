@@ -38,6 +38,7 @@ public final class FamilyDtos {
         private long personalBless;
         private int streakDays;
         private boolean drawnToday;
+        private String pendant;
 
         public Long getUserId() { return userId; }
         public void setUserId(Long userId) { this.userId = userId; }
@@ -55,6 +56,8 @@ public final class FamilyDtos {
         public void setStreakDays(int streakDays) { this.streakDays = streakDays; }
         public boolean isDrawnToday() { return drawnToday; }
         public void setDrawnToday(boolean drawnToday) { this.drawnToday = drawnToday; }
+        public String getPendant() { return pendant; }
+        public void setPendant(String pendant) { this.pendant = pendant; }
     }
 
     public static class FamilyDetail {

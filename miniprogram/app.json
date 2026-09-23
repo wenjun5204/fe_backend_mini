@@ -5,7 +5,9 @@
     "pages/home/home",
     "pages/rank/rank",
     "pages/birthday/birthday",
-    "pages/bagua/bagua"
+    "pages/bagua/bagua",
+    "pages/pendant/pendant",
+    "pages/awards/awards"
   ],
   "window": {
     "navigationBarTitleText": "别点这个签",
@@ -19,9 +21,18 @@
     "backgroundColor": "#ffffff",
     "borderStyle": "white",
     "list": [
-      { "pagePath": "pages/card/card", "text": "福签" },
-      { "pagePath": "pages/jieyou/jieyou", "text": "解忧册" },
-      { "pagePath": "pages/home/home", "text": "家" }
+      {
+        "pagePath": "pages/card/card",
+        "text": "福签"
+      },
+      {
+        "pagePath": "pages/jieyou/jieyou",
+        "text": "解忧册"
+      },
+      {
+        "pagePath": "pages/home/home",
+        "text": "家"
+      }
     ]
   },
   "sitemapLocation": "sitemap.json"

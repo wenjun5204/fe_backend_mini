@@ -330,6 +330,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BaguaCelebrateResponse'
+  /api/me/pendant:
+    post:
+      operationId: wearPendant
+      summary: 佩戴头像挂件(达标解锁制:解锁条件由服务端从既有数据校验,未达标返回 40900;不消耗福值)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PendantWearRequest'
+      responses:
+        '200':
+          description: 佩戴成功,返回当前佩戴
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PendantWearResponse'
   /api/jieyou/quote:
     get:
       operationId: getJieyouQuote
@@ -440,6 +457,24 @@ components:
           description: 连续接福天数
         drawnToday:
           type: boolean
+        pendant:
+          $ref: '#/components/schemas/Pendant'
+    Pendant:
+      type: string
+      description: 头像挂件(达标解锁制,不消耗福值;佩戴持久化于用户档案,家人可见);解锁条件:竹叶=默认/火焰=连续接福7天/灯笼=个人福值≥200/锦鲤=个人福值≥1000/八卦=点亮4卦/福包=八卦圆满
+      enum: [BAMBOO, FLAME, LANTERN, KOI, BAGUA, FUBAO]
+    PendantWearRequest:
+      type: object
+      required: [pendant]
+      properties:
+        pendant:
+          $ref: '#/components/schemas/Pendant'
+    PendantWearResponse:
+      type: object
+      required: [pendant]
+      properties:
+        pendant:
+          $ref: '#/components/schemas/Pendant'
     FamilyDetail:
       type: object
       required: [notJoined]

@@ -47,11 +47,14 @@ const subscribeNotify = (templateId, accepted) =>
   request('/api/notify/subscribe', { method: 'POST', data: { templateId, accepted } })
 const getNotifyStatus = () => request('/api/notify/status')
 
+// 挂件佩戴(v1.5,达标解锁制;服务端校验解锁条件)
+const wearPendant = (pendant) => request('/api/me/pendant', { method: 'POST', data: { pendant } })
+
 module.exports = {
   login, getMyFamily, createFamily, joinFamily, getInviteInfo,
   getTodayFortune, drawFortune, shareFortune, completeFortuneTask,
   tianfu, cuifu, getFamilyRank, getFriendFamilyRank,
   convertCalendar, getBirthdays, getUpcomingBirthday, createBirthday, updateBirthday,
   deleteBirthday, updateBirthdayReminder,
-  getBaguaStatus, celebrateBagua, getJieyouQuote, subscribeNotify, getNotifyStatus,
+  getBaguaStatus, celebrateBagua, getJieyouQuote, subscribeNotify, getNotifyStatus, wearPendant,
 }
