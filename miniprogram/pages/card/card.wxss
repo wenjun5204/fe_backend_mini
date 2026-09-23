@@ -88,6 +88,8 @@
   background: #eaf5ee; border-radius: 24rpx; padding: 30rpx;
 }
 .review-btn { width: 420rpx; margin-top: 20rpx; }
+/* 完成态生日入口：与「再看一眼」同级弱化，米黄底描边 */
+.add-birthday-btn { width: 420rpx; margin-top: 18rpx; }
 
 /* 黄历福签弹层 */
 .card-mask {

@@ -116,6 +116,11 @@ Page({
     wx.navigateTo({ url: '/pages/birthday/birthday' })
   },
 
+  /** 完成态入口：直达生日簿并自动打开新增表单(省一次点击) */
+  onAddBirthday() {
+    wx.navigateTo({ url: '/pages/birthday/birthday?add=1' })
+  },
+
   applyToday(today) {
     const card = today.card || {}
     this.setData({

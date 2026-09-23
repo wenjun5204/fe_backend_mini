@@ -64,6 +64,9 @@
 
       <!-- 再看一眼今日福签 -->
       <button class="btn-sub review-btn" bindtap="refreshToday">再看一眼福签</button>
+
+      <!-- 完成态弱入口：为家人记一位生日(米黄底弱化,不与主流程争注意力) -->
+      <button class="btn-sub add-birthday-btn" bindtap="onAddBirthday">＋ 记一位家人的生日</button>
     </view>
   </block>
 

@@ -52,9 +52,13 @@ Page({
     reminderOptions: REMINDER_OPTIONS,
   },
 
-  async onLoad() {
+  async onLoad(options) {
     await ensureLogin()
     this.refresh()
+    // 首页完成态入口带 ?add=1：登录后自动打开新增表单(省一次点击)
+    if (options && options.add) {
+      this.onAdd()
+    }
   },
 
   async onPullDownRefresh() {
