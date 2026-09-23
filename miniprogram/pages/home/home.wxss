@@ -41,7 +41,7 @@
 /* 「我家 | 家族榜」分段子 Tab */
 .subtabs {
   display: flex; background: #f5ecd8; border: 1rpx solid #e8d5ae;
-  border-radius: 28rpx; padding: 8rpx; margin: 4rpx 32rpx 0;
+  border-radius: 28rpx; padding: 8rpx; margin: 4rpx 32rpx 24rpx;
 }
 .subtab {
   flex: 1; text-align: center; padding: 22rpx 0; border-radius: 22rpx;
