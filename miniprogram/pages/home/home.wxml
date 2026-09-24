@@ -3,7 +3,7 @@
   <view wx:if="{{notJoined}}" class="empty-box">
     <view class="empty-emoji">🏠</view>
     <view class="empty-text">您还没有加入「家」</view>
-    <view class="empty-sub">去福签页一键建家,或等家人发邀请卡片给您</view>
+    <view class="empty-sub">去福卡页一键建家,或等家人发邀请卡片给您</view>
   </view>
 
   <block wx:else>
@@ -37,10 +37,10 @@
 
     <!-- 入口卡:集福阵+生日簿(置于子 Tab 之上,两个子页都可见) -->
     <view class="entry-card" bindtap="onGoBagua">
-      <view class="entry-ico">☰</view>
+      <view class="entry-ico">🕊️</view>
       <view class="entry-main">
-        <view class="entry-title">八卦集福阵 <text class="entry-count">{{baguaLitText}}</text></view>
-        <view class="entry-sub">八方善行点亮八方卦位，集满成阵</view>
+        <view class="entry-title">八方集福阵 <text class="entry-count">{{baguaLitText}}</text></view>
+        <view class="entry-sub">八方善行点亮八方福位，集满成阵</view>
       </view>
       <view class="entry-arrow">›</view>
     </view>
@@ -128,7 +128,7 @@
           <view class="rank-val">{{item.bless}}<text class="rank-unit"> 福</text></view>
         </view>
       </view>
-      <view wx:else class="empty-tip">本周还没有福值记录,快去接福签吧</view>
+      <view wx:else class="empty-tip">本周还没有福值记录,快去接福卡吧</view>
       <view class="rank-more" bindtap="onGoFullRank">查看好友家族榜 ›</view>
     </block>
     </block>
@@ -174,7 +174,7 @@
             <switch checked="{{animEnabled}}" color="#b01f24" bindchange="onAnimChange" />
           </view>
           <view class="sp-row">
-            <text>罗盘触感与提示</text>
+            <text>转盘触感与提示</text>
             <switch checked="{{soundEnabled}}" color="#b01f24" bindchange="onSoundChange" />
           </view>
           <view class="sp-note">关闭后动效更简洁，适合用着更省心的手机</view>

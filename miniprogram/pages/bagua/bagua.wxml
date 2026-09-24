@@ -2,7 +2,7 @@
 
   <!-- 加载失败 -->
   <view wx:if="{{loadFailed}}" class="failed-box">
-    <view class="failed-emoji">☰</view>
+    <view class="failed-emoji">🕊️</view>
     <view class="failed-text">阵图的信息没加载出来</view>
     <view class="failed-sub">多半是网络波动，再试一次就好</view>
     <button class="retry-btn" bindtap="onRetry">再试一次</button>
@@ -11,13 +11,13 @@
   <block wx:else>
     <!-- 标题区 -->
     <view class="board-title">
-      <view class="bt-main kaiti">八卦集福阵</view>
-      <view class="bt-sub">八方卦位对应八类家庭善行 · 点亮卦位，集满成阵</view>
+      <view class="bt-main kaiti">八方集福阵</view>
+      <view class="bt-sub">八方福位对应八类家庭善行 · 点亮福位，集满成阵</view>
     </view>
 
-    <view class="board-progress">已点亮 <text class="bp-strong">{{litCount}}</text> / 8 卦</view>
+    <view class="board-progress">已点亮 <text class="bp-strong">{{litCount}}</text> / 8 方</view>
 
-    <!-- 八边形阵图:8 卦节点环绕 + 中央全家福位 -->
+    <!-- 八边形阵图:8 方位节点环绕 + 中央全家福位 -->
     <view class="board-zone">
       <view class="board-ring"></view>
       <view
@@ -38,18 +38,18 @@
       </view>
     </view>
 
-    <view class="board-legend">卦位只看「做没做」</view>
+    <view class="board-legend">福位只看「做没做」</view>
     <view class="board-legend board-legend-sub">点亮后永久保留 · 全家任一人完成即点亮</view>
   </block>
 
-  <!-- 卦位详情弹层:进度条 + 提示 -->
+  <!-- 福位详情弹层:进度条 + 提示 -->
   <view wx:if="{{detail}}" class="detail-mask" bindtap="closeDetail">
     <view class="detail-pop" catchtap="">
       <view class="dp-head">
         <view class="dp-gua {{detail.lit ? 'lit' : 'dim'}}">{{detail.char}}</view>
         <view class="dp-title-wrap">
-          <view class="dp-title">{{detail.name}}卦<text wx:if="{{detail.lit}}" class="dp-lit-tag"> · 已点亮</text></view>
-          <view class="dp-sub">{{detail.lit ? '这一卦已为家里点亮，永久保留' : '还差一点，全家一起加油'}}</view>
+          <view class="dp-title">{{detail.name}}福位<text wx:if="{{detail.lit}}" class="dp-lit-tag"> · 已点亮</text></view>
+          <view class="dp-sub">{{detail.lit ? '这一位已为家里点亮，永久保留' : '还差一点，全家一起加油'}}</view>
         </view>
       </view>
       <view wx:if="{{detail.hint}}" class="dp-hint">{{detail.hint}}</view>
@@ -62,7 +62,7 @@
           <view class="dp-bar-fill" style="width: {{detail.pct}}%"></view>
         </view>
       </view>
-      <view wx:else class="dp-done-note">✓ 这一卦已经为家里点亮了，永久保留，不因断签熄灭</view>
+      <view wx:else class="dp-done-note">✓ 这一位已经为家里点亮了，永久保留，不因中断熄灭</view>
       <button class="btn-main dp-close" bindtap="closeDetail">知道啦</button>
     </view>
   </view>

@@ -10,11 +10,11 @@ const createFamily = (name) => request('/api/family', { method: 'POST', data: { 
 const joinFamily = (inviteCode) => request('/api/family/join', { method: 'POST', data: { inviteCode } })
 const getInviteInfo = (inviteCode) => request('/api/invite/info?inviteCode=' + inviteCode, { token: '' })
 
-// 福签
+// 福卡
 const getTodayFortune = () => request('/api/fortune/today')
 const drawFortune = () => request('/api/fortune/draw', { method: 'POST' })
 const shareFortune = () => request('/api/fortune/share', { method: 'POST' })
-// taskItem:完成的今日宜事项文本(v1.5 可选体,八卦阵任务型进度依赖;缺省兼容旧行为)
+// taskItem:完成的今日宜事项文本(v1.5 可选体,集福阵任务型进度依赖;缺省兼容旧行为)
 const completeFortuneTask = (taskItem) =>
   request('/api/fortune/task-done', { method: 'POST', data: taskItem ? { taskItem } : {} })
 
@@ -35,7 +35,7 @@ const updateBirthday = (id, data) => request('/api/birthdays/' + id, { method: '
 const deleteBirthday = (id) => request('/api/birthdays/' + id, { method: 'DELETE' })
 const updateBirthdayReminder = (id, reminderDays) => request('/api/birthdays/' + id + '/reminder', { method: 'PUT', data: { reminderDays } })
 
-// 八卦集福阵(v1.5,只读进度 + 圆满庆祝一次性标记)
+// 八方集福阵(v1.5,只读进度 + 圆满庆祝一次性标记)
 const getBaguaStatus = () => request('/api/bagua/status')
 const celebrateBagua = () => request('/api/bagua/celebrate', { method: 'POST' })
 

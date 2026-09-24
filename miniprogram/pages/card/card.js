@@ -3,21 +3,21 @@ const api = require('../../utils/api')
 const prefs = require('../../utils/prefs')
 
 const LEVEL_NAME = { PINGAN: '平安', RUYI: '如意', HONGFU: '鸿福' }
-const LEVEL_TAG = { PINGAN: '平安签 · 全家共享', RUYI: '如意签 · 全家共享', HONGFU: '鸿福签 · 全家共享' }
+const LEVEL_TAG = { PINGAN: '平安卡 · 全家共享', RUYI: '如意卡 · 全家共享', HONGFU: '鸿福卡 · 全家共享' }
 
-// 八卦:卦符/卦名/卡面主题装饰(卦位只决定卡面主题,不影响等级与福值)
+// 八方:符号/名/卡面主题装饰(方位只决定卡面主题,不影响等级与福值)
 const GUAS = [
-  { key: 'QIAN', char: '☰', name: '乾', theme: '云鹤', emoji: '🕊️' },
-  { key: 'DUI', char: '☱', name: '兑', theme: '荷塘', emoji: '🪷' },
-  { key: 'LI', char: '☲', name: '离', theme: '灯笼', emoji: '🏮' },
-  { key: 'ZHEN', char: '☳', name: '震', theme: '春雷', emoji: '🌱' },
-  { key: 'XUN', char: '☴', name: '巽', theme: '风铃', emoji: '🎐' },
-  { key: 'KAN', char: '☵', name: '坎', theme: '锦鲤', emoji: '🐟' },
-  { key: 'GEN', char: '☶', name: '艮', theme: '山景', emoji: '⛰️' },
-  { key: 'KUN', char: '☷', name: '坤', theme: '花开', emoji: '🌾' },
+  { key: 'QIAN', char: '🕊️', name: '云鹤', theme: '云鹤', emoji: '🕊️' },
+  { key: 'DUI', char: '🪷', name: '荷塘', theme: '荷塘', emoji: '🪷' },
+  { key: 'LI', char: '🏮', name: '灯笼', theme: '灯笼', emoji: '🏮' },
+  { key: 'ZHEN', char: '🌱', name: '春雷', theme: '春雷', emoji: '🌱' },
+  { key: 'XUN', char: '🎐', name: '风铃', theme: '风铃', emoji: '🎐' },
+  { key: 'KAN', char: '🐟', name: '锦鲤', theme: '锦鲤', emoji: '🐟' },
+  { key: 'GEN', char: '⛰️', name: '山景', theme: '山景', emoji: '⛰️' },
+  { key: 'KUN', char: '🌾', name: '花开', theme: '花开', emoji: '🌾' },
 ]
 
-// 罗盘物理参数(与已验收原型 docs/prototype/bagua-interactive.html 完全一致)
+// 转盘物理参数(与已验收原型 docs/prototype/bagua-interactive.html 完全一致)
 const FRICTION = 0.975   // 摩擦:角速度每 16.7ms 衰减一次
 const STOP_EPS = 0.02    // 停转阈值(deg/ms)
 const OMEGA_MAX = 2.8    // 角速度上限(deg/ms)
@@ -30,7 +30,7 @@ const NOTIFY_TEMPLATE_ID = 'PLACEHOLDER-TMPL-REPLACE-ME'
 
 const FLOAT_CHARS = ['福', '旺', '顺', '安', '乐', '和', '康', '暖']
 
-// 罗盘 8 卦扇区定位(自正上方顺时针,乾兑离震巽坎艮坤)
+// 转盘 8 扇区定位(自正上方顺时针)
 const SECTORS = GUAS.map((g, i) => ({
   key: g.key,
   char: g.char,
@@ -59,7 +59,7 @@ Page({
     defaultFamilyName: '',
     familyName: '',
     inviteCode: '',
-    // 罗盘
+    // 转盘
     sectors: SECTORS,
     rotation: 0,
     spinning: false,
@@ -207,11 +207,11 @@ Page({
     }
   },
 
-  /** 集福阵入口条数据(已点亮 N/8 卦);失败静默,入口仍可点 */
+  /** 集福阵入口条数据(已点亮 N/8 方);失败静默,入口仍可点 */
   refreshEntries() {
     api.getBaguaStatus().then((status) => {
       if (status && status.litCount !== undefined && status.litCount !== null) {
-        this.setData({ baguaLitText: '已点亮 ' + status.litCount + '/8 卦' })
+        this.setData({ baguaLitText: '已点亮 ' + status.litCount + '/8 方' })
       }
     }).catch(() => {})
   },
@@ -259,15 +259,15 @@ Page({
       taskDone: today.taskDone,
       personalBless: today.personalBless || 0,
       praiseText: '',
-      // 已接签时不自动弹层:弹层是打断性 UI,改为点「再看一眼福签」主动查看;
-      // 抽签成功的开奖时刻仍由停转/大按钮触发主动弹出
+      // 已接卡时不自动弹层:弹层是打断性 UI,改为点「再看一眼福卡」主动查看;
+      // 翻卡成功的开奖时刻仍由停转/大按钮触发主动弹出
       showCard: false,
     })
   },
 
-  /* ===================== 罗盘物理(原型移植) ===================== */
+  /* ===================== 转盘物理(原型移植) ===================== */
 
-  /** 查询罗盘区域中心(拖拽角度计算用;每次按下时刷新以兼容页面滚动) */
+  /** 查询转盘区域中心(拖拽角度计算用;每次按下时刷新以兼容页面滚动) */
   ensureZoneCenter() {
     return new Promise((resolve) => {
       wx.createSelectorQuery().in(this)
@@ -332,7 +332,7 @@ Page({
     }
   },
 
-  /** 点罗盘中央「福」字:顺着当前转向加一股劲(连点越转越快) */
+  /** 点转盘中央「福」字:顺着当前转向加一股劲(连点越转越快) */
   onHubTap() {
     const dir = !this._omega ? 1 : (this._omega > 0 ? 1 : -1)
     this._omega = this.clampOmega((this._omega || 0) + dir * TAP_IMPULSE)
@@ -363,7 +363,7 @@ Page({
     }, 1000)
   },
 
-  /** 手指拨罗盘:跟点击一样只加劲,不限次数 */
+  /** 手指拨转盘:跟点击一样只加劲,不限次数 */
   onDialTouchStart(e) {
     if (this._looping) {
       return
@@ -423,9 +423,9 @@ Page({
     }
   },
 
-  /** 自然停转:指针所指卦位高亮;今日未接则翻出今日福卡 */
+  /** 自然停转:指针所指方位高亮;今日未接则翻出今日福卡 */
   finishSpin() {
-    // 第 i 卦圆心位于盘面角度 i*45(自正上方顺时针);盘转 rotation 后屏幕角度 = i*45 + rotation,取最接近正上方者
+    // 第 i 扇区圆心位于盘面角度 i*45(自正上方顺时针);盘转 rotation 后屏幕角度 = i*45 + rotation,取最接近正上方者
     const norm = ((-this._rotation % 360) + 360) % 360
     const idx = Math.round(norm / 45) % 8
     this.setData({ winnerIdx: idx })
@@ -513,7 +513,7 @@ Page({
     }
   },
 
-  /** 再看一眼:主动弹出今日福签(数据已在页面内,不重新请求) */
+  /** 再看一眼:主动弹出今日福卡(数据已在页面内,不重新请求) */
   onReviewCard() {
     if (this.data.card) {
       this.setData({ showCard: true })
@@ -536,7 +536,7 @@ Page({
     }
   },
 
-  /** 完成今日宜事项(+15);带事项文本,八卦阵任务型进度依赖此字段 */
+  /** 完成今日宜事项(+15);带事项文本,集福阵任务型进度依赖此字段 */
   async onTaskDone(e) {
     if (this.data.taskDone) {
       return
@@ -551,7 +551,7 @@ Page({
       })
       wx.showToast({ title: '事已完成,福值 +' + result.amount, icon: 'none' })
     } catch (e2) {
-      // 已完成/未抽签等提示由网络层处理
+      // 已完成/未抽卡等提示由网络层处理
     }
   },
 
@@ -625,8 +625,8 @@ Page({
   onShareAppMessage() {
     const festival = (this.data.card && this.data.card.festival) || ''
     const title = festival
-      ? '「' + festival + '限定」福签送给您!来自' + (this.data.familyName || '您的家人')
-      : '别点这个签…点开就有福!来自' + (this.data.familyName || '您的家人')
+      ? '「' + festival + '限定」福卡送给您!来自' + (this.data.familyName || '您的家人')
+      : '别点这个福…点开就有福!来自' + (this.data.familyName || '您的家人')
     return {
       title,
       path: '/pages/card/card?inviteCode=' + (this.data.inviteCode || ''),

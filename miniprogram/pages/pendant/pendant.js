@@ -7,8 +7,8 @@ const CATALOG = [
   { key: 'FLAME', emoji: '🔥', name: '火焰', cond: '连续接福 7 天' },
   { key: 'LANTERN', emoji: '🏮', name: '灯笼', cond: '攒下 200 福值' },
   { key: 'KOI', emoji: '🐟', name: '锦鲤', cond: '攒下 1000 福值' },
-  { key: 'BAGUA', emoji: '☯️', name: '八卦', cond: '点亮 4 卦' },
-  { key: 'FUBAO', emoji: '🧧', name: '福包', cond: '八卦圆满' }
+  { key: 'BAGUA', emoji: '✨', name: '集福', cond: '集福阵点亮过半' },
+  { key: 'FUBAO', emoji: '🧧', name: '福包', cond: '集福圆满' }
 ]
 
 Page({
@@ -56,8 +56,8 @@ Page({
       case 'FLAME': return `已连续 ${me.streakDays || 0} 天`
       case 'LANTERN': return `已攒 ${me.personalBless || 0} 福值`
       case 'KOI': return `已攒 ${me.personalBless || 0} 福值`
-      case 'BAGUA': return `已点亮 ${lit} 卦`
-      case 'FUBAO': return `已点亮 ${lit} 卦`
+      case 'BAGUA': return `已点亮 ${lit} 方`
+      case 'FUBAO': return `已点亮 ${lit} 方`
       default: return '已解锁'
     }
   },

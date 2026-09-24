@@ -1,7 +1,7 @@
 const { getMyFamily, getBaguaStatus } = require('../../utils/api')
 const { getUser } = require('../../utils/request')
 
-/** 奖状墙:全部从既有数据推导(身份/火焰/福值/门牌/卦数),达标即亮,无服务端存储 */
+/** 奖状墙:全部从既有数据推导(身份/火焰/福值/门牌/方位数),达标即亮,无服务端存储 */
 const PLATE_NAMES = { BRONZE: '勤俭之家', SILVER: '和睦之家', GOLD: '满门福气', JADE: '福泽满堂' }
 
 Page({
@@ -36,8 +36,8 @@ Page({
           { emoji: '🥉', name: '勤俭之家', desc: '家门牌到青铜', earned: plateIdx >= 1, progress: PLATE_NAMES[plate] || '尚未挂门牌' },
           { emoji: '🥈', name: '和睦之家', desc: '家门牌到白银', earned: plateIdx >= 2, progress: PLATE_NAMES[plate] || '尚未挂门牌' },
           { emoji: '🥇', name: '满门福气', desc: '家门牌到黄金', earned: plateIdx >= 3, progress: PLATE_NAMES[plate] || '尚未挂门牌' },
-          { emoji: '☯️', name: '集福过半', desc: '点亮 4 卦', earned: lit >= 4, progress: `已点亮 ${lit} 卦` },
-          { emoji: '🎆', name: '八卦圆满', desc: '点亮全部 8 卦', earned: lit >= 8, progress: `已点亮 ${lit} 卦` }
+          { emoji: '✨', name: '集福过半', desc: '点亮 4 方', earned: lit >= 4, progress: `已点亮 ${lit} 方` },
+          { emoji: '🎆', name: '集福圆满', desc: '点亮全部 8 方', earned: lit >= 8, progress: `已点亮 ${lit} 方` }
         ]
         this.setData({
           loading: false,

@@ -1,16 +1,16 @@
 const { ensureLogin } = require('../../utils/request')
 const api = require('../../utils/api')
 
-// 八卦固定顺序:乾兑离震巽坎艮坤(与契约 BaguaStatusResponse.trigrams 一致)
+// 八方固定顺序(与契约 Gua 枚举一致)(与契约 BaguaStatusResponse.trigrams 一致)
 const GUAS = [
-  { key: 'QIAN', char: '☰', name: '乾' },
-  { key: 'DUI', char: '☱', name: '兑' },
-  { key: 'LI', char: '☲', name: '离' },
-  { key: 'ZHEN', char: '☳', name: '震' },
-  { key: 'XUN', char: '☴', name: '巽' },
-  { key: 'KAN', char: '☵', name: '坎' },
-  { key: 'GEN', char: '☶', name: '艮' },
-  { key: 'KUN', char: '☷', name: '坤' },
+  { key: 'QIAN', char: '🕊️', name: '云鹤' },
+  { key: 'DUI', char: '🪷', name: '荷塘' },
+  { key: 'LI', char: '🏮', name: '灯笼' },
+  { key: 'ZHEN', char: '🌱', name: '春雷' },
+  { key: 'XUN', char: '🎐', name: '风铃' },
+  { key: 'KAN', char: '🐟', name: '锦鲤' },
+  { key: 'GEN', char: '⛰️', name: '山景' },
+  { key: 'KUN', char: '🌾', name: '花开' },
 ]
 
 // 阵图节点圆环定位(自正上方顺时针)
@@ -26,7 +26,7 @@ Page({
     familyName: '',
     litCount: 0,
     nodes: [],
-    detail: null, // 卦位详情弹层
+    detail: null, // 福位详情弹层
     // 圆满庆祝
     showGrand: false,
     grandNodes: [],
@@ -60,6 +60,8 @@ Page({
       })
       const nodes = GUAS.map((g, i) => {
         const t = byKey[g.key] || {}
+        // 服务端 hint 展示净化:统一展示用词,前端兜底
+        const hint = (t.hint || '').replace(/\u7b7e/g, '\u5361')
         return {
           key: g.key,
           char: g.char,
@@ -67,7 +69,7 @@ Page({
           lit: !!t.lit,
           current: t.current || 0,
           target: t.target || 0,
-          hint: t.hint || '',
+          hint,
           style: nodeStyle(i),
         }
       })
@@ -76,7 +78,7 @@ Page({
         litCount: status.litCount || 0,
         familyName: (family && family.familyName) || '全家',
       })
-      // 8 卦全亮且未庆祝过:播放圆满庆祝动效,结束后调 POST /api/bagua/celebrate
+      // 8 方全亮且未庆祝过:播放圆满庆祝动效,结束后调 POST /api/bagua/celebrate
       if (status.complete && !status.celebrated) {
         this.showGrand()
       }
@@ -156,7 +158,7 @@ Page({
   /** 分享集福阵给家人 */
   onShareAppMessage() {
     return {
-      title: (this.data.familyName || '我们家') + '的集福阵已点亮 ' + this.data.litCount + '/8 卦，一起点亮吧！',
+      title: (this.data.familyName || '我们家') + '的集福阵已点亮 ' + this.data.litCount + '/8 方，一起点亮吧！',
       path: '/pages/card/card',
     }
   },

@@ -4,7 +4,7 @@ const prefs = require('../../utils/prefs')
 
 /** 挂件佩戴展示(与 pages/pendant 目录一致,家人可见) */
 const PENDANT_EMOJI = {
-  BAMBOO: '🎋', FLAME: '🔥', LANTERN: '🏮', KOI: '🐟', BAGUA: '☯️', FUBAO: '🧧',
+  BAMBOO: '🎋', FLAME: '🔥', LANTERN: '🏮', KOI: '🐟', BAGUA: '✨', FUBAO: '🧧',
 }
 
 const PLATES = {
@@ -91,7 +91,7 @@ Page({
         members,
         upcomingBirthday: upcomingResult.upcoming,
         baguaLitText: baguaResult && baguaResult.litCount !== undefined && baguaResult.litCount !== null
-          ? '已点亮 ' + baguaResult.litCount + '/8 卦'
+          ? '已点亮 ' + baguaResult.litCount + '/8 方'
           : '进去看看',
         me: this.buildMe(members),
       })
@@ -191,7 +191,7 @@ Page({
     wx.navigateTo({ url: '/pages/pendant/pendant' })
   },
 
-  /** 奖状墙:身份/火焰/福值/门牌/卦数推导 */
+  /** 奖状墙:身份/火焰/福值/门牌/方位数推导 */
   onAward() {
     wx.navigateTo({ url: '/pages/awards/awards' })
   },
@@ -231,7 +231,7 @@ Page({
     wx.navigateTo({ url: '/pages/birthday/birthday' })
   },
 
-  /** 打开八卦集福阵 */
+  /** 打开八方集福阵 */
   onGoBagua() {
     wx.navigateTo({ url: '/pages/bagua/bagua' })
   },
