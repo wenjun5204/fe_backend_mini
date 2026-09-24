@@ -122,6 +122,7 @@ Page({
 
   onUnload() {
     this.stopLoop()
+    this.clearLoadTimer()
   },
 
   onReady() {
@@ -129,6 +130,10 @@ Page({
   },
 
   async init() {
+    // 秒开:上次成功的数据先渲染(仅缓存过"已就绪"态),网络返回后覆盖为最新;
+    // 应对云托管冷启动(容器缩容到 0 后首次请求需拉起 JVM,可能 5-20 秒)
+    this.applyCache()
+    this.startLoadTimer()
     try {
       await ensureLogin()
       // 分享卡片进入:带邀请码直接进家(新用户第一秒就在场景里)
@@ -142,14 +147,79 @@ Page({
         this._inviteCode = ''
       }
       await this.refreshFamily()
+      this.clearLoadTimer()
       this._inited = true
       if (this.data.pageState === 'ready') {
         // 首屏请求并发,不串行等待
         await Promise.all([this.refreshToday(), this.refreshBirthdayBanner(true), this.refreshEntries()])
+        this.saveCache()
       }
     } catch (e) {
+      this.clearLoadTimer()
+      if (this._fromCache) {
+        // 缓存内容已在屏:保持展示(网络层已 toast),不推倒重来
+        return
+      }
       // 登录失败等:给重试入口,而不是伪装成「可建家」
       this.setData({ pageState: 'loadFailed' })
+    }
+  },
+
+  /** 本地缓存先行渲染(stale-while-revalidate):家族名直接用,福卡仅当天缓存有效 */
+  applyCache() {
+    try {
+      const c = wx.getStorageSync('qjf_card_cache')
+      if (!c || !c.familyName) {
+        return
+      }
+      this._fromCache = true
+      this.setData({
+        pageState: 'ready',
+        familyName: c.familyName,
+        inviteCode: c.inviteCode || '',
+      })
+      // 福卡是"今日"语义:隔天缓存作废,避免把昨天的"已接好"闪现给用户
+      const d = new Date()
+      const todayStr = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate()
+      if (c.date === todayStr && c.today) {
+        this.applyToday(c.today)
+      }
+    } catch (e) {
+      // 缓存读写失败按无缓存处理,不影响正常流程
+    }
+  },
+
+  saveCache() {
+    try {
+      const d = new Date()
+      wx.setStorageSync('qjf_card_cache', {
+        familyName: this.data.familyName,
+        inviteCode: this.data.inviteCode,
+        date: d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(),
+        today: this._lastToday || null,
+      })
+    } catch (e) {
+      // 存储失败静默
+    }
+  },
+
+  /** loading 兜底:15 秒仍未出结果(如冷启动特别慢/请求悬挂)给重试入口,不无限转 */
+  startLoadTimer() {
+    if (this.data.pageState !== 'loading') {
+      return
+    }
+    this.clearLoadTimer()
+    this._loadTimer = setTimeout(() => {
+      if (this.data.pageState === 'loading') {
+        this.setData({ pageState: 'loadFailed' })
+      }
+    }, 15000)
+  },
+
+  clearLoadTimer() {
+    if (this._loadTimer) {
+      clearTimeout(this._loadTimer)
+      this._loadTimer = null
     }
   },
 
@@ -166,6 +236,10 @@ Page({
         })
       }
     } catch (e) {
+      // 缓存内容已在屏:保持展示,等待下次 onShow/操作时再刷新
+      if (this._fromCache) {
+        return
+      }
       // 请求失败 ≠ 未加入家族:误判会诱导重复建家,改为给出重试入口
       this.setData({ pageState: 'loadFailed' })
     }
@@ -173,6 +247,7 @@ Page({
 
   /** 加载失败重试:回到 loading 态重新走 init */
   onRetryLoad() {
+    this._fromCache = false
     this.setData({ pageState: 'loading' })
     this.init()
   },
@@ -243,6 +318,7 @@ Page({
   },
 
   applyToday(today) {
+    this._lastToday = today
     const card = today.card || {}
     const info = guaInfo(card.gua)
     this.setData({
