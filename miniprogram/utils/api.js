@@ -10,7 +10,7 @@ const createFamily = (name) => request('/api/family', { method: 'POST', data: { 
 const joinFamily = (inviteCode) => request('/api/family/join', { method: 'POST', data: { inviteCode } })
 const getInviteInfo = (inviteCode) => request('/api/invite/info?inviteCode=' + inviteCode, { token: '' })
 
-// 福卡
+// 福签
 const getTodayFortune = () => request('/api/fortune/today')
 const drawFortune = () => request('/api/fortune/draw', { method: 'POST' })
 const shareFortune = () => request('/api/fortune/share', { method: 'POST' })

@@ -22,7 +22,7 @@
     <view class="join-hint">家人分享卡片给您时,点开就能直接进家</view>
   </view>
 
-  <!-- 福卡主流程:转转盘 -->
+  <!-- 福签主流程:转转盘 -->
   <block wx:else>
     <view class="top-bar">今天，<text class="top-family">{{familyName}}</text> 的福已送到</view>
 
@@ -69,7 +69,7 @@
     <!-- 未接:大按钮兜底(适老化:不会拨也一定能接到) -->
     <view wx:if="{{phase === 'idle'}}" class="draw-area">
       <button class="btn-main draw-btn" bindtap="onBigDraw">接福气</button>
-      <view class="sub-hint">转够了停下手，福卡自己翻出来</view>
+      <view class="sub-hint">转够了停下手，福签自己翻出来</view>
     </view>
 
     <!-- 抽取中 -->
@@ -80,7 +80,7 @@
     <!-- 已接:完成态 -->
     <view wx:else class="done-area">
       <view class="done-emoji">{{themeEmoji}}</view>
-      <view class="done-text">今日福卡已接好</view>
+      <view class="done-text">今日福签已接好</view>
       <view class="done-gua">{{guaName}}福位 · {{themeName}} · {{levelName}}卡</view>
       <view wx:if="{{praiseText}}" class="done-praise">{{praiseText}}</view>
       <view class="done-bless">我的福值 {{personalBless}}</view>
@@ -103,8 +103,8 @@
         </view>
       </view>
 
-      <!-- 再看一眼今日福卡(点击才弹出,不再自动弹层) -->
-      <button class="btn-sub review-btn" bindtap="onReviewCard">再看一眼福卡</button>
+      <!-- 再看一眼今日福签(点击才弹出,不再自动弹层) -->
+      <button class="btn-sub review-btn" bindtap="onReviewCard">再看一眼福签</button>
 
       <!-- 完成态弱入口：为家人记一位生日(米黄底弱化,不与主流程争注意力) -->
       <button class="btn-sub add-birthday-btn" bindtap="onAddBirthday">＋ 记一位家人的生日</button>
@@ -125,7 +125,7 @@
     </view>
   </block>
 
-  <!-- 福卡结果弹层:3D 翻卡 + 主题卡面 + 订阅勾选(限高 + 内部可滚动,小屏不超出屏幕) -->
+  <!-- 福签结果弹层:3D 翻签 + 主题卡面 + 订阅勾选(限高 + 内部可滚动,小屏不超出屏幕) -->
   <view wx:if="{{showCard && card}}" class="card-mask" bindtap="closeCard">
     <view class="card-scene" catchtap="">
       <scroll-view
@@ -140,7 +140,7 @@
         </view>
         <view class="f-theme-emoji">{{themeEmoji}}</view>
         <view class="f-theme kaiti">{{themeName}}</view>
-        <view wx:if="{{card.festival}}" class="f-festival">{{card.festival}} · 限定福卡</view>
+        <view wx:if="{{card.festival}}" class="f-festival">{{card.festival}} · 限定福签</view>
         <view class="f-family">{{familyName}} · 全家同卡</view>
         <view class="yi-box">
           <view class="yi-title">今 日 宜</view>

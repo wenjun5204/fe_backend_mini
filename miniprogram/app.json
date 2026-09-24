@@ -10,7 +10,7 @@
     "pages/awards/awards"
   ],
   "window": {
-    "navigationBarTitleText": "别点这个福",
+    "navigationBarTitleText": "别点这个签",
     "navigationBarBackgroundColor": "#b01f24",
     "navigationBarTextStyle": "white",
     "backgroundColor": "#fff8ec"
@@ -23,7 +23,7 @@
     "list": [
       {
         "pagePath": "pages/card/card",
-        "text": "福卡"
+        "text": "福签"
       },
       {
         "pagePath": "pages/jieyou/jieyou",

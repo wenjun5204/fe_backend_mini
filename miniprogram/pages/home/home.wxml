@@ -3,7 +3,7 @@
   <view wx:if="{{notJoined}}" class="empty-box">
     <view class="empty-emoji">🏠</view>
     <view class="empty-text">您还没有加入「家」</view>
-    <view class="empty-sub">去福卡页一键建家,或等家人发邀请卡片给您</view>
+    <view class="empty-sub">去福签页一键建家,或等家人发邀请卡片给您</view>
   </view>
 
   <block wx:else>
@@ -128,7 +128,7 @@
           <view class="rank-val">{{item.bless}}<text class="rank-unit"> 福</text></view>
         </view>
       </view>
-      <view wx:else class="empty-tip">本周还没有福值记录,快去接福卡吧</view>
+      <view wx:else class="empty-tip">本周还没有福值记录,快去接福签吧</view>
       <view class="rank-more" bindtap="onGoFullRank">查看好友家族榜 ›</view>
     </block>
     </block>

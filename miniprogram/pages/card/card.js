@@ -3,7 +3,7 @@ const api = require('../../utils/api')
 const prefs = require('../../utils/prefs')
 
 const LEVEL_NAME = { PINGAN: '平安', RUYI: '如意', HONGFU: '鸿福' }
-const LEVEL_TAG = { PINGAN: '平安卡 · 全家共享', RUYI: '如意卡 · 全家共享', HONGFU: '鸿福卡 · 全家共享' }
+const LEVEL_TAG = { PINGAN: '平安签 · 全家共享', RUYI: '如意签 · 全家共享', HONGFU: '鸿福签 · 全家共享' }
 
 // 八方:符号/名/卡面主题装饰(方位只决定卡面主题,不影响等级与福值)
 const GUAS = [
@@ -165,7 +165,7 @@ Page({
     }
   },
 
-  /** 本地缓存先行渲染(stale-while-revalidate):家族名直接用,福卡仅当天缓存有效 */
+  /** 本地缓存先行渲染(stale-while-revalidate):家族名直接用,福签仅当天缓存有效 */
   applyCache() {
     try {
       const c = wx.getStorageSync('qjf_card_cache')
@@ -178,7 +178,7 @@ Page({
         familyName: c.familyName,
         inviteCode: c.inviteCode || '',
       })
-      // 福卡是"今日"语义:隔天缓存作废,避免把昨天的"已接好"闪现给用户
+      // 福签是"今日"语义:隔天缓存作废,避免把昨天的"已接好"闪现给用户
       const d = new Date()
       const todayStr = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate()
       if (c.date === todayStr && c.today) {
@@ -335,7 +335,7 @@ Page({
       taskDone: today.taskDone,
       personalBless: today.personalBless || 0,
       praiseText: '',
-      // 已接卡时不自动弹层:弹层是打断性 UI,改为点「再看一眼福卡」主动查看;
+      // 已接签时不自动弹层:弹层是打断性 UI,改为点「再看一眼福签」主动查看;
       // 翻卡成功的开奖时刻仍由停转/大按钮触发主动弹出
       showCard: false,
     })
@@ -499,7 +499,7 @@ Page({
     }
   },
 
-  /** 自然停转:指针所指方位高亮;今日未接则翻出今日福卡 */
+  /** 自然停转:指针所指方位高亮;今日未接则翻出今日福签 */
   finishSpin() {
     // 第 i 扇区圆心位于盘面角度 i*45(自正上方顺时针);盘转 rotation 后屏幕角度 = i*45 + rotation,取最接近正上方者
     const norm = ((-this._rotation % 360) + 360) % 360
@@ -589,7 +589,7 @@ Page({
     }
   },
 
-  /** 再看一眼:主动弹出今日福卡(数据已在页面内,不重新请求) */
+  /** 再看一眼:主动弹出今日福签(数据已在页面内,不重新请求) */
   onReviewCard() {
     if (this.data.card) {
       this.setData({ showCard: true })
@@ -701,8 +701,8 @@ Page({
   onShareAppMessage() {
     const festival = (this.data.card && this.data.card.festival) || ''
     const title = festival
-      ? '「' + festival + '限定」福卡送给您!来自' + (this.data.familyName || '您的家人')
-      : '别点这个福…点开就有福!来自' + (this.data.familyName || '您的家人')
+      ? '「' + festival + '限定」福签送给您!来自' + (this.data.familyName || '您的家人')
+      : '别点这个签…点开就有福!来自' + (this.data.familyName || '您的家人')
     return {
       title,
       path: '/pages/card/card?inviteCode=' + (this.data.inviteCode || ''),
