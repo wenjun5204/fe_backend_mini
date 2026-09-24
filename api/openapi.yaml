@@ -1,0 +1,908 @@
+openapi: 3.0.3
+info:
+  title: 全家福·接福气 API
+  version: 1.5.0
+  description: |
+    中老年家庭祈福互动小程序「全家福·接福气」接口契约(唯一事实源)。
+    v1.5.0 增量:八卦集福阵(只读进度)/转罗盘卦位(仅卡面主题)/解忧册文案下发(幂等)/订阅消息授权登记。
+    合规约束:文案禁用迷信词(见 .agents/docs/conventions.md,含 v1.5 追加:卦象/卦运/宜忌/生门/吉位/凶位/能成/不行/会有/注定/天意/预示/破财/有灾),错误 message 面向用户须过合规词表。
+paths:
+  /api/auth/login:
+    post:
+      operationId: login
+      summary: 微信登录(MVP 用 code 换取用户身份,返回 token)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+  /api/family:
+    get:
+      operationId: getMyFamily
+      summary: 我的家(家族详情+成员今日状态墙)
+      responses:
+        '200':
+          description: 家族详情;未加入家族时返回 notJoined=true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyDetail'
+    post:
+      operationId: createFamily
+      summary: 创建家族(每人限 1 个,创建者即户主)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFamilyRequest'
+      responses:
+        '200':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyDetail'
+  /api/family/join:
+    post:
+      operationId: joinFamily
+      summary: 通过邀请码加入家族(上限 8 人,每人限加入 1 个)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinFamilyRequest'
+      responses:
+        '200':
+          description: 加入成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyDetail'
+  /api/fortune/today:
+    get:
+      operationId: getTodayFortune
+      summary: 今日福签(含我的抽签/分享/任务状态)
+      responses:
+        '200':
+          description: 今日福签
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FortuneTodayResponse'
+  /api/fortune/draw:
+    post:
+      operationId: drawFortune
+      summary: 抽取今日福签(每家族每日同签,每人每日 1 次)
+      responses:
+        '200':
+          description: 抽签成功,返回福签与最新福值
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FortuneDrawResponse'
+  /api/fortune/share:
+    post:
+      operationId: shareFortune
+      summary: 标记福签已转发(软引导奖励,+10 福值,每日 1 次)
+      responses:
+        '200':
+          description: 分享奖励发放
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlessResult'
+  /api/fortune/task-done:
+    post:
+      operationId: completeFortuneTask
+      summary: 完成今日宜事项(+15 福值,每日 1 次;v1.5 增加可选事项文本用于八卦阵任务型进度统计)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FortuneTaskDoneRequest'
+      responses:
+        '200':
+          description: 任务奖励发放
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlessResult'
+  /api/interact/tianfu:
+    post:
+      operationId: tianfu
+      summary: 给家人添福(+8,每人每天对每位家人 1 次)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TargetUserRequest'
+      responses:
+        '200':
+          description: 添福成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlessResult'
+  /api/interact/cuifu:
+    post:
+      operationId: cuifu
+      summary: 催福(提醒未接福的家人,对同一人每日≤3 次)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TargetUserRequest'
+      responses:
+        '200':
+          description: 催福已送达
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuifuResult'
+  /api/rank/family:
+    get:
+      operationId: getFamilyRank
+      summary: 家内榜(本周成员福值排名)
+      responses:
+        '200':
+          description: 家内榜
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyRankResponse'
+  /api/rank/friends:
+    get:
+      operationId: getFriendFamilyRank
+      summary: 好友家族榜(好友关系内家族福值对比,MVP 互关家族模拟)
+      responses:
+        '200':
+          description: 好友家族榜
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FriendRankResponse'
+  /api/invite/info:
+    get:
+      operationId: getInviteInfo
+      summary: 邀请卡片信息(分享落地页,未登录可用)
+      parameters:
+        - name: inviteCode
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 邀请信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InviteInfo'
+  /api/calendar/convert:
+    post:
+      operationId: convertCalendar
+      summary: 公历农历日期换算(只计算不保存)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalendarConvertRequest'
+      responses:
+        '200':
+          description: 日期换算结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarConvertResponse'
+  /api/birthdays:
+    get:
+      operationId: getBirthdays
+      summary: 获取本人可见的家庭生日簿(按下一次生日由近到远)
+      responses:
+        '200':
+          description: 生日簿列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayListResponse'
+    post:
+      operationId: createBirthday
+      summary: 新增一条家人或亲友生日记录
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BirthdayUpsertRequest'
+      responses:
+        '200':
+          description: 已保存的生日记录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayRecord'
+  /api/birthdays/upcoming:
+    get:
+      operationId: getUpcomingBirthday
+      summary: 获取最近一位本人可见的生日(供我的家卡片使用)
+      responses:
+        '200':
+          description: 近期生日;没有记录时 upcoming 为 null
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpcomingBirthdayResponse'
+  /api/birthdays/{id}:
+    put:
+      operationId: updateBirthday
+      summary: 编辑一条生日记录(录入人或户主可编辑家庭共享记录)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BirthdayUpsertRequest'
+      responses:
+        '200':
+          description: 已更新的生日记录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayRecord'
+    delete:
+      operationId: deleteBirthday
+      summary: 删除生日记录及当前用户的关联提醒
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 删除结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteBirthdayResponse'
+  /api/birthdays/{id}/reminder:
+    put:
+      operationId: updateBirthdayReminder
+      summary: 设置当前用户的生日提醒时点(默认关闭)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BirthdayReminderRequest'
+      responses:
+        '200':
+          description: 当前用户的提醒设置
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayReminder'
+  /api/bagua/status:
+    get:
+      operationId: getBaguaStatus
+      summary: 家族八卦集福阵进度(8 卦,服务端推导,只读;无任何客户端写入接口)
+      responses:
+        '200':
+          description: 八卦阵进度
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaguaStatusResponse'
+  /api/bagua/celebrate:
+    post:
+      operationId: celebrateBaguaComplete
+      summary: 八卦圆满庆祝标记(一次性,幂等;前端圆满庆祝动效结束后调用)
+      responses:
+        '200':
+          description: 标记结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaguaCelebrateResponse'
+  /api/me/pendant:
+    post:
+      operationId: wearPendant
+      summary: 佩戴头像挂件(达标解锁制:解锁条件由服务端从既有数据校验,未达标返回 40900;不消耗福值)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PendantWearRequest'
+      responses:
+        '200':
+          description: 佩戴成功,返回当前佩戴
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PendantWearResponse'
+  /api/jieyou/quote:
+    get:
+      operationId: getJieyouQuote
+      summary: 解忧册当日宽心话(每人每日一翻,服务端幂等:同日重复请求返回同条;纯随机,不采集问题内容)
+      responses:
+        '200':
+          description: 当日宽心话
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JieyouQuoteResponse'
+  /api/notify/subscribe:
+    post:
+      operationId: registerNotifySubscription
+      summary: 登记订阅消息授权(抽卡成功后嵌入的正向时刻授权;拒绝不影响任何功能,静默降级)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotifySubscribeRequest'
+      responses:
+        '200':
+          description: 登记结果与剩余可发送额度
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotifySubscribeResponse'
+  /api/notify/status:
+    get:
+      operationId: getNotifyStatus
+      summary: 查询订阅授权状态与剩余额度(设置页「提醒」分组展示,频率透明)
+      responses:
+        '200':
+          description: 订阅状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotifyStatusResponse'
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          description: 微信登录凭证;开发态允许直接传 openid
+    LoginResponse:
+      type: object
+      required: [token, userId, nickname]
+      properties:
+        token:
+          type: string
+        userId:
+          type: integer
+        nickname:
+          type: string
+        avatarUrl:
+          type: string
+    CreateFamilyRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: 家族名,1-10 字
+    JoinFamilyRequest:
+      type: object
+      required: [inviteCode]
+      properties:
+        inviteCode:
+          type: string
+    TargetUserRequest:
+      type: object
+      required: [targetUserId]
+      properties:
+        targetUserId:
+          type: integer
+    PlateLevel:
+      type: string
+      enum: [NONE, BRONZE, SILVER, GOLD, JADE]
+      description: 门牌等级:无/勤俭之家(500)/和睦之家(2000)/满门福气(5000)/福泽满堂(20000),只升不降
+    FortuneLevel:
+      type: string
+      enum: [PINGAN, RUYI, HONGFU]
+      description: 福签等级:平安(70%)/如意(25%)/鸿福(5%),纯稀有度玩法,不影响福值
+    MemberStatus:
+      type: object
+      required: [userId, nickname, role, personalBless, streakDays, drawnToday]
+      properties:
+        userId:
+          type: integer
+        nickname:
+          type: string
+        avatarUrl:
+          type: string
+        remark:
+          type: string
+          description: 家庭称谓(儿子/孙子等),用户自选
+        role:
+          type: string
+          enum: [OWNER, MEMBER]
+        personalBless:
+          type: integer
+        streakDays:
+          type: integer
+          description: 连续接福天数
+        drawnToday:
+          type: boolean
+        pendant:
+          $ref: '#/components/schemas/Pendant'
+    Pendant:
+      type: string
+      description: 头像挂件(达标解锁制,不消耗福值;佩戴持久化于用户档案,家人可见);解锁条件:竹叶=默认/火焰=连续接福7天/灯笼=个人福值≥200/锦鲤=个人福值≥1000/八卦=点亮4卦/福包=八卦圆满
+      enum: [BAMBOO, FLAME, LANTERN, KOI, BAGUA, FUBAO]
+    PendantWearRequest:
+      type: object
+      required: [pendant]
+      properties:
+        pendant:
+          $ref: '#/components/schemas/Pendant'
+    PendantWearResponse:
+      type: object
+      required: [pendant]
+      properties:
+        pendant:
+          $ref: '#/components/schemas/Pendant'
+    FamilyDetail:
+      type: object
+      required: [notJoined]
+      properties:
+        notJoined:
+          type: boolean
+          description: true=当前用户未加入任何家族
+        familyId:
+          type: integer
+        familyName:
+          type: string
+        inviteCode:
+          type: string
+        totalBless:
+          type: integer
+          description: 家族福池累计值
+        plateLevel:
+          $ref: '#/components/schemas/PlateLevel'
+        nextPlateBless:
+          type: integer
+          description: 距下一级门牌还差的福值
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberStatus'
+    FortuneCard:
+      type: object
+      required: [familyId, date, level, yiItems, blessText, gua, cardTheme]
+      properties:
+        familyId:
+          type: integer
+        date:
+          type: string
+          description: 日期 yyyy-MM-dd
+        level:
+          $ref: '#/components/schemas/FortuneLevel'
+        yiItems:
+          type: array
+          items:
+            type: string
+          description: 今日宜 2-3 项,生活化正面建议,永不出现忌
+        blessText:
+          type: string
+          description: 祝福语,过合规词表
+        gua:
+          $ref: '#/components/schemas/Gua'
+        cardTheme:
+          type: string
+          description: 卦位对应卡面主题(乾=云鹤/兑=锦鲤/离=灯笼/震=春雷/巽=风铃/坎=锦鲤戏水/艮=山景/坤=花开);只影响卡面,不影响等级/概率/福值
+        festival:
+          type: string
+          nullable: true
+          maxLength: 16
+          description: 节日限定标记(如「新春」「中秋」),非节日日为 null
+    FortuneTodayResponse:
+      type: object
+      required: [card, drawn, shared, taskDone]
+      properties:
+        card:
+          $ref: '#/components/schemas/FortuneCard'
+        drawn:
+          type: boolean
+        shared:
+          type: boolean
+        taskDone:
+          type: boolean
+        personalBless:
+          type: integer
+    FortuneDrawResponse:
+      type: object
+      required: [card, personalBless, familyTotalBless]
+      properties:
+        card:
+          $ref: '#/components/schemas/FortuneCard'
+        personalBless:
+          type: integer
+        familyTotalBless:
+          type: integer
+        praiseText:
+          type: string
+          description: 抽签吉祥话(如:坚持第N天,越活越年轻)
+    BlessResult:
+      type: object
+      required: [amount, personalBless, familyTotalBless, plateLevel]
+      properties:
+        amount:
+          type: integer
+          description: 本次获得福值
+        personalBless:
+          type: integer
+        familyTotalBless:
+          type: integer
+        plateLevel:
+          $ref: '#/components/schemas/PlateLevel'
+    CuifuResult:
+      type: object
+      required: [sent, remainCount]
+      properties:
+        sent:
+          type: boolean
+        remainCount:
+          type: integer
+          description: 今日对该家人剩余催福次数(0-3)
+    FamilyRankItem:
+      type: object
+      required: [rank, userId, nickname, bless]
+      properties:
+        rank:
+          type: integer
+        userId:
+          type: integer
+        nickname:
+          type: string
+        bless:
+          type: integer
+          description: 本周攒福值
+        streakDays:
+          type: integer
+    FamilyRankResponse:
+      type: object
+      required: [weekStart, items]
+      properties:
+        weekStart:
+          type: string
+          description: 本周起始日期 yyyy-MM-dd
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/FamilyRankItem'
+    FriendRankItem:
+      type: object
+      required: [rank, familyId, familyName, bless, isMine]
+      properties:
+        rank:
+          type: integer
+        familyId:
+          type: integer
+        familyName:
+          type: string
+        bless:
+          type: integer
+        plateLevel:
+          $ref: '#/components/schemas/PlateLevel'
+        isMine:
+          type: boolean
+    FriendRankResponse:
+      type: object
+      required: [items, chaseText]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/FriendRankItem'
+        chaseText:
+          type: string
+          description: 追赶文案(如:就差60福值追上老李家,今天全家接福就能反超)
+    InviteInfo:
+      type: object
+      required: [familyName, familyId, memberCount, inviteText]
+      properties:
+        familyName:
+          type: string
+        familyId:
+          type: integer
+        memberCount:
+          type: integer
+        inviteText:
+          type: string
+          description: 邀请文案,如:王家庄邀请您一起接福气,全家福值榜见!
+    CalendarType:
+      type: string
+      enum: [SOLAR, LUNAR]
+      description: 日期口径：公历或农历
+    BirthdaySubjectType:
+      type: string
+      enum: [MEMBER, CONTACT]
+      description: MEMBER 为家族成员，CONTACT 为亲友
+    BirthdayVisibility:
+      type: string
+      enum: [PRIVATE, FAMILY]
+      description: PRIVATE 仅录入人可见，FAMILY 家人可见
+    CalendarConvertRequest:
+      type: object
+      required: [calendarType]
+      properties:
+        calendarType:
+          $ref: '#/components/schemas/CalendarType'
+        solarDate:
+          type: string
+          description: 完整公历日期 yyyy-MM-dd；只查不保存时使用，范围 1900-01-01 至当天
+        month:
+          type: integer
+          description: 按日期口径填写的生日月份；与 day 一起用于计算下一次日期
+        day:
+          type: integer
+          description: 按日期口径填写的生日日期；与 month 一起使用
+        isLeapMonth:
+          type: boolean
+          default: false
+          description: 仅农历有效，是否为闰月
+    CalendarConvertResponse:
+      type: object
+      required: [solarDate, lunarText, lunarMonth, lunarDay, isLeapMonth]
+      properties:
+        solarDate:
+          type: string
+          description: 对应或下一次的公历日期 yyyy-MM-dd
+        lunarText:
+          type: string
+          description: 农历显示文本，如农历八月十五
+        lunarMonth:
+          type: integer
+        lunarDay:
+          type: integer
+        isLeapMonth:
+          type: boolean
+    BirthdayUpsertRequest:
+      type: object
+      required: [subjectType, displayName, calendarType, month, day, isLeapMonth, visibility]
+      properties:
+        subjectType:
+          $ref: '#/components/schemas/BirthdaySubjectType'
+        subjectUserId:
+          type: integer
+          nullable: true
+          description: subjectType=MEMBER 时必填，且必须属于当前家族
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 12
+          description: 家人的称呼或亲友姓名
+        calendarType:
+          $ref: '#/components/schemas/CalendarType'
+        month:
+          type: integer
+        day:
+          type: integer
+        isLeapMonth:
+          type: boolean
+        visibility:
+          $ref: '#/components/schemas/BirthdayVisibility'
+    BirthdayReminderRequest:
+      type: object
+      required: [reminderDays]
+      properties:
+        reminderDays:
+          type: array
+          maxItems: 3
+          uniqueItems: true
+          items:
+            type: integer
+            enum: [7, 3, 0]
+          description: 提前天数，空数组表示关闭提醒
+    BirthdayReminder:
+      type: object
+      required: [birthdayId, reminderDays]
+      properties:
+        birthdayId:
+          type: integer
+        reminderDays:
+          type: array
+          items:
+            type: integer
+    BirthdayRecord:
+      type: object
+      required: [id, familyId, subjectType, displayName, calendarType, month, day, isLeapMonth, visibility, createdBy, nextBirthdayDate, nextBirthdayLunarText, reminderDays]
+      properties:
+        id:
+          type: integer
+        familyId:
+          type: integer
+        subjectType:
+          $ref: '#/components/schemas/BirthdaySubjectType'
+        subjectUserId:
+          type: integer
+          nullable: true
+        displayName:
+          type: string
+        calendarType:
+          $ref: '#/components/schemas/CalendarType'
+        month:
+          type: integer
+        day:
+          type: integer
+        isLeapMonth:
+          type: boolean
+        visibility:
+          $ref: '#/components/schemas/BirthdayVisibility'
+        createdBy:
+          type: integer
+        nextBirthdayDate:
+          type: string
+          description: 下一次生日对应公历日期 yyyy-MM-dd
+        nextBirthdayLunarText:
+          type: string
+          description: 下一次生日农历显示文本
+        daysUntil:
+          type: integer
+          description: 距下一次生日的天数
+        reminderDays:
+          type: array
+          items:
+            type: integer
+          description: 当前用户设置的提醒提前天数
+    BirthdayListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BirthdayRecord'
+    UpcomingBirthdayResponse:
+      type: object
+      required: [upcoming]
+      properties:
+        upcoming:
+          allOf:
+            - $ref: '#/components/schemas/BirthdayRecord'
+          nullable: true
+    DeleteBirthdayResponse:
+      type: object
+      required: [deleted]
+      properties:
+        deleted:
+          type: boolean
+    Gua:
+      type: string
+      description: 八卦卦位;家族+日期唯一确定,全家同卦,每日变化;只影响卡面主题
+      enum: [QIAN, DUI, LI, ZHEN, XUN, KAN, GEN, KUN]
+    FortuneTaskDoneRequest:
+      type: object
+      properties:
+        taskItem:
+          type: string
+          maxLength: 24
+          description: 完成的今日宜事项文本(须属于当日卡面 yiItems;用于八卦阵早睡/喝水/打电话类进度统计;缺省时兼容旧行为)
+    BaguaTrigramProgress:
+      type: object
+      required: [gua, lit, current, target, hint]
+      properties:
+        gua:
+          $ref: '#/components/schemas/Gua'
+        lit:
+          type: boolean
+          description: 是否已点亮;只涨不跌,永不熄灭
+        current:
+          type: integer
+          description: 当前进度(服务端从事件/任务数据推导,≥0)
+        target:
+          type: integer
+          description: 点亮阈值(>0)
+        hint:
+          type: string
+          maxLength: 24
+          description: 进度提示文案,过合规词表(禁卦象/卦运/吉位等)
+    BaguaStatusResponse:
+      type: object
+      required: [trigrams, litCount, complete]
+      properties:
+        trigrams:
+          type: array
+          description: 8 卦进度(固定顺序:乾兑离震巽坎艮坤)
+          items:
+            $ref: '#/components/schemas/BaguaTrigramProgress'
+        litCount:
+          type: integer
+          description: 已点亮卦数 0-8
+        complete:
+          type: boolean
+          description: 八卦圆满(8 卦全亮)
+        celebrated:
+          type: boolean
+          description: 圆满大阵图庆祝是否已触发(一次性,服务端标记防重复);未圆满时为 false
+    BaguaCelebrateResponse:
+      type: object
+      required: [celebrated]
+      properties:
+        celebrated:
+          type: boolean
+          description: true=本次标记成功或此前已标记(幂等)
+    JieyouQuoteType:
+      type: string
+      description: 宽心话三型:促成(推一把)/缓行(等一等)/放下(松一松)
+      enum: [CU_CHENG, HUAN_XING, FANG_XIA]
+    JieyouQuoteResponse:
+      type: object
+      required: [quoteId, type, text, pageNo]
+      properties:
+        quoteId:
+          type: integer
+        type:
+          $ref: '#/components/schemas/JieyouQuoteType'
+        text:
+          type: string
+          maxLength: 16
+          description: 宽心话正文,≤16 字,指向行动,禁吉凶与承诺结果词汇
+        pageNo:
+          type: integer
+          description: 册页码(1-120,前端展示用)
+    NotifySubscribeRequest:
+      type: object
+      required: [templateId, accepted]
+      properties:
+        templateId:
+          type: string
+          description: 订阅消息模板 ID(微信后台申请;开发期占位联调)
+        accepted:
+          type: boolean
+          description: 本次授权是否接受(拒绝也登记,用于频率透明展示)
+    NotifySubscribeResponse:
+      type: object
+      required: [registered, remainingQuotaToday]
+      properties:
+        registered:
+          type: boolean
+        remainingQuotaToday:
+          type: integer
+          description: 今日剩余可发送条数(频控≤4 条/人/天)
+    NotifyStatusResponse:
+      type: object
+      required: [subscribed, remainingQuotaToday, dailyLimit]
+      properties:
+        subscribed:
+          type: boolean
+          description: 是否存在有效授权额度
+        remainingQuotaToday:
+          type: integer
+        dailyLimit:
+          type: integer
+          description: 每日上限(4);设置页展示「您每天最多收到 4 条提醒,不会多打扰」

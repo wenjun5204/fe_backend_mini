@@ -1,0 +1,20 @@
+<view class="page-awards">
+  <view class="aw-summary">
+    <text class="aw-count">已得 {{earnedCount}} 张</text>
+    <text class="aw-tip">接着陪家人接福，奖状一张张攒起来</text>
+  </view>
+
+  <view class="aw-list">
+    <view wx:for="{{items}}" wx:key="name" class="aw-card {{item.earned ? '' : 'aw-pending'}}">
+      <view class="aw-emoji">{{item.earned ? item.emoji : '📌'}}</view>
+      <view class="aw-mid">
+        <view class="aw-name">{{item.name}}</view>
+        <view class="aw-desc">{{item.desc}}</view>
+        <view class="aw-progress">{{item.earned ? '已到手' : item.progress}}</view>
+      </view>
+      <view class="aw-stamp {{item.earned ? 'aw-stamp-on' : ''}}">{{item.earned ? '福' : '…'}}</view>
+    </view>
+  </view>
+
+  <button class="btn-main aw-back" bindtap="onBack">回我家看看</button>
+</view>

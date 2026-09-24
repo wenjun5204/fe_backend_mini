@@ -1,0 +1,177 @@
+<view class="page-card">
+
+  <!-- 加载中 -->
+  <view wx:if="{{pageState === 'loading'}}" class="loading-box">
+    <text class="loading-text">福气加载中…</text>
+  </view>
+
+  <!-- 网络失败:给重试入口,绝不能误显示「一键建家」造成重复建家 -->
+  <view wx:elif="{{pageState === 'loadFailed'}}" class="join-box">
+    <view class="join-title kaiti">福气堵在路上了</view>
+    <view class="join-sub">网络不太顺畅,您稍后再试试</view>
+    <view class="join-emoji">🏮</view>
+    <button class="btn-main join-btn" bindtap="onRetryLoad">重新加载</button>
+  </view>
+
+  <!-- 未加入家族:一键建家(零键盘输入) -->
+  <view wx:elif="{{pageState === 'notJoined'}}" class="join-box">
+    <view class="join-title kaiti">建一个您的「家」</view>
+    <view class="join-sub">全家人一起接福气、攒福值、上榜单</view>
+    <view class="join-emoji">🏮</view>
+    <button class="btn-main join-btn" bindtap="onCreateFamily">一键建家</button>
+    <view class="join-hint">家人分享卡片给您时,点开就能直接进家</view>
+  </view>
+
+  <!-- 福签主流程:转转盘 -->
+  <block wx:else>
+    <view class="top-bar">今天，<text class="top-family">{{familyName}}</text> 的福已送到</view>
+
+    <!-- 生日事件横幅:仅临近生日 ≤7 天或当天显示,点击直达生日簿 -->
+    <view wx:if="{{birthdayBanner}}" class="birthday-banner {{birthdayBanner.today ? 'today' : ''}}" bindtap="onBirthdayBanner">
+      <view class="bb-emoji">🎂</view>
+      <view class="bb-main">
+        <view class="bb-text kaiti">{{birthdayBanner.today ? '今天是' + birthdayBanner.name + '的生日' : birthdayBanner.name + '的生日快到了'}}</view>
+        <view class="bb-sub">{{birthdayBanner.today ? '去送一句祝福吧' : '还有 ' + birthdayBanner.daysUntil + ' 天'}}</view>
+      </view>
+      <view class="bb-go">查看 ›</view>
+    </view>
+
+    <!-- 转转盘 -->
+    <view class="dial-area">
+      <view
+        class="dial-zone {{spinning ? 'spinning' : ''}}"
+        bindtouchstart="onDialTouchStart"
+        bindtouchmove="onDialTouchMove"
+        bindtouchend="onDialTouchEnd"
+        bindtouchcancel="onDialTouchEnd"
+      >
+        <view class="dial-glow"></view>
+        <view class="dial" style="transform: rotate({{rotation}}deg)">
+          <view class="dial-inner"></view>
+          <view wx:for="{{sectors}}" wx:key="key" class="sector {{winnerIdx === index ? 'winner' : ''}}" style="{{item.style}}">
+            <view class="ring"></view>
+            <view class="s-char">{{item.char}}</view>
+            <view class="s-name">{{item.name}}</view>
+          </view>
+        </view>
+        <view class="pointer"></view>
+        <view class="hub" bindtap="onHubTap">
+          <view class="hub-fu kaiti">福</view>
+          <view class="hub-txt">转一转</view>
+        </view>
+        <view wx:for="{{floats}}" wx:key="id" class="float-txt" style="left: {{item.left}}%">{{item.char}}</view>
+      </view>
+
+      <view class="dial-hint">点一下转一下，<text class="hint-strong">连点越转越快</text>，手指拨也行</view>
+      <view class="tap-counter">今日已拨 <text class="tap-num">{{tapCount}}</text> 下</view>
+    </view>
+
+    <!-- 未接:大按钮兜底(适老化:不会拨也一定能接到) -->
+    <view wx:if="{{phase === 'idle'}}" class="draw-area">
+      <button class="btn-main draw-btn" bindtap="onBigDraw">接福气</button>
+      <view class="sub-hint">转够了停下手，福签自己翻出来</view>
+    </view>
+
+    <!-- 抽取中 -->
+    <view wx:elif="{{phase === 'shaking'}}" class="draw-area">
+      <button class="btn-main draw-btn disabled" disabled>福气停驻中…</button>
+    </view>
+
+    <!-- 已接:完成态 -->
+    <view wx:else class="done-area">
+      <view class="done-emoji">{{themeEmoji}}</view>
+      <view class="done-text">今日福签已接好</view>
+      <view class="done-gua">{{guaName}}福位 · {{themeName}} · {{levelName}}卡</view>
+      <view wx:if="{{praiseText}}" class="done-praise">{{praiseText}}</view>
+      <view class="done-bless">我的福值 {{personalBless}}</view>
+
+      <view class="todo-box">
+        <view wx:if="{{!taskDone && card && card.yiItems && card.yiItems.length}}" class="todo-title">今天做了哪件？点一下记上</view>
+        <view wx:if="{{!taskDone && card && card.yiItems && card.yiItems.length}}" class="todo-items">
+          <button
+            wx:for="{{card.yiItems}}"
+            wx:key="*this"
+            class="mini-btn mini-gold todo-item"
+            data-item="{{item}}"
+            bindtap="onTaskDone"
+          >{{item}} +15</button>
+        </view>
+        <view wx:if="{{taskDone && shared}}" class="todo-all">今天的福气都接满啦，明早 7:30 再来 🎉</view>
+        <view wx:if="{{!shared}}" class="todo-row">
+          <text class="todo-text">把福气带给家人</text>
+          <button class="mini-btn mini-red" open-type="share" bindtap="onShareTap">转给家人 +10</button>
+        </view>
+      </view>
+
+      <!-- 再看一眼今日福签(点击才弹出,不再自动弹层) -->
+      <button class="btn-sub review-btn" bindtap="onReviewCard">再看一眼福签</button>
+
+      <!-- 完成态弱入口：为家人记一位生日(米黄底弱化,不与主流程争注意力) -->
+      <button class="btn-sub add-birthday-btn" bindtap="onAddBirthday">＋ 记一位家人的生日</button>
+    </view>
+
+    <!-- 功能入口条:集福阵 / 生日簿 -->
+    <view class="entry-chips">
+      <view class="entry-chip" bindtap="onGoBagua">
+        <view class="ec-ico">🕊️</view>
+        <view class="ec-name">集福阵</view>
+        <view class="ec-sub">{{baguaLitText || '进去看看'}}</view>
+      </view>
+      <view class="entry-chip" bindtap="onBirthdayBanner">
+        <view class="ec-ico">🎂</view>
+        <view class="ec-name">生日簿</view>
+        <view class="ec-sub">{{birthdayChipText}}</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 福签结果弹层:3D 翻签 + 主题卡面 + 订阅勾选(限高 + 内部可滚动,小屏不超出屏幕) -->
+  <view wx:if="{{showCard && card}}" class="card-mask" bindtap="closeCard">
+    <view class="card-scene" catchtap="">
+      <scroll-view
+        class="fcard {{animEnabled ? 'anim' : 'no-anim'}} {{themeClass}}"
+        scroll-y
+        enhanced
+        show-scrollbar="{{false}}"
+      >
+        <view class="f-level-row">
+          <view class="f-level {{card.level === 'HONGFU' ? 'lv-hongfu' : card.level === 'RUYI' ? 'lv-ruyi' : 'lv-pingan'}}">{{levelName}}卡</view>
+          <view class="f-gua">今日福位 · <text class="f-gua-strong">{{guaName}}福位</text></view>
+        </view>
+        <view class="f-theme-emoji">{{themeEmoji}}</view>
+        <view class="f-theme kaiti">{{themeName}}</view>
+        <view wx:if="{{card.festival}}" class="f-festival">{{card.festival}} · 限定福签</view>
+        <view class="f-family">{{familyName}} · 全家同卡</view>
+        <view class="yi-box">
+          <view class="yi-title">今 日 宜</view>
+          <view class="yi-items">
+            <block wx:if="{{!taskDone}}">
+              <button
+                wx:for="{{card.yiItems}}"
+                wx:key="*this"
+                class="yi-item"
+                data-item="{{item}}"
+                bindtap="onTaskDone"
+              >{{item}}</button>
+            </block>
+            <block wx:else>
+              <view wx:for="{{card.yiItems}}" wx:key="*this" class="yi-item yi-item-done">{{item}}</view>
+            </block>
+          </view>
+          <view wx:if="{{!taskDone}}" class="yi-hint">今天做了哪件？点一下记上</view>
+        </view>
+        <view class="f-bless">{{card.blessText}}</view>
+        <view class="f-btn-row">
+          <button class="f-btn f-btn-main" open-type="share" bindtap="onShareTap" disabled="{{shared}}">
+            {{shared ? '已带给家人' : '转给家人 +10'}}
+          </button>
+        </view>
+        <view class="notify-row" catchtap="onToggleNotify">
+          <view class="notify-check {{notifyChecked ? 'on' : ''}}">✓</view>
+          <text class="notify-text">明天提醒我来接福</text>
+        </view>
+        <view class="f-close" catchtap="closeCard">先不转发</view>
+      </scroll-view>
+    </view>
+  </view>
+</view>

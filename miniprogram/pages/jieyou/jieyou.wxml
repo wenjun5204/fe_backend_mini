@@ -1,0 +1,75 @@
+<view class="page-jieyou">
+
+  <!-- 顶部提示 -->
+  <view class="book-tip">心里想着那件<text class="tip-strong">拿不准的事</text></view>
+  <view class="book-tip-sub">按住封面，想好了再松手</view>
+
+  <!-- 书舞台:封面 → 3D 翻页 → 内页 -->
+  <view class="book-stage {{pressing ? 'pressing' : ''}} {{opened ? 'opened' : ''}}">
+    <view class="book-glow"></view>
+
+    <view class="book">
+      <!-- 内页 -->
+      <view class="book-inner">
+        <view class="bp-quote kaiti">{{quote ? '「' + quote.text + '」' : ''}}</view>
+        <view wx:if="{{quote}}" class="bp-type {{quote.typeClass}}">{{quote.typeLabel}}</view>
+        <view wx:if="{{quote}}" class="bp-page-no">解忧册 · 第 {{quote.pageNo}} 页</view>
+        <view class="bp-disclaimer">本册只宽心，只陪您拿主意</view>
+      </view>
+
+      <!-- 封面(竖排烫金书名) -->
+      <view class="book-cover {{opened ? 'opening' : ''}}"
+        bindtouchstart="onCoverTouchStart"
+        bindtouchend="onCoverTouchEnd"
+        bindtouchcancel="onCoverTouchEnd"
+      >
+        <view class="bc-spine"></view>
+        <view class="bc-title kaiti">
+          <text class="bc-char">解</text>
+          <text class="bc-char">忧</text>
+          <text class="bc-char">册</text>
+        </view>
+        <view class="bc-sub">家藏一册 · 遇事翻翻</view>
+        <view class="bc-press-hint">{{pressHint}}</view>
+      </view>
+
+      <!-- 「定」印章 -->
+      <view wx:if="{{stamped}}" class="seal kaiti">定</view>
+    </view>
+  </view>
+
+  <!-- 内页按钮 -->
+  <view class="book-actions {{opened && !stamped ? 'show' : ''}}">
+    <button class="btn-main ba-main" bindtap="onDecide">就这么定了</button>
+    <button class="btn-sub ba-share" open-type="share">发给家人问问</button>
+  </view>
+
+  <!-- 盖章后:收进册子的记忆 -->
+  <view class="book-actions {{stamped ? 'show' : ''}}">
+    <button class="btn-sub ba-save {{saved ? 'saved' : ''}}" bindtap="onSaveMemory">
+      {{saved ? '已收进册子' : '收进册子的记忆'}}
+    </button>
+  </view>
+
+  <view class="book-hint">当日翻过一次，就要认一次——明天再来翻</view>
+
+  <!-- 册子的记忆:只存本机,最近 3 条,绝不上报 -->
+  <view wx:if="{{memories.length}}" class="book-records">
+    <view class="rec-head">
+      <text class="rec-title">册子的记忆</text>
+      <text wx:if="{{doneCount > 0}}" class="rec-count">成了 {{doneCount}} 件</text>
+    </view>
+    <view class="rec-note">只留最近三条，翻过就翻篇</view>
+    <view wx:for="{{memories}}" wx:key="dateKey" class="rec-item">
+      <view class="rec-main">
+        <view class="rec-quote kaiti">{{item.text}}</view>
+        <view class="rec-meta">
+          <text class="rec-type">{{item.typeLabel}}</text>
+          <text class="rec-date">{{item.dateText}}</text>
+        </view>
+      </view>
+      <view wx:if="{{item.done}}" class="rec-done-seal kaiti">成了</view>
+      <view wx:else class="rec-done-btn" data-quoteid="{{item.quoteId}}" data-datekey="{{item.dateKey}}" bindtap="onMarkDone">办成了</view>
+    </view>
+  </view>
+</view>
