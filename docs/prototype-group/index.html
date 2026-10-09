@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>咦投票 · 交互原型 v0.6（PRD v1.4：AA 砍除，三凑链路）</title>
+<style>
+  /* ============ 设计令牌：「群主的白板」 ============ */
+  :root{
+    --board:#FBFBF7;        /* 板面白：整个产品的纸感底色 */
+    --ink:#20242B;          /* 墨黑：正文与正字笔画 */
+    --marker:#2B59E0;       /* 记号蓝：主操作 */
+    --marker-deep:#1E41AD;
+    --highlight:#FFE14D;   /* 荧光黄：点亮时段 / 进度 */
+    --highlight-soft:#FFF3B0;
+    --red-mark:#E5484D;     /* 红笔：催缴、盖章、未付 */
+    --gray-mark:#8A9199;    /* 铅笔灰：次要信息 */
+    --pencil:#E4E4DC;       /* 铅笔线：分隔与描边 */
+    --card:#FFFFFF;
+    --radius:14px;
+    --font-ui:-apple-system,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+    --font-hand:'Kaiti SC','STKaiti','KaiTi',var(--font-ui); /* 楷体：签名元素专用 */
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:var(--font-ui);
+    background:
+      linear-gradient(0deg, rgba(228,228,220,.35) 1px, transparent 1px) 0 0/100% 32px, /* 横格纸纹理 */
+      var(--board);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;gap:48px;justify-content:center;align-items:flex-start;
+    padding:40px 24px;flex-wrap:wrap;
+  }
+  /* ============ 左侧：设计说明 ============ */
+  .notes{max-width:380px;flex:1 1 340px;position:sticky;top:40px}
+  .notes h1{font-size:22px;letter-spacing:1px;margin-bottom:6px}
+  .notes .sub{color:var(--gray-mark);font-size:13px;margin-bottom:26px}
+  .noteBlock{background:var(--card);border:1.5px solid var(--pencil);border-radius:var(--radius);padding:16px 18px;margin-bottom:14px}
+  .noteBlock h3{font-size:13px;letter-spacing:2px;color:var(--gray-mark);margin-bottom:10px;font-weight:600}
+  .swatches{display:flex;gap:8px;flex-wrap:wrap}
+  .sw{width:64px;font-size:11px;color:#fff;text-align:center;border-radius:8px;padding:14px 0 6px}
+  .sw small{display:block;font-size:9px;opacity:.85;font-family:monospace}
+  .dir p{font-size:13.5px;line-height:1.75}
+  .dir b{color:var(--marker-deep)}
+  .try li{font-size:13.5px;line-height:1.9;list-style:none;padding-left:26px;position:relative}
+  .try li::before{content:'✓';position:absolute;left:2px;color:var(--marker);font-weight:700}
+  /* 群聊卡片预览（随演示实时更新） */
+  .chat .bubble{background:#F2F2EE;border-radius:2px 10px 10px 10px;padding:8px 12px;font-size:13px;display:inline-block;margin-bottom:10px}
+  .sharecard{background:var(--card);border:1.5px solid var(--pencil);border-left:4px solid var(--marker);border-radius:10px;padding:12px 14px}
+  .sharecard .t{font-size:14px;font-weight:600;margin-bottom:4px}
+  .sharecard .m{font-size:12px;color:var(--gray-mark)}
+  .sharecard .m b{color:var(--red-mark);font-size:15px}
+  .sharecard .go{font-size:11px;color:var(--gray-mark);border-top:1px dashed var(--pencil);margin-top:8px;padding-top:6px}
+  .stampNote{font-size:11px;color:var(--gray-mark);margin-top:14px;line-height:1.7;border-top:1px dashed var(--pencil);padding-top:10px}
+  /* ============ 手机 ============ */
+  .stage{flex:0 0 auto}
+  .phone{
+    width:375px;height:812px;background:#fff;border-radius:48px;border:3px solid #D8D8CF;
+    box-shadow:0 24px 60px rgba(32,36,43,.14), 0 2px 0 #fff inset;
+    position:relative;overflow:hidden;display:flex;flex-direction:column;
+    background:var(--board);
+  }
+  .statusbar{height:48px;display:flex;justify-content:space-between;align-items:center;padding:0 26px 0 32px;font-size:14px;font-weight:600;flex:0 0 auto}
+  .capsule{position:absolute;top:12px;right:14px;width:84px;height:32px;background:rgba(0,0,0,.08);border-radius:16px;display:flex;align-items:center;justify-content:center;gap:4px;z-index:50}
+  .capsule i{width:7px;height:7px;background:rgba(0,0,0,.35);border-radius:50%}
+  .capsule i:first-child{width:6px;height:6px}
+  /* 屏幕区 */
+  .viewport{flex:1;position:relative;overflow:hidden}
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;overflow-y:auto;overscroll-behavior:contain}
+  .screen.on{display:flex}
+  .pageHead{padding:20px 20px 4px;display:flex;align-items:center;gap:10px}
+  .pageHead .back{font-size:20px;color:var(--ink);padding:2px 8px 2px 0}
+  .pageHead .title{font-size:17px;font-weight:700;flex:1}
+  .body{padding:10px 20px 120px;flex:1}
+  /* 底部演示导航（非产品 UI） */
+  /* ============ 个人条 & 菜单行 ============ */
+  .meStrip{display:flex;align-items:center;gap:11px;background:var(--card);border:1.5px solid var(--pencil);border-radius:14px;padding:10px 13px;margin:4px 20px 4px;cursor:pointer}
+  .gmItem{display:flex;align-items:center;gap:11px;background:var(--card);border:1.5px solid var(--pencil);border-radius:14px;padding:13px 14px;margin:0 20px 9px;cursor:pointer}
+  .gmItem:active{transform:scale(.985)}
+  .gmItem b{display:block;font-size:14.5px;font-weight:700}
+  .gmItem i{display:block;font-style:normal;font-size:11px;color:var(--gray-mark);margin-top:2px}
+  .gmItem .gmIco{font-size:20px;flex:0 0 auto}
+  .gmItem .gmGo{color:var(--gray-mark);font-size:15px;flex:0 0 auto}
+
+  /* ============ 底部 tabBar（产品 UI）============ */
+  .tabBar{
+    flex:0 0 auto;display:flex;align-items:flex-end;
+    border-top:1.5px solid var(--pencil);background:#fff;
+    padding:6px 8px calc(14px + env(safe-area-inset-bottom));
+  }
+  .tabItem{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+    border:none;background:none;cursor:pointer;padding:5px 0 3px;position:relative;
+    font-family:var(--font-ui);color:var(--gray-mark)
+  }
+  .tabItem svg{width:24px;height:24px;stroke:var(--gray-mark);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .tabItem span{font-size:10.5px;letter-spacing:1px}
+  .tabItem.active{color:var(--marker)}
+  .tabItem.active svg{stroke:var(--marker)}
+  .tabItem .reddot{position:absolute;top:2px;right:calc(50% - 16px);width:7px;height:7px;border-radius:50%;background:var(--red-mark)}
+  .tabItem.center{color:#fff}
+  .tabItem.center svg{stroke:#fff}
+  .tabFab{
+    width:46px;height:46px;border-radius:50%;background:var(--marker);margin-top:-24px;
+    display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+    box-shadow:0 6px 14px rgba(43,89,224,.35);border:3px solid #fff;
+    transition:transform .12s;cursor:pointer
+  }
+  .tabFab:active{transform:scale(.92)}
+  .tabFab svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round}
+  .demoHint{font-size:10px;color:var(--gray-mark);width:100%;text-align:center;margin-top:6px;letter-spacing:1px}
+  /* ============ 通用组件 ============ */
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    border-radius:14px;font-size:17px;font-weight:600;border:none;cursor:pointer;
+    padding:16px 20px;width:100%;font-family:var(--font-ui);
+    transition:transform .12s,box-shadow .12s;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn-primary{background:var(--marker);color:#fff;box-shadow:0 6px 16px rgba(43,89,224,.28)}
+  .btn-ghost{background:#fff;color:var(--marker);border:1.5px solid var(--marker)}
+  .btn[disabled]{background:var(--pencil);color:#fff;box-shadow:none;cursor:default}
+  .demoChip{
+    display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--gray-mark);
+    border:1.5px dashed var(--gray-mark);border-radius:20px;padding:4px 10px;background:none;cursor:pointer;font-family:var(--font-ui)
+  }
+  .orgRow{
+    margin:14px 2px 0;font-size:12.5px;color:var(--gray-mark);border:1.5px dashed var(--pencil);
+    border-radius:10px;padding:11px 13px;cursor:pointer;background:rgba(255,255,255,.65);transition:.15s
+  }
+  .orgRow:active{transform:scale(.98)}
+  .orgRow b{color:var(--marker);font-weight:700}
+  .roleTabs{display:flex;gap:0;border:1.5px solid var(--pencil);border-radius:10px;overflow:hidden;margin:0 0 12px}
+  .roleTabs button{flex:1;padding:8px 0;border:none;background:#fff;font-size:12.5px;color:var(--gray-mark);cursor:pointer;font-family:var(--font-ui)}
+  .roleTabs button.active{background:var(--ink);color:#fff;font-weight:600}
+  .toast{
+    position:absolute;bottom:120px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:rgba(32,36,43,.92);color:#fff;font-size:13px;border-radius:10px;padding:10px 18px;
+    opacity:0;pointer-events:none;transition:.25s;z-index:99;white-space:nowrap;max-width:320px;white-space:normal;text-align:center
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* 头像 */
+  .av{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex:0 0 auto}
+  .avcolors{background:#E9EDF8;color:#2B59E0}
+  .avcolors:nth-of-type(3n){background:#FBEDE0;color:#B0552A}
+  .avcolors:nth-of-type(3n+1){background:#E4F3E8;color:#2E7D43}
+  .avcolors:nth-of-type(4n){background:#F3EAF6;color:#7B3FA0}
+  /* ============ 首页 ============ */
+  .heroCta{
+    background:var(--marker);border-radius:20px;padding:22px 22px 20px;cursor:pointer;
+    display:flex;align-items:center;gap:16px;color:#fff;position:relative;overflow:hidden;
+    box-shadow:0 10px 24px rgba(43,89,224,.30);transition:transform .12s
+  }
+  .heroCta:active{transform:scale(.98)}
+  .heroCta::after{ /* 白板角落的荧光笔斜杠，打破纯色块的呆板 */
+    content:'';position:absolute;right:-14px;top:-14px;width:74px;height:74px;
+    background:var(--highlight);transform:rotate(45deg);opacity:.25;border-radius:12px
+  }
+  .heroIco{font-size:34px;flex:0 0 auto;filter:drop-shadow(0 2px 4px rgba(0,0,0,.15))}
+  .heroTx{flex:1}
+  .heroTt{font-size:22px;font-weight:800;letter-spacing:2px}
+  .heroDd{font-size:12.5px;opacity:.85;margin-top:4px}
+  .heroGo{font-size:26px;opacity:.9;flex:0 0 auto}
+  .brand{padding:28px 24px 8px}
+  .brand .name{font-size:32px;font-weight:800;letter-spacing:3px}
+  .brand .name span{color:var(--marker)}
+  .brand .slogan{font-family:var(--font-hand);font-size:15px;color:var(--gray-mark);margin-top:6px;letter-spacing:2px}
+  .heroWrap{padding:16px 20px 6px}
+  .entry{
+    background:var(--card);border:1.5px solid var(--pencil);border-radius:18px;padding:20px 20px 18px;cursor:pointer;
+    display:flex;align-items:center;gap:16px;transition:transform .12s;position:relative
+  }
+  .entry:active{transform:scale(.98)}
+  .entry .ico{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;flex:0 0 auto}
+  .entry .tt{font-size:19px;font-weight:700}
+  .entry .dd{font-size:12px;color:var(--gray-mark);margin-top:3px}
+  .entry .arrow{position:absolute;right:18px;font-size:14px;color:var(--gray-mark)}
+  .entry.p1{opacity:.55}
+  .tagP1{font-size:10px;background:var(--pencil);color:var(--gray-mark);border-radius:6px;padding:2px 6px;margin-left:6px;font-weight:400}
+  .listHead{padding:20px 22px 8px;font-size:13px;color:var(--gray-mark);letter-spacing:2px;font-weight:600;display:flex;align-items:baseline;gap:8px}
+  .listHead .sub{font-size:10.5px;letter-spacing:1px;font-weight:400}
+  .actCard{margin:0 20px 10px;background:var(--card);border:1.5px solid var(--pencil);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer}
+  .actCard .dot{width:8px;height:8px;border-radius:50%;background:var(--red-mark);flex:0 0 auto}
+  .actCard .dotBlue{background:var(--marker)}
+  .actCard .tt{font-size:15px;font-weight:600;flex:1}
+  .actCard .st{font-size:12px;color:var(--gray-mark)}
+  /* ============ 发起（创建投票） ============ */
+  .fieldLabel{font-size:13px;color:var(--gray-mark);margin:18px 0 8px;font-weight:600;letter-spacing:1px}
+  .fieldLabel b{color:var(--red-mark)}
+  input.title{
+    width:100%;border:1.5px solid var(--pencil);border-radius:12px;padding:14px;font-size:16px;
+    font-family:var(--font-ui);background:#fff;color:var(--ink)
+  }
+  input.title:focus{outline:none;border-color:var(--marker)}
+  .slotGrid{display:flex;flex-wrap:wrap;gap:8px}
+  .slotChip{
+    border:1.5px solid var(--pencil);background:#fff;border-radius:10px;padding:9px 14px;font-size:14px;cursor:pointer;
+    transition:.15s;color:var(--ink)
+  }
+  .slotChip.sel{background:var(--highlight-soft);border-color:var(--marker);box-shadow:inset 0 0 0 1px var(--marker)}
+  .tipRow{font-size:11.5px;color:var(--gray-mark);margin-top:8px;line-height:1.6}
+  .bottomBar{position:sticky;bottom:0;margin-top:auto;padding:14px 20px 8px;background:linear-gradient(transparent,var(--board) 30%)}
+  /* ============ 投票详情：生死页 ============ */
+  .voteTitle{font-size:21px;font-weight:800;line-height:1.4;padding:2px 0 6px}
+  .ownerChip{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--gray-mark);margin:2px 0 14px}
+  .summaryBar{
+    background:var(--card);border:1.5px solid var(--pencil);border-radius:12px;padding:11px 14px;
+    font-size:13px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px
+  }
+  .summaryBar b{color:var(--marker-deep)}
+  .summaryBar .lead{color:var(--ink);font-weight:600}
+  /* 时段行 */
+  .slotRow{
+    background:var(--card);border:1.5px solid var(--pencil);border-radius:14px;padding:13px 14px;margin-bottom:10px;
+    cursor:pointer;position:relative;transition:border-color .15s, background .15s, box-shadow .15s;
+  }
+  .slotRow.top{box-shadow:0 0 0 2px var(--marker), 0 6px 14px rgba(43,89,224,.15)}
+  .slotRow.mine{background:var(--highlight-soft);border-color:var(--marker)}
+  .slotRow.lockDim{opacity:.55}
+  .slotRow .rowTop{display:flex;align-items:center;gap:10px}
+  .slotRow .day{font-size:16px;font-weight:700;flex:0 0 auto}
+  .tally{display:flex;align-items:center;gap:2px;flex:1;min-width:0;flex-wrap:wrap}
+  .zheng{width:17px;height:17px;flex:0 0 auto}
+  .zheng line{stroke:var(--ink);stroke-width:2.6;stroke-linecap:round}
+  .zheng.fresh line{stroke-dasharray:32;stroke-dashoffset:32;animation:draw .35s ease forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .cnt{font-size:13px;color:var(--gray-mark);font-weight:600;flex:0 0 auto}
+  .bestTag{
+    position:absolute;top:-10px;right:12px;background:var(--highlight);border:1.5px solid var(--ink);border-radius:6px;
+    font-size:10.5px;font-weight:700;padding:2.5px 8px;transform:rotate(2deg);font-family:var(--font-hand)
+  }
+  .roster{display:flex;align-items:center;gap:4px;margin-top:9px;padding-left:2px}
+  .roster .av{width:22px;height:22px;font-size:10.5px}
+  .roster .more{font-size:11px;color:var(--gray-mark);margin-left:2px}
+  .pickHint{font-size:10px;color:var(--marker);position:absolute;top:12px;right:12px;opacity:0;transition:.15s}
+  .slotRow.mine .pickHint{opacity:1}
+  /* 组织者定档小按钮 */
+  .lockBtn{
+    font-size:12px;color:#fff;background:var(--marker);border:none;border-radius:8px;padding:5px 10px;cursor:pointer;flex:0 0 auto;font-family:var(--font-ui)
+  }
+  /* 我的票已选条 */
+  .myBar{display:none;align-items:center;gap:8px;font-size:12.5px;color:var(--ink);margin:2px 0 10px;padding:0 4px}
+  .myBar.show{display:flex}
+  .myBar .dot{width:9px;height:9px;background:var(--highlight);border:1.5px solid var(--ink);border-radius:2px;transform:rotate(4deg)}
+  /* 定档后到场名单 */
+  .rosterPanel{display:none;background:var(--card);border:1.5px solid var(--pencil);border-radius:16px;padding:16px;margin-top:16px}
+  .rosterPanel.show{display:block}
+  .rosterPanel h4{font-size:14px;margin-bottom:10px;font-weight:700}
+  .rosterPanel h4 b{color:var(--marker-deep)}
+  .rosterPanel .people{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .rosterPanel .person{display:flex;align-items:center;gap:6px;font-size:13px;background:var(--board);border:1px solid var(--pencil);border-radius:20px;padding:4px 10px 4px 4px}
+  /* 盖章动画 */
+  .stampWrap{position:absolute;inset:0;background:rgba(251,251,247,.55);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:80}
+  .stampWrap.on{display:flex}
+  .seal{
+    width:110px;height:110px;border:4px solid var(--red-mark);border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-hand);font-size:52px;font-weight:700;color:var(--red-mark);
+    transform:rotate(-14deg);animation:slam .5s cubic-bezier(.2,1.5,.4,1);box-shadow:0 0 0 1.5px rgba(229,72,77,.25) inset
+  }
+  @keyframes slam{0%{transform:scale(2.6) rotate(-32deg);opacity:0}70%{transform:scale(.92) rotate(-12deg);opacity:1}100%{transform:scale(1) rotate(-14deg)}}
+  .sealCap{font-size:14px;font-weight:700;animation:fadeUp .4s .25s both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+  /* ============ 群日历（v1.3 预览）============ */
+  /* ============ 群日历（v1.3 预览）：月视图 ============ */
+  .calGrid{background:var(--card);border:1.5px solid var(--pencil);border-radius:16px;padding:12px 10px 8px;margin-bottom:14px}
+  .calHead{display:flex;justify-content:space-between;align-items:center;padding:0 4px 10px}
+  .calHead b{font-family:var(--font-hand);font-size:16px}
+  .calHead button{border:1.5px solid var(--pencil);background:var(--board);border-radius:8px;width:30px;height:26px;font-size:13px;cursor:pointer;color:var(--ink);font-family:var(--font-ui)}
+  .calWeek{display:grid;grid-template-columns:repeat(7,1fr);font-size:10px;color:var(--gray-mark);text-align:center;padding-bottom:5px;letter-spacing:1px}
+  .calDays{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .cell{
+    aspect-ratio:1;border-radius:9px;position:relative;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;font-size:12.5px;cursor:pointer;transition:.12s
+  }
+  .cell.dim{color:#C9C9C0}
+  .cell.today{border:1.5px solid var(--marker)}
+  .cell.hasEv{background:var(--highlight-soft);font-weight:700}
+  .cell.hasEv:active{transform:scale(.92)}
+  .cell.sel{outline:2px solid var(--marker);outline-offset:1px}
+  .dot{position:absolute;bottom:4px;display:flex;gap:2px}
+  .dot i{width:4px;height:4px;border-radius:50%;background:var(--marker)}
+  .dot i.gold{background:var(--ink);width:7px;height:7px;border-radius:2px;transform:rotate(45deg);margin-top:-1px}
+  .dot i.red{background:var(--red-mark)}
+  .dot i.green{background:#2E7D43}
+  .cell.hasEv .dNum{margin-top:-3px}
+  .calEmpty{font-size:11px;color:var(--gray-mark);text-align:center;padding:6px 0 2px}
+  .monthRow{display:flex;align-items:baseline;gap:8px;padding:14px 4px 8px;font-family:var(--font-hand)}
+  .monthRow b{font-size:17px;font-weight:700}
+  .monthRow span{font-size:11px;color:var(--gray-mark)}
+  .evCard{
+    background:var(--card);border:1.5px solid var(--pencil);border-radius:14px;padding:13px 15px;margin-bottom:10px;
+    display:flex;gap:13px;align-items:center;cursor:pointer;position:relative
+  }
+  .evCard:active{transform:scale(.98)}
+  .evDate{
+    width:46px;height:50px;border:1.5px solid var(--ink);border-radius:10px;flex:0 0 auto;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--highlight-soft);transform:rotate(-2deg)
+  }
+  .evDate b{font-size:19px;font-weight:800;line-height:1}
+  .evDate span{font-size:9.5px;color:var(--gray-mark);margin-top:2px;letter-spacing:1px}
+  .evCard .evInfo{flex:1;min-width:0}
+  .evCard .evName{font-size:15px;font-weight:700}
+  .evCard .evMeta{font-size:11.5px;color:var(--gray-mark);margin-top:3px}
+  .evCard .evChain{display:flex;gap:3px;margin-top:6px}
+  .chainBadge{font-size:9.5px;border-radius:5px;padding:2px 6px;border:1px solid var(--pencil);color:var(--gray-mark);background:var(--board)}
+  .chainBadge.hit{border-color:var(--marker);color:var(--marker);background:#E8F0FF}
+  .evCard .evStat{font-size:11px;font-weight:700;flex:0 0 auto}
+  .doneBtn{font-size:12px;font-weight:600;border:1.5px solid var(--pencil);color:var(--gray-mark);background:#fff;border-radius:9px;padding:6px 12px;cursor:pointer;font-family:var(--font-ui);flex:0 0 auto}
+  .doneBtn.mine{border-color:var(--marker);color:var(--marker)}
+  .checkMark{
+    width:26px;height:26px;border:2px solid var(--gray-mark);border-radius:7px;display:flex;align-items:center;justify-content:center;
+    font-size:16px;color:#fff;flex:0 0 auto;transition:.2s
+  }
+  .checkMark.on{background:var(--ink);border-color:var(--ink);transform:rotate(-6deg)}
+  /* ============ 响应式 & 可访问性 ============ */
+  @media (max-width:860px){.notes{position:static;width:100%}}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}
+  }
+  .viewport button:focus-visible,.slotRow:focus-visible{outline:3px solid var(--highlight);outline-offset:2px}
+</style>
+</head>
+<body>
+
+<!-- ================= 左侧设计说明 ================= -->
+<aside class="notes">
+  <h1>咦投票（AI 群助手）· 交互原型</h1>
+  <div class="sub">v0.6 · PRD v1.4 · 三凑链路：凑时间 → 凑人头 → 凑分工 → 沉淀 · 2026-09-24</div>
+
+  <div class="noteBlock dir">
+    <h3>产品叙事 · 四凑链路</h3>
+    <p><b>凑时间</b>（投票·MVP）→ <b>凑人头</b>（收集填表·v1.1 预览页已做进原型）→ <b>凑分工</b>（群待办·v1.2）→ <b>沉淀</b>（群日历·v1.3，个人主体可做）。每个环节的产出是下一环节的输入：投票定档名单 = 后续协作的人员底册。<br><b>AA 记账已彻底砍除（D5）</b>：收钱交给微信官方「群收款」，本产品不碰资金。<br><b>心理引擎</b>：组织者面子（定档卡署名+盖章）· 搭把手（全点选+「我来」）· 围观（数字会动的卡片）；催办话术全走<b>召唤语气</b>，不走质问（「这场还缺个人搭把手」而非「还差你的那份」）。<br>AI 高情商回复已移出（决策 D4：官方类目政策，个人主体不可上线 AI 生成服务），迁企业主体后回归。</p>
+  </div>
+
+  <div class="noteBlock dir">
+    <h3>设计方向 · 群主的白板</h3>
+    <p>组织一群人的工具就该长得像组织者的家伙什儿：<b>记号笔</b>写主操作，<b>荧光笔</b>点亮"我有空"的时段，票数用<b>正字计数</b>（一人一画、五个一正），最后<b>盖章定档</b>——白板上的事，落章才算数。</p>
+  </div>
+
+  <div class="noteBlock">
+    <h3>色板</h3>
+    <div class="swatches">
+      <div class="sw" style="background:#FBFBF7;color:#8A9199">板面白<small>#FBFBF7</small></div>
+      <div class="sw" style="background:#20242B">墨黑<small>#20242B</small></div>
+      <div class="sw" style="background:#2B59E0">记号蓝<small>#2B59E0</small></div>
+      <div class="sw" style="background:#FFE14D;color:#8A6D00">荧光黄<small>#FFE14D</small></div>
+      <div class="sw" style="background:#E5484D">红笔<small>#E5484D</small></div>
+    </div>
+  </div>
+
+  <div class="noteBlock chat">
+    <h3>群里的卡片（实时联动 →）</h3>
+    <div class="bubble">咦，投票？下周球局帮忙选个时间👇</div>
+    <div class="sharecard">
+      <div class="t">就差 2 个了！球局已投 <b id="cardCount">6</b> 人</div>
+      <div class="m">周六下午领先 · 王哥喊你来</div>
+      <div class="go">▸ 咦投票 · 点开就能投，不用登录</div>
+    </div>
+    <div class="stampNote">卡片标题走三段式模板：{悬念缺口}+{数字动态}+{组织者署名}——数字会动的卡片自带围观欲（围观引擎），「已投 N 人」随右侧演示实时更新。</div>
+  </div>
+
+  <div class="noteBlock try">
+    <h3>试试看（四凑链路全流程）</h3>
+    <ul>
+      <li>进「投票」页，点亮你有空的时段，点「就这些时间我有空」</li>
+      <li>切到「组织者视角」，看每个时段的名单，对周六下午点「定这个」——盖章动画</li>
+      <li>定档后到场名单自动沉淀——点「给到场的人分个工」看人员底册流向</li>
+      <li>点首页链路上的「凑人头」，看 v1.1 收集填表预览——填表 → 汇总 → 导出</li>
+      <li>点「凑分工」看 v1.2 群待办：群友点「我来」认领、点「搞定了」打钩；认领的事可「转给别人」放回池子（可改不可逃）；发起人视角可「催一下」空缺事项</li>
+      <li>投票页底部「我也发起一个」= 发起人候补的转化入口；待办/收集的催办话术走召唤语气（PRD §1.2 红线）</li>
+      <li>点「沉淀」看群日历 v1.3：月日历 + 链路小点 + 凝聚力分 + 战功卡</li>
+    </ul>
+  </div>
+</aside>
+
+<!-- ================= 手机 ================= -->
+<main class="stage">
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span>●●●●⁂ 🔋</span></div>
+    <div class="capsule"><i></i><i></i><i></i></div>
+
+    <div class="viewport">
+      <!-- ============ 首页 ============ -->
+      <section class="screen on" id="scr-home">
+        <div class="pageHead"><span class="title">我的事</span><button class="demoChip" style="margin-left:auto" onclick="toast('提醒设置：定档/催办 · 每日最多 1 条，随时可关')">🔔 提醒</button></div>
+
+        <div class="meStrip" onclick="toast('昵称头像走微信官方授权；未授权显示「群友 1234」——零登录，openid 即身份')">
+          <span class="av avcolors" style="width:38px;height:38px;font-size:17px">刘</span>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:700">小刘</div>
+            <div style="font-size:10.5px;color:var(--gray-mark);margin-top:1px">我发起的 3 场 · 我参与的 8 场</div>
+          </div>
+          <span class="gmGo">›</span>
+        </div>
+
+        <div class="heroWrap">
+          <div class="heroCta" onclick="go('create')">
+            <div class="heroIco">🗳️</div>
+            <div class="heroTx">
+              <div class="heroTt">发起投票</div>
+              <div class="heroDd">凑时间 · 拿主意，30 秒建好发到群里</div>
+            </div>
+            <div class="heroGo">›</div>
+          </div>
+        </div>
+
+        <div class="chainCard">
+          <div class="chainHead">一件事的全流程 · 都在这块板上</div>
+          <div class="chain">
+            <div class="cstep live" onclick="go('vote')"><span class="ic">🗳️</span><b>凑时间</b></div>
+            <div class="clink"></div>
+            <div class="cstep live" onclick="go('collect')"><span class="ic">📋</span><b>凑人头</b></div>
+            <div class="clink"></div>
+            <div class="cstep live" onclick="go('todo')"><span class="ic">✅</span><b>凑分工</b></div>
+            <div class="clink"></div>
+            <div class="cstep live" onclick="go('cal')"><span class="ic">📅</span><b>沉淀</b></div>
+          </div>
+        </div>
+
+        <div class="listHead">进行中<span class="sub" id="homeSub">· 点开就能接着办</span></div>
+        <div class="actCard" onclick="go('vote')">
+          <div class="dot"></div>
+          <div class="tt">下周球局，哪天人最齐？</div>
+          <div class="st" id="homeCount">已投 6 人</div>
+        </div>
+        <div class="actCard" onclick="go('collect')">
+          <div class="dot dotBlue"></div>
+          <div class="tt">球队新赛季报名</div>
+          <div class="st">已填 4 人</div>
+        </div>
+      </section>
+
+      <!-- ============ 发起投票 ============ -->
+      <section class="screen" id="scr-create">
+        <div class="pageHead"><span class="back" onclick="go('home')">‹</span><span class="title">发起投票 · 凑时间</span></div>
+        <div class="body">
+          <div class="fieldLabel">标题<b>*</b></div>
+          <input class="title" id="createTitle" value="下周球局，哪天人最齐？" maxlength="30">
+          <div class="fieldLabel">候选时段（半天粒度，勾几个都行）</div>
+          <div class="slotGrid" id="createSlots"></div>
+          <div class="tipRow">候选 ≤ 8 个，选项越多大家越懒得投。<br>没设截止时间？随时可以手动「定这个时间」收口。</div>
+          <button class="demoChip" style="margin-top:16px" onclick="go('vote')">演示：跳过填写，直接看成局 →</button>
+        </div>
+        <div class="bottomBar"><button class="btn btn-primary" onclick="go('vote')">创建并分享到群</button></div>
+      </section>
+
+      <!-- ============ 收集填表（v1.1 预览）============ -->
+      <section class="screen" id="scr-collect">
+        <div class="pageHead">
+          <span class="back" onclick="go('home')">‹</span>
+          <span class="title">收集填表 · v1.1 预览</span>
+        </div>
+        <div class="body">
+          <div class="voteTitle">球队新赛季报名</div>
+          <div class="ownerChip"><span class="av avcolors" style="width:20px;height:20px;font-size:10px">王</span>王哥发起的 · 填 3 项，30 秒搞定</div>
+          <div class="roleTabs">
+            <button id="colTabMember" class="active" onclick="setColRole('member')">我的视角（群友）</button>
+            <button id="colTabOwner" onclick="setColRole('owner')">发起人视角</button>
+          </div>
+          <div class="summaryBar" id="colSummary"></div>
+          <div id="colFormWrap"></div>
+          <div id="colListWrap"></div>
+          <div class="chainHint">链路联动：报名表可以是投票定档后的下一步——<b>定了周六打球，顺手收球衣尺码</b>；填好的名单一键导出。<br>最简形态就是接龙：单字段「+1 报名」，v1.0 被砍的接龙以子模板回归（PRD §11）。</div>
+        </div>
+        <div class="bottomBar" id="colBottom"></div>
+      </section>
+
+      <!-- ============ 投票详情（生死页）============ -->
+      <section class="screen" id="scr-vote">
+        <div class="pageHead">
+          <span class="back" onclick="go('home')">‹</span>
+          <span class="title">投票</span>
+          <button class="demoChip" onclick="simulateJoin()">＋ 模拟一位群友投票</button>
+        </div>
+        <div class="body">
+          <div class="voteTitle">下周球局，哪天人最齐？</div>
+          <div class="ownerChip"><span class="av avcolors" style="width:20px;height:20px;font-size:10px">王</span>王哥组织的 · 点亮你有空的时间</div>
+          <div class="roleTabs">
+            <button id="tabMember" class="active" onclick="setRole('member')">我的视角（群友）</button>
+            <button id="tabOwner" onclick="setRole('owner')">组织者视角</button>
+          </div>
+          <div class="summaryBar" id="voteSummary"></div>
+          <div class="myBar" id="myBar"><span class="dot"></span><span id="myBarText"></span></div>
+          <div id="slotList"></div>
+          <div class="orgRow" onclick="orgConvert()">用着顺手？<b>我也发起一个</b> —— 在我群里也张罗一场</div>
+          <div class="rosterPanel" id="rosterPanel"></div>
+          <div class="stampWrap" id="stampWrap">
+            <div class="seal" id="sealChar">定</div>
+            <div class="sealCap" id="sealCap"></div>
+          </div>
+        </div>
+        <div class="bottomBar" id="voteBottom"></div>
+      </section>
+
+      <!-- ============ 群待办（v1.2 预览）============ -->
+      <section class="screen" id="scr-todo">
+        <div class="pageHead">
+          <span class="back" onclick="go('home')">‹</span>
+          <span class="title">群待办 · v1.2 预览</span>
+        </div>
+        <div class="body">
+          <div class="voteTitle">周六球局 · 分个工</div>
+          <div class="ownerChip"><span class="av avcolors" style="width:20px;height:20px;font-size:10px">王</span>王哥发起的 · 事项认领制，谁点「我来」谁干</div>
+          <div class="roleTabs">
+            <button id="todoTabMember" class="active" onclick="setTodoRole('member')">我的视角（群友）</button>
+            <button id="todoTabOwner" onclick="setTodoRole('owner')">发起人视角</button>
+          </div>
+          <div class="summaryBar" id="todoSummary"></div>
+          <div id="todoList"></div>
+          <div class="chainHint">待办挂在<b>活动</b>上，不挂在人上：活动结束自动归档进群日历，不留"待办焦虑"。从投票定档页「给这顿分个工」一键发起，标题名单自动带入（PRD §7B）。</div>
+        </div>
+        <div class="bottomBar" id="todoBottom"></div>
+      </section>
+
+      <!-- ============ 群板（tab）============ -->
+      <section class="screen" id="scr-group">
+        <div class="pageHead"><span class="title">群板</span></div>
+        <div class="body">
+          <div class="voteTitle">常打球的这群人</div>
+          <div class="ownerChip"><span class="av avcolors" style="width:20px;height:20px;font-size:10px">王</span>群备注名（成员共编）· 从群里的卡片进来过，就自动归到这个群</div>
+          <div class="summaryBar" style="margin-bottom:14px">
+            <span>本群战功 · <b>6</b> 场活动 · <b>41</b> 人次到场</span>
+            <span class="lead">凝聚力 92 分</span>
+          </div>
+          <div class="groupMenu">
+            <div class="gmItem" onclick="go('cal')">
+              <span class="gmIco">📅</span><div style="flex:1"><b>群日历</b><i>这个群张罗过的日子，月格子一眼扫</i></div><span class="gmGo">›</span>
+            </div>
+            <div class="gmItem" onclick="toast('本群历史活动列表（v1.3 群日历的列表形态）——按月归档，可回看每场名单')">
+              <span class="gmIco">🗂️</span><div style="flex:1"><b>历史活动</b><i>报过的名、分过的工，翻聊天记录找不到的这里都有</i></div><span class="gmGo">›</span>
+            </div>
+            <div class="gmItem" onclick="toast('群备注名修改：只有群成员能改，全群共享（C6：微信不开放真实群名）')">
+              <span class="gmIco">✏️</span><div style="flex:1"><b>群名备注</b><i>「常打球的这群人」是成员起的，谁来都能改</i></div><span class="gmGo">›</span>
+            </div>
+          </div>
+          <div class="chainHint">群板 = 这个群协作资产的首页（openGid 聚合）。切换别的群？从那个群里的分享卡片点进来即可——群列表会自动多一行。</div>
+        </div>
+        <div class="bottomBar">
+          <button class="btn btn-ghost" onclick="toast('战功卡已生成：常打球的这群人 · 6 场活动 · 凝聚力 92 分——发到群里给大家看看')">🏅 把群战功发到群里</button>
+          <div class="demoHint" style="font-size:11px">月底/年底是天然分享高峰</div>
+        </div>
+      </section>
+
+      <!-- ============ 群日历（v1.3 预览）============ -->
+      <section class="screen" id="scr-cal">
+        <div class="pageHead">
+          <span class="back" onclick="go('group')">‹</span>
+          <span class="title">群日历 · v1.3 预览</span>
+        </div>
+        <div class="body">
+          <div class="voteTitle">常打球的这群人</div>
+          <div class="ownerChip"><span class="av avcolors" style="width:20px;height:20px;font-size:10px">王</span>群备注名（群成员共编）· 这个群张罗过 6 场活动</div>
+          <div class="summaryBar" style="margin-bottom:4px">
+            <span>本群战功 · <b>6</b> 场活动 · <b>41</b> 人次到场</span>
+            <span class="lead">凝聚力 92 分</span>
+          </div>
+          <div class="roleTabs">
+            <button id="calTabMonth" class="active" onclick="setCalMode('month')">月日历</button>
+            <button id="calTabList" onclick="setCalMode('list')">时间轴</button>
+          </div>
+          <div id="calMonthWrap"></div>
+          <div id="calListWrap"></div>
+          <div class="chainHint" style="margin-top:10px">时间轴倒序沉淀——翻聊天记录找不到的定过的日子、报过的名、谁帮过忙，这里都在。<br>链路徽标（投票/收集/待办）点亮表示那场活动走过哪几段；沉淀不挂在人身上，挂在<b>群</b>身上：换手机、退群重进，这个群的历史还在。<br><b>凝聚力分</b>是群战功的展示（只升不降，永不惩罚）：活动越多、链路走满越多，分越高——给组织者的面子勋章。</div>
+        </div>
+        <div class="bottomBar">
+          <button class="btn btn-ghost" onclick="toast('战功卡已生成：常打球的这群人 · 6 场活动 · 凝聚力 92 分——发到群里给大家看看')"><span style="font-size:14px">🏅</span>&nbsp;把群战功发到群里</button>
+          <div class="demoHint" style="font-size:11px">给组织者的社交货币；月底/年底是天然分享高峰</div>
+        </div>
+      </section>
+
+      
+
+      <div class="toast" id="toast"></div>
+    </div>
+
+    <nav class="tabBar">
+      <button id="nav-home" class="tabItem active" onclick="go('home')">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/></svg><span>我的事</span><i class="reddot"></i>
+      </button>
+      <button id="nav-create" class="tabItem center" onclick="go('create')" title="发起">
+        <div class="tabFab"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+      </button>
+      <button id="nav-group" class="tabItem" onclick="go('group')">
+        <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16M9 4v16"/></svg><span>群板</span>
+      </button>
+    </nav>
+  </div>
+</main>
+
+<script>
+/* ================= 数据 ================= */
+var ME = '小刘', OWNER = '王哥';
+var SLOT_DEFS = ['周五晚上','周六上午','周六下午','周六晚上','周日上午','周日晚上'];
+var EXTRA_NAMES = ['东子','强子','琳琳','梅姐','阿凯','李姐','老张'];
+var slots;      /* [{label, voters[]}] */
+var mySel;      /* Set 选中时段下标 */
+var submitted;  /* 我是否已提交 */
+var role;       /* member | owner */
+var locked;     /* 是否已定档 */
+var chosenSlot; /* 定档时段下标 */
+var prevCounts; /* 每时段上次票数，用于笔画动画 */
+
+function resetDemo(){
+  slots = [
+    {label:'周五晚上', voters:['老张','李姐']},
+    {label:'周六上午', voters:[]},
+    {label:'周六下午', voters:['老张','李姐','阿凯','琳琳','强子','梅姐','东子']},
+    {label:'周六晚上', voters:[]},
+    {label:'周日上午', voters:['强子']},
+    {label:'周日晚上', voters:['阿凯','琳琳']}
+  ];
+  mySel = new Set(); submitted = false; role = 'member'; locked = false; chosenSlot = null;
+  prevCounts = slots.map(function(s){ return s.voters.length; });
+}
+resetDemo();
+
+/* ================= 工具 ================= */
+function $(id){ return document.getElementById(id); }
+var toastTimer;
+function toast(msg){
+  var t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+}
+function uniqueVoters(){
+  var s = new Set();
+  slots.forEach(function(sl){ sl.voters.forEach(function(v){ s.add(v); }); });
+  if(submitted) s.add(ME);
+  return s.size;
+}
+function avatarChips(names, cap){
+  var out = '', show = names.slice(0, cap || 4);
+  show.forEach(function(n){
+    out += '<span class="av avcolors">' + n.charAt(n.length-1) + '</span>';
+  });
+  if(names.length > show.length) out += '<span class="more">+' + (names.length - show.length) + '</span>';
+  return out;
+}
+/* 正字计数：一人一画，五个一正 */
+var STROKES = [[4,5,20,5],[5,5,5,19],[5,12,19,12],[19,5,19,19],[5,19,19,19]];
+function tallySVG(n, fresh){
+  if(!n) return '<span style="color:var(--pencil);font-size:13px">–</span>';
+  var full = Math.floor(n/5), part = n % 5, out = '';
+  function one(count, isFresh){
+    var p = '';
+    for(var i=0;i<count;i++){
+      var s = STROKES[i];
+      p += '<line x1="'+s[0]+'" y1="'+s[1]+'" x2="'+s[2]+'" y2="'+s[3]+'"/>';
+    }
+    return '<svg class="zheng'+(isFresh?' fresh':'')+'" viewBox="0 0 24 24">'+p+'</svg>';
+  }
+  for(var f=0; f<full; f++) out += one(5, false);
+  if(part) out += one(part, fresh);
+  return out;
+}
+
+/* ================= 投票渲染 ================= */
+function bestSlots(){
+  var max = 0, ids = [];
+  slots.forEach(function(s,i){ if(s.voters.length > max) max = s.voters.length; });
+  if(max === 0) return [];
+  slots.forEach(function(s,i){ if(s.voters.length === max) ids.push(i); });
+  return ids;
+}
+function renderVote(){
+  var best = bestSlots();
+  var total = uniqueVoters();
+  var lead = best.length ? slots[best[0]].label : '还没人投';
+  $('voteSummary').innerHTML =
+    '已投 <b>'+total+'</b> 人 · <span class="lead">'+lead+(best.length?'最多人有空':'')+'</span>';
+
+  /* 我的已选提示条 */
+  var mb = $('myBar');
+  if(mySel.size && !locked){
+    mb.className = 'myBar show';
+    $('myBarText').textContent = '你选了：' + Array.from(mySel).map(function(i){ return slots[i].label; }).join('、');
+  } else mb.className = 'myBar';
+
+  /* 时段列表 */
+  var html = '';
+  slots.forEach(function(s, i){
+    var n = s.voters.length + (submitted && mySel.has(i) ? 1 : 0);
+    var fresh = n > (prevCounts[i] || 0);
+    var isBest = best.indexOf(i) >= 0 && n > 0;
+    var mine = mySel.has(i);
+    var cls = 'slotRow' + (isBest && !locked ? ' top' : '') + (mine && !locked ? ' mine' : '') + (locked && i !== chosenSlot ? ' lockDim' : '');
+    html += '<div class="'+cls+'" tabindex="0" role="button" onclick="slotTap('+i+')">';
+    if(isBest && !locked) html += '<div class="bestTag">最多人有空</div>';
+    html += '<div class="rowTop"><span class="day">'+s.label+'</span>'
+      + '<span class="tally">'+tallySVG(n, fresh)+'</span>'
+      + '<span class="cnt">'+n+' 人</span>';
+    if(!locked && role==='member' && !submitted) html += '<span class="pickHint">点我选上 ✓</span>';
+    if(!locked && role==='owner') html += '<button class="lockBtn" onclick="event.stopPropagation();lockSlot('+i+')">定这个</button>';
+    html += '</div>';
+    var shown = s.voters.slice();
+    if(submitted && mySel.has(i)) shown = shown.concat([ME]);
+    if(shown.length) html += '<div class="roster">'+avatarChips(shown, 5)+'</div>';
+    html += '</div>';
+    prevCounts[i] = n;
+  });
+  $('slotList').innerHTML = html;
+
+  /* 定档后的到场名单 */
+  var rp = $('rosterPanel');
+  if(locked){
+    var voters = slots[chosenSlot].voters.slice();
+    if(mySel.has(chosenSlot) && submitted) voters.push(ME);
+    rp.className = 'rosterPanel show';
+    rp.innerHTML = '<h4>已定档：'+slots[chosenSlot].label+' · 到场 <b>'+voters.length+'</b> 人</h4>'
+      + '<div class="people">'+voters.map(function(n){ return '<span class="person"><span class="av avcolors">'+n.charAt(n.length-1)+'</span>'+n+'</span>'; }).join('')+'</div>';
+  } else rp.className = 'rosterPanel';
+
+  /* 底部主按钮 */
+  var b = $('voteBottom');
+  if(locked){
+    b.innerHTML = '<button class="btn btn-primary" onclick="toast(\'到场名单已沉淀到群主页——v1.1 起一键带进收集填表/群待办\')">给到场的人分个工</button>'
+      + '<div class="demoHint">定档名单 = 人员底册，直达后续协作（资金交给微信官方群收款，本产品不碰）</div>';
+  } else if(role === 'member'){
+    b.innerHTML = submitted
+      ? '<button class="btn btn-ghost" onclick="reopenMy()">改一下我的时间</button>'
+      : '<button class="btn btn-primary" '+(mySel.size?'':'disabled')+' onclick="submitMine()">就这些时间我有空</button>';
+  } else {
+    b.innerHTML = '<div class="demoHint" style="font-size:12px">组织者视角：看名单，对最合适的时段点「定这个」盖章收口</div>';
+  }
+  updateCard();
+}
+function updateCard(){
+  var n = uniqueVoters();
+  $('cardCount').textContent = n;
+  $('homeCount').textContent = '已投 ' + n + ' 人';
+}
+function slotTap(i){
+  if(locked){ toast('已定档 '+slots[chosenSlot].label+'，名单锁定了'); return; }
+  if(role === 'owner'){ toast('组织者视角看名单；切「我的视角」去投票'); return; }
+  if(submitted){ toast('点下方「改一下我的时间」就能重新选'); return; }
+  if(mySel.has(i)) mySel.delete(i); else mySel.add(i);
+  renderVote();
+}
+function submitMine(){
+  submitted = true;
+  toast('好了！你的时间已记上'+(mySel.size>1?('（'+mySel.size+' 个时段）'):''));
+  renderVote();
+}
+function reopenMy(){ submitted = false; renderVote(); }
+function setRole(r){
+  role = r;
+  $('tabMember').className = r==='member' ? 'active' : '';
+  $('tabOwner').className = r==='owner' ? 'active' : '';
+  renderVote();
+}
+function lockSlot(i){
+  chosenSlot = i;
+  $('sealChar').textContent = '定';
+  $('sealCap').textContent = '已定档 · ' + slots[i].label;
+  $('stampWrap').classList.add('on');
+  setTimeout(function(){
+    $('stampWrap').classList.remove('on');
+    locked = true;
+    toast('定了！把结果卡片发回群里通知大家');
+    renderVote();
+  }, 1100);
+}
+var simPool = EXTRA_NAMES.slice();
+function simulateJoin(){
+  if(locked) { toast('已定档，模拟投票结束'); return; }
+  if(!simPool.length) simPool = EXTRA_NAMES.slice();
+  var name = simPool.shift();
+  var i = 2 + Math.floor(Math.random()*4); /* 避开周六上午/晚上两个空时段，演示更好看 */
+  if(!slots[i]) i = 0;
+  slots[i].voters.push(name);
+  toast(name + ' 投了「' + slots[i].label + '」');
+  renderVote();
+}
+
+/* ================= 收集填表（v1.1 预览） ================= */
+var COL_FIELDS = [
+  {label:'姓名', req:true, type:'text', ph:'填你的名字'},
+  {label:'手机号', req:true, type:'tel', ph:'只在队内可见'},
+  {label:'球衣尺码', req:true, type:'chip', options:['S','M','L','XL']}
+];
+var COL_FILLED = [
+  {name:'老张', vals:['138****1101','L']},
+  {name:'李姐', vals:['139****3345','M']},
+  {name:'阿凯', vals:['137****7789','XL']},
+  {name:'琳琳', vals:['136****2468','S']}
+];
+var colRole = 'member', colSubmitted = false, colSize = null;
+
+function setColRole(r){
+  colRole = r;
+  $('colTabMember').className = r==='member' ? 'active' : '';
+  $('colTabOwner').className = r==='owner' ? 'active' : '';
+  renderCollect();
+}
+function renderCollect(){
+  var total = COL_FILLED.length + (colSubmitted?1:0);
+  $('colSummary').innerHTML = '已填 <b>'+total+'</b> 人'+(colSubmitted?'（含你）':' · 表还开着，随时能填');
+
+  if(colRole === 'member'){
+    var f = '';
+    if(!colSubmitted){
+      f += '<div class="formCard">';
+      COL_FIELDS.forEach(function(fd){
+        f += '<div class="fRow"><div class="fLabel">'+fd.label+(fd.req?'<b>*</b>':'')+'</div>';
+        if(fd.type === 'chip'){
+          f += '<div class="sizeChips">';
+          fd.options.forEach(function(o){
+            f += '<span class="slotChip'+(colSize===o?' sel':'')+'" onclick="pickSize(\''+o+'\')">'+o+'</span>';
+          });
+          f += '</div>';
+        } else if(fd.label === '姓名'){
+          f += '<input value="小刘" readonly style="opacity:.6">';
+        } else {
+          f += '<input type="'+fd.type+'" placeholder="'+fd.ph+'">';
+        }
+        f += '</div>';
+      });
+      f += '</div>';
+    } else {
+      f += '<div class="formCard"><div class="fRow" style="margin:0">'
+        + '<div style="font-size:14px;font-weight:700;margin-bottom:6px">你的回执</div>'
+        + '<div style="font-size:13px;color:var(--gray-mark);line-height:1.8">小刘 · 138****6666 · 球衣 <b style="color:var(--ink)">'+(colSize||'L')+'</b></div>'
+        + '</div></div>';
+    }
+    $('colFormWrap').innerHTML = f;
+    $('colListWrap').innerHTML = '';
+    $('colBottom').innerHTML = colSubmitted
+      ? '<button class="btn btn-ghost" onclick="colSubmitted=false;renderCollect();toast(\'已打开修改，改完重新提交\')">改一下我的信息</button>'
+        + '<button class="btn btn-primary" style="margin-top:8px" onclick="toast(\'分享卡片已带上你的名字：小刘 已报名\')">分享到群</button>'
+      : '<button class="btn btn-primary" onclick="submitCollect()">填好了，提交</button>'
+        + '<div class="demoHint" style="font-size:11px">零登录 · 点开就填 · 已填的人头像自动上屏</div>';
+  } else {
+    $('colFormWrap').innerHTML = '';
+    var l = '';
+    COL_FILLED.forEach(function(p){
+      l += '<div class="memberRow"><span class="av avcolors">'+p.name.charAt(p.name.length-1)+'</span>'
+        + '<span class="nm">'+p.name+'</span><span class="fv" style="font-size:12.5px;color:var(--gray-mark)">'+p.vals[0]+' · 尺码 '+p.vals[1]+'</span>'
+        + '<span class="stateChip confirmed">已填</span></div>';
+    });
+    if(colSubmitted) l += '<div class="memberRow"><span class="av avcolors">刘</span><span class="nm">小刘</span><span class="fv" style="font-size:12.5px;color:var(--gray-mark)">138****6666 · 尺码 '+(colSize||'L')+'</span><span class="stateChip confirmed">已填</span></div>';
+    l += '<div class="memberRow" style="border-style:dashed"><span class="av avcolors" style="background:#F1F1EC;color:var(--gray-mark)">?</span><span class="nm" style="color:var(--gray-mark)">还有 3 人没填</span><button class="smBtn warn" onclick="toast(\'话术已复制：「表还开着，30 秒就能填完——帮王哥省一份手抄」——去微信里发（每天最多 1 次）\')">催一下</button></div>';
+    $('colListWrap').innerHTML = l;
+    $('colBottom').innerHTML = '<button class="btn btn-primary" onclick="toast(\'名单已复制：1.老张 L 2.李姐 M 3.阿凯 XL …——粘到群里或存表格\')">复制汇总名单</button>'
+      + '<div class="demoHint" style="font-size:11px">自动汇总 · 不用再翻聊天记录抄手机号</div>';
+  }
+}
+function pickSize(s){ colSize = s; renderCollect(); }
+function submitCollect(){
+  if(!colSize){ toast('选一下球衣尺码'); return; }
+  colSubmitted = true;
+  toast('报名成功！你的头像已上屏');
+  renderCollect();
+}
+
+/* ================= 群待办（v1.2 预览） ================= */
+/* state: open 空缺 | claimed 已认领 | done 已完成；multi 项可多人认领 */
+var TODO_ITEMS = [
+  {name:'订场地', multi:false, claimers:['老张'], done:false},
+  {name:'带球和网', multi:false, claimers:[], done:false},
+  {name:'买水', multi:true, max:2, claimers:['琳琳'], done:false},
+  {name:'拉新群友', multi:false, claimers:[], done:false},
+  {name:'订饭后烤肉', multi:false, claimers:['阿凯'], done:false}
+];
+var todoRole = 'member';
+var todoReminded = {};
+
+function setTodoRole(r){
+  todoRole = r;
+  $('todoTabMember').className = r==='member' ? 'active' : '';
+  $('todoTabOwner').className = r==='owner' ? 'active' : '';
+  renderTodo();
+}
+function todoStats(){
+  var claimed = 0, done = 0;
+  TODO_ITEMS.forEach(function(t){ if(t.claimers.length) claimed++; if(t.done) done++; });
+  return {claimed:claimed, done:done, open:TODO_ITEMS.length-claimed, total:TODO_ITEMS.length};
+}
+function renderTodo(){
+  var s = todoStats();
+  var allDone = s.done === s.total;
+  $('todoSummary').innerHTML = allDone
+    ? '<span class="lead">5 件事全办成了 🎉</span>'
+    : '共 <b>'+s.total+'</b> 件 · 已认领 <b>'+s.claimed+'</b> · <span style="color:var(--red-mark);font-weight:600">还空着 '+s.open+' 件</span>';
+
+  var html = '';
+  TODO_ITEMS.forEach(function(t, i){
+    var mine = t.claimers.indexOf(ME) >= 0;
+    var st = t.done ? 'done' : (t.claimers.length ? 'claimed' : 'openSlot');
+    html += '<div class="todoCard '+st+'">';
+    if(t.done) html += '<span class="checkMark on">✓</span>';
+    html += '<div style="flex:1"><div class="tName">'+t.name+'</div>';
+    html += '<div class="tSub">';
+    if(t.done) html += '搞定了 · ' + t.claimers.join('、');
+    else if(t.claimers.length){
+      html += t.multi
+        ? '已认领 '+t.claimers.length+'/'+t.max+' 人 · ' + t.claimers.join('、') + (mine?'（有你）':'')
+        : t.claimers[0] + (mine?'（你）':'') + ' 认领了';
+    } else html += '还没人认领';
+    html += '</div></div>';
+    if(!t.done){
+      if(t.claimers.length) html += '<div class="claimAv">' + t.claimers.map(function(n){ return '<span class="av avcolors">'+n.charAt(n.length-1)+'</span>'; }).join('') + '</div>';
+      if(todoRole === 'member'){
+        if(mine) html += '<button class="doneBtn mine" onclick="finishTodo('+i+')">搞定了</button><button class="doneBtn" style="margin-left:4px" onclick="transferTodo('+i+')">转给别人</button>';
+        else if(!t.claimers.length || (t.multi && t.claimers.length < t.max)) html += '<button class="claimBtn" onclick="claimTodo('+i+')">我来</button>';
+      } else {
+        if(!t.claimers.length) html += '<button class="smBtn warn" onclick="remindTodo('+i+')">催一下</button>';
+        else if(!t.done) html += '<button class="doneBtn" onclick="finishTodo('+i+')">完成</button>';
+      }
+    }
+    html += '</div>';
+  });
+  $('todoList').innerHTML = html;
+
+  $('todoBottom').innerHTML = allDone
+    ? '<button class="btn btn-primary" onclick="toast(\'完成卡已生成：周六球局 · 5 件事全办成了——发回群里收口\')">分享完成卡片到群</button>'
+    : '<button class="btn btn-ghost" onclick="toast(\'待办卡已生成：周六球局 · 还空着 ' + todoStats().open + ' 件事没人领——发回群里喊人搭把手\')">分享待办卡片到群</button>'
+      + '<div class="demoHint" style="font-size:11px">空缺本身就是传播力：场没人订、球没人带，发起人会把卡发回群里</div>';
+}
+function claimTodo(i){
+  var t = TODO_ITEMS[i];
+  if(t.multi && t.claimers.length >= t.max){ toast('这件认领满了'); return; }
+  t.claimers.push(ME);
+  toast('好样的！「'+t.name+'」归你了，搞定后回来打钩');
+  renderTodo();
+}
+function finishTodo(i){
+  TODO_ITEMS[i].done = true;
+  renderTodo();
+}
+function transferTodo(i){
+  var t = TODO_ITEMS[i];
+  var idx = t.claimers.indexOf(ME);
+  if(idx >= 0) t.claimers.splice(idx, 1);
+  toast('已放回池子（全群可见）——谁想搭把手就来认领，不许悄悄消失');
+  renderTodo();
+}
+function remindTodo(i){
+  var name = TODO_ITEMS[i].name;
+  if(todoReminded[name]){ toast('今天已经催过这件了，明天再说（每件每天最多 1 次）'); return; }
+  todoReminded[name] = true;
+  toast('话术已复制：「'+name+'」还没人认领，谁能搭把手？——去微信里发');
+}
+function orgConvert(){
+  toast('这就去你的群里张罗一场！（发起人候补 · 埋点 org_convert）');
+}
+
+/* ================= 创建页时段勾选 ================= */
+var createSel = new Set([0,1,2,3,4,5]);
+function renderCreateSlots(){
+  var html = '';
+  SLOT_DEFS.forEach(function(s,i){
+    html += '<span class="slotChip'+(createSel.has(i)?' sel':'')+'" onclick="toggleCreate('+i+')">'+s+'</span>';
+  });
+  $('createSlots').innerHTML = html;
+}
+function toggleCreate(i){
+  if(createSel.has(i)) createSel.delete(i); else createSel.add(i);
+  renderCreateSlots();
+}
+
+/* ================= 导航 ================= */
+function go(name){
+  ['home','create','vote','collect','todo','group','cal'].forEach(function(n){
+    var scr = $('scr-'+n), nav = $('nav-'+n);
+    if(scr) scr.className = 'screen' + (n===name ? ' on' : '');
+    if(nav) nav.className = 'tabItem' + (n===name ? ' active' : '');
+  });
+  if(name==='vote') renderVote();
+  if(name==='collect') renderCollect();
+  if(name==='todo') renderTodo();
+  if(name==='cal') renderCal();
+  if(name==='create') renderCreateSlots();
+  var scr = $('scr-'+name); if(scr) scr.scrollTop = 0;
+}
+
+/* ================= 群日历（v1.3 预览） ================= */
+var CAL_EVENTS = [
+  {d:27, name:'羽毛球局', meta:'9 人到场 · 5 件事全办成', chain:['vote','collect','todo'], stat:'满链'},
+  {d:20, name:'火锅聚餐', meta:'8 人到场 · 收了 3 项信息', chain:['vote','collect'], stat:'满链'},
+  {d:13, name:'爬香山', meta:'11 人到场 · 4 件事全办成', chain:['vote','collect','todo'], stat:'满链'},
+  {d:6,  name:'桌游夜', meta:'6 人到场 · 定了时间就散场', chain:['vote'], stat:'半程'}
+];
+var calMode = 'month', calSelDay = 27;
+var WEEK = ['一','二','三','四','五','六','日'];
+/* 2026-09-01 是周二；月视图按周一起排 */
+var FIRST_OFFSET = 1;
+
+function setCalMode(m){
+  calMode = m;
+  $('calTabMonth').className = m==='month' ? 'active' : '';
+  $('calTabList').className = m==='list' ? 'active' : '';
+  renderCal();
+}
+function evOnDay(d){ return CAL_EVENTS.filter(function(e){ return e.d === d; }); }
+
+function renderCal(){
+  /* 月视图 */
+  var mw = '';
+  if(calMode === 'month'){
+    mw += '<div class="calGrid">'
+      + '<div class="calHead"><button onclick="toast(\'8 月只有 1 场：中秋聚餐\')">‹</button><b>2026 年 9 月</b><button onclick="toast(\'下个月还没有活动——要不要张罗一场？\')">›</button></div>'
+      + '<div class="calWeek">'+WEEK.map(function(w){ return '<span>'+w+'</span>'; }).join('')+'</div>'
+      + '<div class="calDays">';
+    for(var pad=0; pad<FIRST_OFFSET; pad++) mw += '<div class="cell"></div>';
+    for(var day=1; day<=30; day++){
+      var evs = evOnDay(day);
+      var cls = 'cell' + (evs.length ? ' hasEv' : '') + (day===24 ? ' today' : '') + (day===calSelDay ? ' sel' : '');
+      var dots = '';
+      if(evs.length){
+        dots = '<span class="dot">';
+        evs[0].chain.forEach(function(c){
+          dots += '<i class="'+(c==='todo'?'gold':(c==='collect'?'green':''))+'"></i>';
+        });
+        dots += '</span>';
+      }
+      mw += '<div class="'+cls+'" onclick="pickDay('+day+')"><span class="dNum">'+day+'</span>'+dots+'</div>';
+    }
+    mw += '</div></div>';
+    /* 选中日的详情（月视图的下半屏） */
+    var evs = evOnDay(calSelDay);
+    if(evs.length){
+      mw += '<div class="calEmpty" style="padding-bottom:2px">'+calSelDay+' 日</div>';
+      evs.forEach(function(e){ mw += evCardHTML(e); });
+    } else {
+      mw += '<div class="calEmpty" style="padding:18px 0">'+calSelDay+' 日没安排。<a style="color:var(--marker)" onclick="toast(\'去张罗一场？\')">这约一场</a>？</div>';
+    }
+  }
+  $('calMonthWrap').innerHTML = mw;
+
+  /* 时间轴视图 */
+  var lw = '';
+  if(calMode === 'list'){
+    lw += '<div class="monthRow"><b>2026 年 9 月</b><span>4 场</span></div>';
+    CAL_EVENTS.forEach(function(e){ lw += evCardHTML(e); });
+  }
+  $('calListWrap').innerHTML = lw;
+}
+function evCardHTML(e){
+  var badges = '';
+  e.chain.forEach(function(c){ badges += '<span class="chainBadge hit">'+{vote:'投票',collect:'收集',todo:'待办'}[c]+'</span>'; });
+  ['vote','collect','todo'].forEach(function(c){
+    if(e.chain.indexOf(c) < 0) badges += '<span class="chainBadge">'+{vote:'投票',collect:'收集',todo:'待办'}[c]+'</span>';
+  });
+  return '<div class="evCard" onclick="toast(\'回看这场活动：名单、账单、谁帮了忙——都在\')">'
+    + '<div class="evDate"><b>'+e.d+'</b><span>周六</span></div>'
+    + '<div class="evInfo"><div class="evName">'+e.name+'</div><div class="evMeta">'+e.meta+'</div>'
+    + '<div class="evChain">'+badges+'</div></div>'
+    + '<div class="evStat" style="color:'+(e.stat==='满链'?'var(--marker)':'var(--gray-mark)')+'">'+e.stat+'</div>'
+    + '</div>';
+}
+function pickDay(d){ calSelDay = d; renderCal(); }
+
+/* 初始化 */
+renderCreateSlots();
+renderVote();
+renderCollect();
+renderTodo();
+renderCal();
+</script>
+</body>
+</html>

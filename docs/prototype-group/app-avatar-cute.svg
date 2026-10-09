@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="咦投票小程序头像：圆滚滚的绿色小球怪，举着荧光笔在白板上画勾">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#fffdf4"/>
+      <stop offset="1" stop-color="#eef5ee"/>
+    </linearGradient>
+    <radialGradient id="gloss" cx="0.35" cy="0.28" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 底色 -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="410" cy="112" r="26" fill="#ffe66b" opacity="0.55"/>
+  <circle cx="92" cy="396" r="18" fill="#ffe66b" opacity="0.45"/>
+
+  <!-- 影子 -->
+  <ellipse cx="256" cy="426" rx="126" ry="22" fill="#0e5937" opacity="0.10"/>
+
+  <!-- 小脚 -->
+  <ellipse cx="196" cy="386" rx="36" ry="25" fill="#0e5937"/>
+  <ellipse cx="316" cy="386" rx="36" ry="25" fill="#0e5937"/>
+
+  <!-- 身体 -->
+  <circle cx="256" cy="248" r="142" fill="#18794e"/>
+  <circle cx="256" cy="248" r="142" fill="url(#gloss)"/>
+
+  <!-- 手臂：左手举起，右手握笔 -->
+  <path d="M148 262 L112 196" fill="none" stroke="#18794e" stroke-width="34" stroke-linecap="round"/>
+  <circle cx="108" cy="188" r="24" fill="#18794e"/>
+  <path d="M364 262 L400 204" fill="none" stroke="#18794e" stroke-width="34" stroke-linecap="round"/>
+  <circle cx="404" cy="196" r="24" fill="#18794e"/>
+
+  <!-- 荧光笔 -->
+  <g transform="rotate(18 404 196)">
+    <rect x="392" y="120" width="28" height="66" rx="14" fill="#ffe66b"/>
+    <rect x="392" y="120" width="28" height="18" rx="9" fill="#d0a20a"/>
+  </g>
+
+  <!-- 呆萌表情 -->
+  <path d="M184 172 Q204 160 224 172" fill="none" stroke="#0b3a26" stroke-width="7" stroke-linecap="round" opacity="0.8"/>
+  <path d="M288 172 Q308 160 328 172" fill="none" stroke="#0b3a26" stroke-width="7" stroke-linecap="round" opacity="0.8"/>
+
+  <ellipse cx="212" cy="216" rx="31" ry="35" fill="#ffffff"/>
+  <ellipse cx="300" cy="216" rx="31" ry="35" fill="#ffffff"/>
+  <circle cx="216" cy="222" r="15" fill="#172019"/>
+  <circle cx="304" cy="222" r="15" fill="#172019"/>
+  <circle cx="206" cy="210" r="6.5" fill="#ffffff"/>
+  <circle cx="294" cy="210" r="6.5" fill="#ffffff"/>
+
+  <ellipse cx="164" cy="266" rx="21" ry="13" fill="#ffb3a0" opacity="0.75"/>
+  <ellipse cx="348" cy="266" rx="21" ry="13" fill="#ffb3a0" opacity="0.75"/>
+
+  <path d="M238 262 Q256 282 274 262" fill="none" stroke="#0b3a26" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- 肚子上的荧光勾 -->
+  <path d="M204 316 L240 350 L312 272" fill="none" stroke="#ffe66b" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- 高光 -->
+  <ellipse cx="196" cy="150" rx="46" ry="28" fill="#ffffff" opacity="0.16" transform="rotate(-24 196 150)"/>
+</svg>

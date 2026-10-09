@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>咦投票 · 小程序头像与简介方案</title>
+<style>
+  :root{
+    --paper:#f4f7f1; --ink:#172019; --muted:#667067; --line:#dce3da;
+    --green:#18794e; --green-deep:#0e5937; --green-soft:#e5f4e9;
+    --yellow:#ffe66b; --yellow-deep:#d0a20a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);
+    background:radial-gradient(circle at 8% 6%,rgba(255,230,107,.45),transparent 22rem),var(--paper);}
+  .wrap{max-width:1080px;margin:0 auto;padding:46px 24px 70px}
+  .eyebrow{color:var(--green);font-size:12px;font-weight:800;letter-spacing:.18em}
+  h1{font-size:clamp(30px,4vw,46px);letter-spacing:-.05em;line-height:1.15;margin:12px 0 10px}
+  .sub{color:var(--muted);max-width:620px;line-height:1.8;font-size:15px}
+  h2{margin:44px 0 14px;font-size:20px;letter-spacing:-.02em}
+  .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px}
+  .grid{display:grid;gap:16px}
+  .cols-2{grid-template-columns:1fr 1fr}
+  @media(max-width:760px){.cols-2{grid-template-columns:1fr}}
+  .label{font-size:11px;color:var(--muted);letter-spacing:.1em;font-weight:800;margin-bottom:10px}
+  .icon-row{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+  .icon-cell{text-align:center}
+  .icon-cell small{display:block;margin-top:8px;color:var(--muted);font-size:11px}
+  .box{display:grid;place-items:center;border-radius:26px;background:var(--green);position:relative;overflow:hidden;
+    box-shadow:0 10px 22px rgba(14,89,55,.28)}
+  .box svg{width:100%;height:100%;display:block}
+  .size-lg{width:144px;height:144px}
+  .size-md{width:96px;height:96px;border-radius:18px}
+  .size-sm{width:64px;height:64px;border-radius:12px}
+  .size-xs{width:40px;height:40px;border-radius:8px}
+  .note{margin:0;color:var(--muted);font-size:12.5px;line-height:1.7}
+  .intro-list{display:grid;gap:14px}
+  .intro-item{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:#fbfdfb}
+  .intro-item.recommend{border-color:#94c8a3;background:var(--green-soft)}
+  .intro-item .tag{display:inline-block;padding:3px 9px;border-radius:99px;background:var(--yellow);color:#5e5100;font-size:10px;font-weight:800;margin-bottom:9px}
+  .intro-item p{margin:0;font-size:14.5px;line-height:1.7;font-weight:600}
+  .meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;color:var(--muted);font-size:11px}
+  .meta b{color:var(--green-deep)}
+  .usage{border:1px dashed var(--line);border-radius:14px;padding:16px 18px;background:#fff}
+  .usage li{margin:0 0 10px 0;font-size:13.5px;line-height:1.7;list-style:none;padding-left:24px;position:relative;color:var(--ink)}
+  .usage li:last-child{margin-bottom:0}
+  .usage li::before{content:'✓';position:absolute;left:0;color:var(--green);font-weight:900}
+  .usage{padding-left:34px}
+  .chart{width:100%;border-collapse:collapse;font-size:12.5px}
+  .chart th,.chart td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  .chart th{color:var(--muted);font-size:11px;letter-spacing:.06em}
+  .chart td b{color:var(--green-deep)}
+  button:focus-visible{outline:3px solid #ffd54a;outline-offset:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">YI POLL · BRAND KIT</div>
+  <h1>小程序头像与简介方案</h1>
+  <p class="sub">头像延续原型的「白板 + 荧光笔 + 手写勾」语言；简介按微信搜索权重布局：功能词前置、场景词补齐、名词少动词多。</p>
+
+  <h2>一、头像（Logo）</h2>
+  <div class="card">
+    <div class="label">主方案 · 白板上的一笔荧光勾</div>
+    <div class="icon-row">
+      <div class="icon-cell"><div class="box size-lg">
+        <svg viewBox="0 0 144 144" role="img" aria-label="咦投票头像：绿底白板上一道荧光黄勾">
+          <rect width="144" height="144" fill="#18794e"/>
+          <rect x="26" y="30" width="92" height="84" rx="10" fill="#ffffff"/>
+          <path d="M34 44 h52" stroke="#c9d6cc" stroke-width="6" stroke-linecap="round"/>
+          <path d="M34 62 h38" stroke="#e2e9e3" stroke-width="6" stroke-linecap="round"/>
+          <path d="M38 96 L60 116 L106 62" fill="none" stroke="#ffe66b" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="112" cy="34" r="7" fill="#ffe66b"/>
+        </svg>
+      </div><small>144px</small></div>
+      <div class="icon-cell"><div class="box size-md">
+        <svg viewBox="0 0 144 144"><rect width="144" height="144" fill="#18794e"/><rect x="26" y="30" width="92" height="84" rx="10" fill="#fff"/><path d="M38 96 L60 116 L106 62" fill="none" stroke="#ffe66b" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div><small>96px</small></div>
+      <div class="icon-cell"><div class="box size-sm">
+        <svg viewBox="0 0 144 144"><rect width="144" height="144" fill="#18794e"/><path d="M38 96 L60 116 L106 62" fill="none" stroke="#ffe66b" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div><small>64px</small></div>
+      <div class="icon-cell"><div class="box size-xs">
+        <svg viewBox="0 0 144 144"><rect width="144" height="144" fill="#18794e"/><path d="M38 96 L60 116 L106 62" fill="none" stroke="#ffe66b" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div><small>40px</small></div>
+    </div>
+    <div class="grid cols-2" style="margin-top:22px">
+      <div>
+        <div class="label">设计逻辑</div>
+        <p class="note">绿底 = 原型主色，白板 = 群协作的载体；荧光黄的手写大勾 = 「定了/我有空」的收口动作，是全产品最强的视觉记忆点；缩到 40px 时只保留「绿底 + 黄勾」两元素，群列表里依然醒目。</p>
+      </div>
+      <div>
+        <div class="label">备选方向（弱化品牌色时用）</div>
+        <p class="note">白底 + 绿勾 + 右上角荧光黄圆点：更清爽，但群聊深色列表里对比弱于绿底版；建议 A/B 只做一次测试，主推绿底。</p>
+      </div>
+    </div>
+
+    <div class="label" style="margin-top:24px">呆萌吉祥物 · 圆滚滚的绿色小球怪（AI 生成，已定稿）</div>
+    <div class="icon-row">
+      <div class="icon-cell">
+        <img src="avatar-export/avatar-ai-v4.png" alt="定稿头像：墨绿色呆萌小球怪，肚子上有荧光黄对勾" style="width:200px;height:200px;border-radius:44px;border:1px solid var(--line);display:block">
+        <small>★ 定稿 · 微笑 + 腮红版（好认、好缩、够呆萌）</small>
+      </div>
+      <div class="icon-cell">
+        <img src="avatar-export/preview-v4-144.png" alt="定稿头像 144px 效果" style="width:96px;height:96px;border-radius:22px;border:1px solid var(--line);display:block">
+        <small>144px</small>
+      </div>
+      <div class="icon-cell">
+        <img src="avatar-export/preview-v4-40.png" alt="定稿头像 40px 效果" style="width:40px;height:40px;border-radius:10px;border:1px solid var(--line);display:block">
+        <small>40px</small>
+      </div>
+    </div>
+    <div class="label" style="margin-top:24px">备选（同一只小怪的其他姿态）</div>
+    <div class="icon-row">
+      <div class="icon-cell">
+        <img src="avatar-export/avatar-ai-v1.png" alt="备选一：小怪举荧光笔在白板上画黄勾" style="width:150px;height:150px;border-radius:34px;border:1px solid var(--line);display:block">
+        <small>备选 A · 白板画勾（适合启动页/分享卡插图）</small>
+      </div>
+      <div class="icon-cell">
+        <img src="avatar-export/avatar-ai-v2.png" alt="备选二：小怪抱住一个巨大的荧光黄对勾" style="width:150px;height:150px;border-radius:34px;border:1px solid var(--line);display:block">
+        <small>备选 B · 抱住大勾（动作感强，脸会被挡）</small>
+      </div>
+      <div class="icon-cell">
+        <img src="avatar-export/avatar-ai-v3.png" alt="备选三：张嘴微笑的圆脑袋版" style="width:150px;height:150px;border-radius:34px;border:1px solid var(--line);display:block">
+        <small>备选 C · 张嘴版（对比后被定稿替换）</small>
+      </div>
+    </div>
+    <p class="note" style="margin-top:14px"><b>为什么定稿选它</b>：只保留「墨绿圆球 + 荧光黄对勾 + 一双大眼」三个符号——缩到 40px（微信群聊里的实际尺寸）时，色彩块面依然成立，不会糊成一团；微笑弧线加淡腮红负责「呆萌」，对勾负责「事定了」的品牌记忆；白板、马克笔、四肢全部砍掉，因为它们的细节在小尺寸下只会变成噪声。备选 A 细节丰富，适合做启动页插画或分享卡配图，与主头像构成同一形象的不同场景用法。</p>
+  </div>
+
+  <h2>二、简介（简介是搜索权重的第二入口）</h2>
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="label">推荐（主用）</div>
+      <div class="intro-item recommend">
+        <span class="tag">均衡版 · 覆盖三凑链路</span>
+        <p>群投票凑时间，活动分工搭把手，群日历留记录。点开卡片就能投，不用登录不用打字。</p>
+        <div class="meta"><span>关键词：<b>投票 / 凑时间 / 分工 / 群日历</b></span><span>42 字</span></div>
+      </div>
+      <div class="intro-item" style="margin-top:14px">
+        <span class="tag">转化版 · 主打零门槛</span>
+        <p>约球约饭不用刷屏：发起投票发到群里，大家点一下就有空时间，自动找出最多人有空的一天。</p>
+        <div class="meta"><span>关键词：<b>投票 / 约饭 / 约球 / 有空</b></span><span>40 字</span></div>
+      </div>
+      <div class="intro-item" style="margin-top:14px">
+        <span class="tag">搜索版 · 关键词密度最高</span>
+        <p>群投票、凑时间、聚会定时间、活动分工接龙、报名收集、群日历，一个群里的事全搞定。</p>
+        <div class="meta"><span>关键词：<b>投票 / 凑时间 / 定时间 / 分工 / 接龙 / 报名</b></span><span>38 字</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label">简介写法原则</div>
+      <ul class="usage">
+        <li><b>功能词前置</b>：前 10 个字必须出现「投票」，微信搜索截断只看开头。</li>
+        <li><b>动词化</b>：「凑时间、搭把手」比「协作工具、日程管理」更接近用户搜索时的口语。</li>
+        <li><b>零门槛卖点</b>：一句话说清「不用登录、不用打字」，和要手机号的竞品拉开差距。</li>
+        <li><b>禁止词自查</b>：不出现「运势/宜忌」等福签负面词，也不做「最好用/第一」类绝对化表述（广告法风险）。</li>
+      </ul>
+      <div class="label" style="margin-top:20px">一句话定位（页面内用）</div>
+      <ul class="usage">
+        <li>首页顶部：「群里的事，凑好就办成了」</li>
+        <li>分享卡片角标：「点开就能投，不用登录」</li>
+        <li>结果页署名：「球局定了！周六下午 · 王哥组织的」</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>三、名称 × 简介 × 头像的组合建议</h2>
+  <div class="card">
+    <table class="chart">
+      <tr><th>组合</th><th>名称</th><th>简介开头 10 字</th><th>适配头像</th><th>适用判断</th></tr>
+       <tr><td><b>A（主推）</b></td><td>投票好商量</td><td>群投票凑时间，活动分工…</td><td>呆萌小球怪</td><td>长期品牌 + 搜索均衡</td></tr>
+       <tr><td>B</td><td>咦投票</td><td>约球约饭不用刷屏：发起投票…</td><td>呆萌小球怪</td><td>MVP 期主攻投票传播</td></tr>
+       <tr><td>C</td><td>投票一起定</td><td>群投票、凑时间、聚会定时间…</td><td>呆萌小球怪</td><td>关键词密度优先</td></tr>
+    </table>
+     <p class="note" style="margin-top:14px">三种组合共用同一只「呆萌小球怪」头像，避免改名后重做品牌资产；微信头像上传需 144×144 以上的 PNG/JPG，直接使用 <b>avatar-export/preview-v4-144.png</b> 即可，原始 512px 源文件为 <b>avatar-export/avatar-ai-v4.png</b>。</p>
+  </div>
+</div>
+</body>
+</html>
