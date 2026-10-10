@@ -5,7 +5,14 @@
     "pages/me/me",
     "pages/day-edit/day-edit",
     "pages/days-list/days-list",
-    "pages/day-detail/day-detail"
+    "pages/day-detail/day-detail",
+    "pages/letter-edit/letter-edit",
+    "pages/letter-preview/letter-preview",
+    "pages/days-card-edit/days-card-edit",
+    "pages/capsule-edit/capsule-edit",
+    "pages/capsule-open/capsule-open",
+    "pages/mycards/mycards",
+    "pages/visitor/visitor"
   ],
   "window": {
     "navigationBarTitleText": "念家时",

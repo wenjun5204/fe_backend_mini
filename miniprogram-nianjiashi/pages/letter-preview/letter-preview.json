@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "看看这封信",
+  "backgroundColor": "#fbfaf7",
+  "usingComponents": {
+    "poster": "/components/poster/poster"
+  }
+}

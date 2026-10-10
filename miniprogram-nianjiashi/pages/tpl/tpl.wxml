@@ -1,12 +1,79 @@
 <view class="page-tpl">
-  <view class="tpl-empty">
-    <view class="es-art">💌</view>
-    <view class="es-title">模板馆准备中</view>
-    <view class="es-sub">做卡片、写感恩信、时光胶囊</view>
-    <view class="es-sub">这些好玩的，Change 2 跟您见面</view>
-    <view class="es-chips">
-      <button class="es-chip" bindtap="goDays">先回「日子」看看 ›</button>
+  <!-- 节日卡横滑(借势入口,随日历自动更新;无临近节点时隐藏) -->
+  <scroll-view wx:if="{{rail.length}}" class="festival-rail" scroll-x enable-flex>
+    <view
+      wx:for="{{rail}}"
+      wx:key="key"
+      class="fr-card {{item.bgClass}}"
+      bindtap="openPreview"
+      data-key="{{item.key}}"
+    >
+      <view class="fr-bg">{{item.emoji}}</view>
+      <view class="fr-count">{{item.countText}}</view>
+      <view class="fr-emoji">{{item.emoji}}</view>
+      <view class="fr-name">{{item.festivalName}}</view>
+      <view class="fr-sub"><view class="fr-dot"></view>{{item.name}} · {{item.usedLabel}}</view>
     </view>
-    <view class="es-note">先把重要的日子记下来，到时候直接用</view>
+  </scroll-view>
+
+  <!-- 分类过滤 chips -->
+  <view class="tpl-tabs">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="tpl-tab {{activeTab === item.key ? 'on' : ''}}"
+      bindtap="switchTab"
+      data-key="{{item.key}}"
+    >{{item.name}}</view>
   </view>
+
+  <!-- 模板网格(两列) -->
+  <view class="tpl-grid">
+    <view
+      wx:for="{{grid}}"
+      wx:key="key"
+      class="tpl-card"
+      bindtap="openPreview"
+      data-key="{{item.key}}"
+    >
+      <view class="tp-cover {{item.bgClass}}">
+        <view class="tp-emoji">{{item.emoji}}</view>
+        <view wx:if="{{item.badge}}" class="tp-hot">{{item.badge}}</view>
+      </view>
+      <view class="tp-body">
+        <view class="tp-name">{{item.name}}</view>
+        <view class="tp-sub">{{item.sub}}</view>
+        <view class="tp-used">{{item.usedLabel}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{!grid.length && !loading}}" class="cal-empty">这个分类暂时没有模板，看看「全部」吧</view>
+</view>
+
+<!-- 模板预览弹层(半屏 sheet) -->
+<view class="sheet-mask {{sheetOpen ? 'show' : ''}}" bindtap="closeSheet"></view>
+<view class="sheet tpl-sheet {{sheetOpen ? 'show' : ''}}">
+  <block wx:if="{{pv}}">
+    <view class="tpl-sheet-body">
+      <!-- 迷你成品卡(按 kind 渐变渲染) -->
+      <view class="pv-mini {{pv.bgClass}}">
+        <view class="pm-kicker">{{pv.kicker}}</view>
+        <view class="pm-emoji">{{pv.emoji}}</view>
+        <view class="pm-body">{{pv.sampleText}}</view>
+      </view>
+      <view class="pv-title">{{pv.name}}</view>
+      <view class="pv-sub">{{pv.sub}}</view>
+      <!-- 特性标签 -->
+      <view class="pv-features">
+        <view wx:for="{{pv.feats}}" wx:key="*this" class="pv-feat">{{item}}</view>
+      </view>
+      <view class="pv-stats">{{pv.stats}}</view>
+      <view class="pv-hint">{{pv.hint}}</view>
+      <view class="sheet-buttons">
+        <button class="btn-main pv-go" bindtap="pvGo">{{pv.btnText}}</button>
+        <button class="sheet-cancel" bindtap="pvLater">{{pv.btnLater}}</button>
+      </view>
+    </view>
+  </block>
 </view>

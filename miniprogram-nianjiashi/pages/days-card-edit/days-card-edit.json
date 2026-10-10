@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "相伴天数卡",
+  "backgroundColor": "#fbfaf7",
+  "usingComponents": {
+    "poster": "/components/poster/poster"
+  }
+}

@@ -1,54 +1,284 @@
-.page-tpl {
-  padding: 40rpx 32rpx;
+/* 模板馆:节日横滑/分类 chips/两列网格/预览弹层,视觉对齐原型 v2.1 */
+
+/* previewMeta.backgroundKey 六键 → 渐变(app.wxss 令牌优先,爸爸/婚卡两键补原型专属色) */
+.bg-night {
+  background: var(--grad-night);
+}
+.bg-sunset {
+  background: var(--grad-sunset);
+}
+.bg-mint {
+  background: var(--grad-teal);
+}
+.bg-violet {
+  background: var(--grad-violet);
+}
+.bg-dad {
+  background: linear-gradient(135deg, #1f3a5f, #16233d);
+}
+.bg-wedding {
+  background: linear-gradient(135deg, #7a4e8f, #4a2a63);
 }
 
-.tpl-empty {
-  margin-top: 60rpx;
-  text-align: center;
-  padding: 68rpx 32rpx 60rpx;
-  background: var(--card);
-  border: 3rpx dashed #e3ddce;
-  border-radius: 52rpx;
+.page-tpl {
+  padding-bottom: 40rpx;
 }
-.es-art {
-  font-size: 128rpx;
-  animation: bob 2.2s ease-in-out infinite;
-}
-@keyframes bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8rpx); }
-}
-.es-title {
-  margin-top: 32rpx;
-  font-size: 40rpx;
-  font-weight: 900;
-  color: var(--ink);
-}
-.es-sub {
-  margin-top: 16rpx;
-  font-size: 28rpx;
-  color: var(--ink-3);
-  line-height: 1.7;
-}
-.es-chips {
+
+/* ===== 节日卡横滑 ===== */
+.festival-rail {
   display: flex;
-  flex-direction: column;
-  gap: 18rpx;
-  margin-top: 40rpx;
+  gap: 24rpx;
+  padding: 28rpx 32rpx 8rpx;
+  white-space: nowrap;
+  width: 100%;
+  box-sizing: border-box;
 }
-.es-chip {
-  min-height: 104rpx;
-  line-height: 104rpx;
-  border: 3rpx solid var(--line);
-  border-radius: 30rpx;
-  background: var(--bg);
-  font-size: 32rpx;
+.fr-card {
+  flex-shrink: 0;
+  width: 392rpx;
+  border-radius: 36rpx;
+  padding: 32rpx;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 16rpx 40rpx rgba(28, 28, 40, 0.14);
+}
+.fr-bg {
+  position: absolute;
+  right: -28rpx;
+  bottom: -36rpx;
+  font-size: 172rpx;
+  opacity: 0.18;
+  transform: rotate(-10deg);
+}
+.fr-count {
+  position: absolute;
+  right: 24rpx;
+  top: 24rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2rpx solid rgba(255, 255, 255, 0.45);
+  padding: 6rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+.fr-emoji {
+  font-size: 60rpx;
+  position: relative;
+}
+.fr-name {
+  font-size: 34rpx;
+  font-weight: 900;
+  margin-top: 16rpx;
+  position: relative;
+}
+.fr-sub {
+  font-size: 23rpx;
+  opacity: 0.85;
+  margin-top: 6rpx;
+  position: relative;
+}
+.fr-dot {
+  display: inline-block;
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: #ffd76e;
+  margin-right: 10rpx;
+  vertical-align: 4rpx;
+}
+
+/* ===== 分类 chips ===== */
+.tpl-tabs {
+  display: flex;
+  gap: 16rpx;
+  padding: 8rpx 32rpx 28rpx;
+  overflow-x: auto;
+}
+.tpl-tab {
+  flex-shrink: 0;
+  border-radius: 999rpx;
+  padding: 18rpx 34rpx;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--ink-2);
+  background: #f1efe9;
+}
+.tpl-tab.on {
+  background: var(--ink);
+  color: #fff;
+}
+
+/* ===== 两列网格 ===== */
+.tpl-grid {
+  padding: 0 32rpx 24rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24rpx;
+}
+.tpl-card {
+  width: calc(50% - 12rpx);
+  border-radius: 36rpx;
+  overflow: hidden;
+  background: var(--card);
+  border: 2rpx solid var(--line);
+  box-shadow: 0 8rpx 40rpx rgba(28, 28, 40, 0.07);
+  position: relative;
+  animation: tplin 0.4s backwards;
+}
+.tpl-card:nth-child(2n) {
+  animation-delay: 0.06s;
+}
+@keyframes tplin {
+  from {
+    opacity: 0;
+    transform: translateY(24rpx);
+  }
+}
+.tp-cover {
+  height: 216rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.tp-emoji {
+  font-size: 84rpx;
+  filter: drop-shadow(0 8rpx 20rpx rgba(0, 0, 0, 0.18));
+}
+.tp-hot {
+  position: absolute;
+  top: 18rpx;
+  left: 18rpx;
+  background: #fff;
+  color: var(--rose);
+  font-size: 20rpx;
+  font-weight: 900;
+  padding: 6rpx 16rpx;
+  border-radius: 999rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
+}
+.tp-body {
+  padding: 22rpx 26rpx 26rpx;
+}
+.tp-name {
+  font-size: 30rpx;
   font-weight: 800;
   color: var(--ink);
 }
-.es-note {
-  margin-top: 28rpx;
+.tp-sub {
+  font-size: 23rpx;
+  color: var(--ink-3);
+  margin-top: 6rpx;
+  line-height: 1.45;
+}
+.tp-used {
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+.cal-empty {
+  margin: 48rpx 64rpx;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 27rpx;
+  line-height: 1.8;
+}
+
+/* ===== 预览弹层 ===== */
+.tpl-sheet {
+  padding-bottom: calc(44rpx + env(safe-area-inset-bottom));
+}
+.tpl-sheet-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.pv-mini {
+  width: 392rpx;
+  border-radius: 44rpx;
+  padding: 44rpx 36rpx 36rpx;
+  text-align: center;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 32rpx 72rpx rgba(28, 28, 40, 0.22);
+  animation: pop 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+@keyframes pop {
+  from {
+    transform: scale(0.86);
+    opacity: 0;
+  }
+}
+.pm-kicker {
+  font-size: 19rpx;
+  letter-spacing: 4rpx;
+  opacity: 0.75;
+  font-weight: 800;
+}
+.pm-emoji {
+  font-size: 76rpx;
+  margin: 20rpx 0 8rpx;
+}
+.pm-body {
+  font-size: 22rpx;
+  margin-top: 16rpx;
+  opacity: 0.92;
+  line-height: 1.65;
+}
+.pv-title {
+  margin-top: 32rpx;
+  font-size: 36rpx;
+  font-weight: 900;
+  color: var(--ink);
+  text-align: center;
+}
+.pv-sub {
+  text-align: center;
+  margin-top: 10rpx;
+  font-size: 26rpx;
+  color: var(--ink-2);
+  line-height: 1.6;
+  padding: 0 24rpx;
+}
+.pv-features {
+  display: flex;
+  gap: 14rpx;
+  margin-top: 26rpx;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.pv-feat {
+  font-size: 23rpx;
+  font-weight: 700;
+  color: var(--ink-2);
+  background: #f4f2ec;
+  border-radius: 999rpx;
+  padding: 10rpx 22rpx;
+}
+.pv-stats {
+  margin-top: 26rpx;
   font-size: 24rpx;
   color: var(--ink-3);
-  line-height: 1.7;
+  font-weight: 700;
+  text-align: center;
+}
+.pv-hint {
+  margin-top: 24rpx;
+  font-size: 23rpx;
+  color: var(--teal);
+  font-weight: 700;
+  text-align: center;
+  padding: 0 24rpx;
+  line-height: 1.6;
+}
+.sheet-buttons {
+  width: 100%;
+  margin-top: 34rpx;
+}
+.pv-go {
+  width: 100%;
 }

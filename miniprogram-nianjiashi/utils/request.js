@@ -83,11 +83,11 @@ function request(path, options = {}) {
   return requestViaHttp(path, options)
 }
 
-/** 云托管通道 */
+/** 云托管通道(options.noAuth=true 时不带 Authorization,visitor 免鉴权组专用) */
 function requestViaCloud(path, options) {
   return new Promise((resolve, reject) => {
     const header = { 'content-type': 'application/json' }
-    const token = options.token || getToken()
+    const token = options.noAuth ? '' : options.token || getToken()
     if (token) {
       header['Authorization'] = 'Bearer ' + token
     }
@@ -107,11 +107,11 @@ function requestViaCloud(path, options) {
   })
 }
 
-/** 本地直连通道 */
+/** 本地直连通道(options.noAuth=true 时不带 Authorization) */
 function requestViaHttp(path, options) {
   return new Promise((resolve, reject) => {
     const header = { 'content-type': 'application/json' }
-    const token = options.token || getToken()
+    const token = options.noAuth ? '' : options.token || getToken()
     if (token) {
       header['Authorization'] = 'Bearer ' + token
     }
