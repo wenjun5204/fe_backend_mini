@@ -4,6 +4,19 @@ import com.example.backend.dto.AuthDtos.LoginRequest;
 import com.example.backend.dto.AuthDtos.LoginResponse;
 import com.example.backend.dto.BaguaDtos.BaguaCelebrateResponse;
 import com.example.backend.dto.BaguaDtos.BaguaStatusResponse;
+import com.example.backend.dto.CardDtos.CreateCardRequest;
+import com.example.backend.dto.CardDtos.DeleteCardResponse;
+import com.example.backend.dto.CardDtos.LetterGenerateRequest;
+import com.example.backend.dto.CardDtos.LetterGenerateResponse;
+import com.example.backend.dto.CardDtos.MadeCard;
+import com.example.backend.dto.CardDtos.MadeCardListResponse;
+import com.example.backend.dto.CardDtos.ShareSceneResponse;
+import com.example.backend.dto.CardDtos.TemplateCategory;
+import com.example.backend.dto.CardDtos.TemplateListResponse;
+import com.example.backend.dto.CapsuleDtos.CapsuleCreateRequest;
+import com.example.backend.dto.CapsuleDtos.CapsuleListResponse;
+import com.example.backend.dto.CapsuleDtos.CapsuleOpenResponse;
+import com.example.backend.dto.CapsuleDtos.TimeCapsule;
 import com.example.backend.dto.MeDtos.PendantWearRequest;
 import com.example.backend.dto.MeDtos.PendantWearResponse;
 import com.example.backend.dto.BirthdayDtos.BirthdayListResponse;
@@ -43,9 +56,15 @@ import com.example.backend.dto.NotifyDtos.NotifySubscribeRequest;
 import com.example.backend.dto.NotifyDtos.NotifySubscribeResponse;
 import com.example.backend.dto.RankDtos.FamilyRankResponse;
 import com.example.backend.dto.RankDtos.FriendRankResponse;
+import com.example.backend.dto.VisitorDtos.HeartsRequest;
+import com.example.backend.dto.VisitorDtos.UnlockedContentResponse;
+import com.example.backend.dto.VisitorDtos.VisitorCardView;
+import com.example.backend.dto.VisitorDtos.VisitorUnlockState;
 import com.example.backend.service.AuthService;
 import com.example.backend.service.BaguaService;
 import com.example.backend.service.BirthdayService;
+import com.example.backend.service.CardService;
+import com.example.backend.service.CapsuleService;
 import com.example.backend.service.DayService;
 import com.example.backend.service.FamilyService;
 import com.example.backend.service.FortuneService;
@@ -54,6 +73,7 @@ import com.example.backend.service.JieyouService;
 import com.example.backend.service.NotifyService;
 import com.example.backend.service.PendantService;
 import com.example.backend.service.RankService;
+import com.example.backend.service.VisitorService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -66,7 +86,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 契约路由(与 api/openapi.yaml 一一对应,32 个 operationId;/api/ping 为部署探活,不入契约) */
+/** 契约路由(与 api/openapi.yaml 一一对应,46 个 operationId;/api/ping 为部署探活,不入契约) */
 @RestController
 @RequestMapping("/api")
 public class ApiController {
@@ -74,6 +94,8 @@ public class ApiController {
     private final AuthService authService;
     private final BaguaService baguaService;
     private final BirthdayService birthdayService;
+    private final CardService cardService;
+    private final CapsuleService capsuleService;
     private final DayService dayService;
     private final FamilyService familyService;
     private final FortuneService fortuneService;
@@ -82,10 +104,13 @@ public class ApiController {
     private final NotifyService notifyService;
     private final PendantService pendantService;
     private final RankService rankService;
+    private final VisitorService visitorService;
 
     public ApiController(AuthService authService,
                          BaguaService baguaService,
                          BirthdayService birthdayService,
+                         CardService cardService,
+                         CapsuleService capsuleService,
                          DayService dayService,
                          FamilyService familyService,
                          FortuneService fortuneService,
@@ -93,10 +118,13 @@ public class ApiController {
                          JieyouService jieyouService,
                          NotifyService notifyService,
                          PendantService pendantService,
-                         RankService rankService) {
+                         RankService rankService,
+                         VisitorService visitorService) {
         this.authService = authService;
         this.baguaService = baguaService;
         this.birthdayService = birthdayService;
+        this.cardService = cardService;
+        this.capsuleService = capsuleService;
         this.dayService = dayService;
         this.familyService = familyService;
         this.fortuneService = fortuneService;
@@ -105,6 +133,7 @@ public class ApiController {
         this.notifyService = notifyService;
         this.pendantService = pendantService;
         this.rankService = rankService;
+        this.visitorService = visitorService;
     }
 
     @PostMapping("/auth/login")
@@ -286,5 +315,103 @@ public class ApiController {
     @GetMapping("/notify/status")
     public NotifyStatusResponse getNotifyStatus() {
         return notifyService.getStatus();
+    }
+
+    // ---- 念家时·模板馆引擎(契约 v1.7.0,tag=cards/capsules/visitor) ----
+
+    @GetMapping("/templates")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = TemplateListResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public TemplateListResponse listTemplates(@RequestParam(value = "category", required = false) String category) {
+        TemplateCategory parsed = null;
+        if (category != null && !category.isBlank()) {
+            try {
+                parsed = TemplateCategory.valueOf(category);
+            } catch (IllegalArgumentException e) {
+                throw com.example.backend.common.ApiException.param("请您选择一个模板分类");
+            }
+        }
+        return cardService.listTemplates(parsed);
+    }
+
+    @PostMapping("/templates/letter/generate")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = LetterGenerateResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "403", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public LetterGenerateResponse generateLetter(@RequestBody LetterGenerateRequest request) {
+        return cardService.generateLetter(request);
+    }
+
+    @PostMapping("/cards")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = MadeCard.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public MadeCard createCard(@RequestBody CreateCardRequest request) {
+        return cardService.create(request);
+    }
+
+    @GetMapping("/cards")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = MadeCardListResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public MadeCardListResponse listMyCards() {
+        return cardService.listMyCards();
+    }
+
+    @GetMapping("/cards/{id}")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = MadeCard.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public MadeCard getMyCard(@PathVariable Long id) {
+        return cardService.getMyCard(id);
+    }
+
+    @DeleteMapping("/cards/{id}")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DeleteCardResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public DeleteCardResponse deleteMyCard(@PathVariable Long id) {
+        return cardService.delete(id);
+    }
+
+    @PostMapping("/cards/{id}/share")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = ShareSceneResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public ShareSceneResponse issueShareScene(@PathVariable Long id) {
+        return cardService.share(id);
+    }
+
+    @PostMapping("/capsules")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = TimeCapsule.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public TimeCapsule sealCapsule(@RequestBody CapsuleCreateRequest request) {
+        return capsuleService.seal(request);
+    }
+
+    @GetMapping("/capsules")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = CapsuleListResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public CapsuleListResponse listMyCapsules() {
+        return capsuleService.listMine();
+    }
+
+    @GetMapping("/capsules/{id}")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = TimeCapsule.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public TimeCapsule getMyCapsule(@PathVariable Long id) {
+        return capsuleService.getMine(id);
+    }
+
+    @PostMapping("/capsules/{id}/open")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = CapsuleOpenResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public CapsuleOpenResponse openCapsule(@PathVariable Long id) {
+        return capsuleService.open(id);
+    }
+
+    // ---- 免鉴权访客组(/api/visitor/**,AuthInterceptor 排除,永不 40100) ----
+
+    @GetMapping("/visitor/cards/{scene}")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = VisitorCardView.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public VisitorCardView getVisitorCard(@PathVariable String scene,
+                                          @RequestParam(value = "deviceId", required = false) String deviceId) {
+        return visitorService.getCard(scene, deviceId);
+    }
+
+    @PostMapping("/visitor/cards/{scene}/hearts")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = VisitorUnlockState.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "429", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public VisitorUnlockState lightHeart(@PathVariable String scene, @RequestBody HeartsRequest request) {
+        return visitorService.lightHeart(scene, request);
+    }
+
+    @GetMapping("/visitor/cards/{scene}/content")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UnlockedContentResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public UnlockedContentResponse getUnlockedContent(@PathVariable String scene,
+                                                      @RequestParam(value = "deviceId", required = false) String deviceId) {
+        return visitorService.getContent(scene, deviceId);
     }
 }

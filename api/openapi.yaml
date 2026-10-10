@@ -1,15 +1,22 @@
 openapi: 3.0.3
 info:
   title: 全家福·接福气 API
-  version: 1.6.0
+  version: 1.7.0
   description: |
     中老年家庭祈福互动小程序「全家福·接福气」接口契约(唯一事实源)。
     v1.5.0 增量:八卦集福阵(只读进度)/转罗盘卦位(仅卡面主题)/解忧册文案下发(幂等)/订阅消息授权登记。
     v1.6.0 增量(念家时 v2.0 日子管家):日子记录(生日/纪念日/在一起)CRUD、按人提醒配置、到期计算;复用既有 /api/calendar/convert 与 /api/notify/*。
+    v1.7.0 增量(念家时 v2.1 模板馆引擎):模板馆清单(服务端配置驱动)、感恩信 AI 生成(逐句备选)、三类卡片定稿存档/详情/删除/分享场景码、时光胶囊封存/开箱、免鉴权访客落地/点亮心/解锁内容(/api/visitor/* 不要求登录 token)。
     合规约束:文案禁用迷信词(见 .agents/docs/conventions.md,含 v1.5 追加:卦象/卦运/宜忌/生门/吉位/凶位/能成/不行/会有/注定/天意/预示/破财/有灾),错误 message 面向用户须过合规词表。
 tags:
   - name: days
     description: 念家时 v2.0 日子管家(生日/纪念日/在一起三类日子,自由关系文本,按人提醒配置与到期计算)
+  - name: cards
+    description: 念家时 v2.1 模板馆引擎——模板清单、感恩信 AI 生成与三类卡片(LETTER/DAYS_CARD/CAPSULE)定稿存档、分享场景码签发
+  - name: capsules
+    description: 念家时 v2.1 时光胶囊——封存/列表/详情(内容门控)/到期开箱(幂等)
+  - name: visitor
+    description: 念家时 v2.1 免鉴权访客组(/api/visitor/*)——扫码落地/点亮心(42900 软频控)/解锁取隐藏内容;不要求登录 token,永不返回 40100
 paths:
   /api/auth/login:
     post:
@@ -600,6 +607,448 @@ paths:
                 $ref: '#/components/schemas/DayReminderDueResponse'
         '401':
           description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/templates:
+    get:
+      tags: [cards]
+      operationId: listTemplates
+      summary: 模板馆清单(服务端配置驱动:分类/上下架/预约态/节点倒计时数据/预览弹层元数据);节点日历横滑与首页节日横幅同源消费此数据,前端本地算倒计时
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/TemplateCategory'
+          description: 分类过滤;缺省=全部
+      responses:
+        '200':
+          description: 模板清单(按 sort 升序,含 live=false 预约态模板)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateListResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/templates/letter/generate:
+    post:
+      tags: [cards]
+      operationId: generateLetter
+      summary: 感恩信生成(AI 优先,无 Key/异常静默降级本地文案库,用户无感;无服务端草稿态);响应每段 ≥2 备选 variants 供前端逐句点换;导航栏整体重写=同参重调本端点(计入频控)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LetterGenerateRequest'
+      responses:
+        '200':
+          description: 生成成功(5-9 段:开头 1+每故事 1+收尾 1;AI 输出逐段过违禁词表,命中即丢弃该段并以降级写法补位)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LetterGenerateResponse'
+        '400':
+          description: 参数错误(40000:recipient 越界、stories 空数组/越界/值域外、tone 非法)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 硬频控(40300:每日每人 >5 次,AI 与降级路径统一计数)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/cards:
+    get:
+      tags: [cards]
+      operationId: listMyCards
+      summary: 我的卡片列表(双列卡片墙数据源)+统计;按 createdAt 降序;封面渲染元数据从 payload 归并
+      responses:
+        '200':
+          description: 仅 status=ACTIVE 的本人卡片与统计
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MadeCardListResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [cards]
+      operationId: createCard
+      summary: 卡片定稿存档(三类统一:LETTER 定稿/DAYS_CARD 生成/CAPSULE 邀请函);payload 按 templateKind 异构校验;当日同 kind 去重由前端做,服务端不去重
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCardRequest'
+      responses:
+        '200':
+          description: 已存档的卡片(shareScene 此时为 null,首次分享才签发)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MadeCard'
+        '400':
+          description: 参数错误(40000:templateKind 非法、payload 结构与 templateKind 不符、sourceDayId 非本人或非 TOGETHER 日子、CAPSULE 未传 capsuleId)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 关联资源不存在或越权(40400:capsuleId 非本人或非 SEALED 胶囊、sourceDayId 不存在,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/cards/{id}:
+    get:
+      tags: [cards]
+      operationId: getMyCard
+      summary: 卡片详情(再次分享/重出海报数据源);仅本人可见
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 卡片详情(含完整 payload 与 totalHearts)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MadeCard'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 卡片不存在、已软删或非本人(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [cards]
+      operationId: deleteMyCard
+      summary: 删除卡片(软删 status=DELETED,幂等);已签发 shareScene 随之失效,访客端经 scene 访问返回 40400;前端删除前需二次确认
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 删除结果(恒 true,重复删除幂等)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteCardResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 卡片不存在或非本人(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/cards/{id}/share:
+    post:
+      tags: [cards]
+      operationId: issueShareScene
+      summary: 签发分享场景码(幂等:同卡片恒返回同一 scene)并下发访客页路径;前端据此本地绘二维码/海报,scene 协议见响应
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: scene 与 pagePath(首次调用生成,后续恒定;卡片软删后该 scene 访客端 40400)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareSceneResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 卡片不存在、已软删或非本人(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/capsules:
+    get:
+      tags: [capsules]
+      operationId: listMyCapsules
+      summary: 我的胶囊列表(我的页「待开红点」数据源);按 openDate 升序,已开的按 openedAt 降序排后;SEALED 态项不下发内容字段
+      responses:
+        '200':
+          description: 胶囊列表与待开数(每项含 dueNow,首页召回横幅数据源)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapsuleListResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [capsules]
+      operationId: sealCapsule
+      summary: 封存时光胶囊(openDate>封存日;contentText 明文存,读取由接口门控);开箱日订阅提醒复用既有 /api/notify/subscribe 语义(拒绝登记静默降级)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CapsuleCreateRequest'
+      responses:
+        '200':
+          description: 已封存的胶囊(SEALED 态:含 id/openDate/daysUntilOpen/coverHint,不下发 contentText/photoUrl)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeCapsule'
+        '400':
+          description: 参数错误(40000:openDate 缺失/格式非法/≤今天、type/openRule 非法、coverHint/contentText 越界或命中违禁词)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/capsules/{id}:
+    get:
+      tags: [capsules]
+      operationId: getMyCapsule
+      summary: 胶囊详情(仅本人);SEALED 态仅返回封面提示语/开箱日/倒计时,不下发内容;OPENED 态返回完整内容,开箱后可反复回看
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 胶囊详情(status=SEALED 无 contentText/photoUrl 字段;status=OPENED 含完整内容)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeCapsule'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 胶囊不存在或非本人(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/capsules/{id}/open:
+    post:
+      tags: [capsules]
+      operationId: openCapsule
+      summary: 开箱(today≥openDate 才允许);成功置 OPENED 并首次下发内容;重复调用幂等返回首次结果,开箱后内容对本人常开
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OPENED 态完整内容(信件+照片揭示)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapsuleOpenResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 胶囊不存在或非本人(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 状态冲突(40900:胶囊未到期,today<openDate 不允许开箱)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/visitor/cards/{scene}:
+    get:
+      tags: [visitor]
+      operationId: getVisitorCard
+      summary: 访客扫码落地【免鉴权公开端点:不要求登录 token,永不返回 40100】;按卡片可见策略返回体面内容+打码钩子+本设备心进度
+      description: 免鉴权公开端点(/api/visitor/* 组);scene 为 8-12 位 base62 高熵随机串,不可枚举;卡片已软删或 scene 无效返回 40400(不泄露存在性)
+      parameters:
+        - name: scene
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 分享场景码(POST /api/cards/{id}/share 签发)
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 前端生成并持久化的 UUID,32-64 字符(访客心进度与防刷主体)
+      responses:
+        '200':
+          description: 访客落地页数据(体面内容+打码钩子+本设备心进度;unlocked=true 时前端展示深色转化 CTA)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitorCardView'
+        '400':
+          description: 参数错误(40000:deviceId 缺失/长度非法)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: scene 无效或卡片已软删(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/visitor/cards/{scene}/hearts:
+    post:
+      tags: [visitor]
+      operationId: lightHeart
+      summary: 点亮一颗心【免鉴权公开端点:不要求登录 token,永不返回 40100】;device 维度计数,同设备同卡片封顶 3 不重复计数;已满 3 后再调恒返回 3/true(幂等不报错)
+      description: 免鉴权公开端点(/api/visitor/* 组);软频控 42900(单设备对单卡片 >3 次/分钟),提示稍后再点,不阻断解锁目标
+      parameters:
+        - name: scene
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 分享场景码
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HeartsRequest'
+      responses:
+        '200':
+          description: 点亮后本设备计数与解锁状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitorUnlockState'
+        '400':
+          description: 参数错误(40000:deviceId 缺失/长度非法)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: scene 无效或卡片已软删(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: 软频控(42900:单设备对单卡片 >3 次/分钟,提示稍后再点;不阻断解锁目标)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/visitor/cards/{scene}/content:
+    get:
+      tags: [visitor]
+      operationId: getUnlockedContent
+      summary: 解锁后取隐藏内容【免鉴权公开端点:不要求登录 token,永不返回 40100】;LETTER=完整段落,DAYS_CARD=隐藏一句话,CAPSULE=开箱前为封存信摘要、开箱日后为信件本体+照片;未解锁 40900
+      description: 免鉴权公开端点(/api/visitor/* 组);capsule 类卡片开箱日前的隐藏内容为预置悬念文案,不含真实信件内容(内容门控)
+      parameters:
+        - name: scene
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 分享场景码
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 前端生成并持久化的 UUID,32-64 字符
+      responses:
+        '200':
+          description: 隐藏内容与深色转化 CTA 数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnlockedContentResponse'
+        '400':
+          description: 参数错误(40000:deviceId 缺失/长度非法)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: scene 无效或卡片已软删(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 状态冲突(40900:本设备未解锁,hearts<3 不可取隐藏内容)
           content:
             application/json:
               schema:
@@ -1307,7 +1756,546 @@ components:
       properties:
         code:
           type: string
-          description: 业务错误码(字符串形式,与运行时序列化一致):"40000" 参数错误/"40100" 未登录或身份失效/"40300" 提醒发送频控超限(>3 条/人/天,仅真实下发链路)/"40400" 不存在或越权(不泄露存在性)/"40900" 保留既有枚举
+          description: 业务错误码(字符串形式,与运行时序列化一致):"40000" 参数错误/"40100" 未登录或身份失效(免鉴权 /api/visitor/* 端点组不适用)/"40300" 硬频控超限(提醒发送 >3 条/人/天,仅真实下发链路;感恩信生成每日每人 >5 次,AI 与降级路径统一计数)/"40400" 不存在或越权(不泄露存在性)/"40900" 状态冲突(胶囊未到期开箱、访客未解锁取隐藏内容)/"42900" 软频控——访客点亮心过于频繁(单设备对单卡片 >3 次/分钟),提示稍后再点,不阻断解锁目标
         message:
           type: string
           description: 面向用户的错误文案,须过合规词表
+    TemplateKey:
+      type: string
+      enum: [LETTER, DAYS_CARD, CAPSULE, BIRTHDAY_CARD, HARD_FOR_DAD, WEDDING_CARD]
+      description: 模板键(服务端配置主键):感恩信/相伴天数卡/时光胶囊邀请函/生日福卡/给爸爸的一句硬话/结婚纪念日卡;后三者为预告态(live=false,预约展示)
+    TemplateCategory:
+      type: string
+      enum: [FESTIVAL, FAMILY, COUPLE, FUN]
+      description: 模板分类(前端分类 Tab 过滤):FESTIVAL 节日/FAMILY 家人/COUPLE 情侣/FUN 整活
+    TemplatePreviewMeta:
+      type: object
+      required: [kicker, emoji, sampleText, backgroundKey, sub, feats, usedLabel, durationLabel, freeLabel, hint]
+      properties:
+        kicker:
+          type: string
+          description: 预览弹层眉题(如:写给妈妈)
+        emoji:
+          type: string
+          description: 模板主表情
+        sampleText:
+          type: string
+          description: 示例文案摘录,过合规词表
+        backgroundKey:
+          type: string
+          description: 样式渲染键(前端据此选背景样式)
+        sub:
+          type: string
+          description: 一句话说明
+        feats:
+          type: array
+          items:
+            type: string
+          description: 特性标签数组
+        usedLabel:
+          type: string
+          description: 社会证明文案(如:12.4 万人已写)
+        durationLabel:
+          type: string
+          description: 耗时提示(如:约 3 分钟)
+        freeLabel:
+          type: string
+          description: 免费标记,恒「✅ 免费」
+        hint:
+          type: string
+          description: 场景化提示文案
+    TemplateInfo:
+      type: object
+      required: [key, name, category, live, sort, previewMeta]
+      properties:
+        key:
+          $ref: '#/components/schemas/TemplateKey'
+        name:
+          type: string
+          description: 模板名(给妈妈的感恩信/相伴天数卡/时光胶囊邀请函/生日福卡/给爸爸的一句硬话/结婚纪念日卡)
+        category:
+          $ref: '#/components/schemas/TemplateCategory'
+        live:
+          type: boolean
+          description: 上下架;false=预约态(主按钮「上线提醒我」,预约仅前端本地收藏)
+        sort:
+          type: integer
+          description: 展示序,升序
+        festivalDate:
+          type: string
+          nullable: true
+          description: 节点日期 yyyy-MM-dd,可空;节点日历横滑倒计时数据源(母亲节/父亲节/七夕),前端本地算 X 天后
+        festivalLabel:
+          type: string
+          nullable: true
+          description: 节点卡名称+emoji(如:母亲节 🌷),可空
+        previewMeta:
+          $ref: '#/components/schemas/TemplatePreviewMeta'
+        makerPage:
+          type: string
+          nullable: true
+          description: 制作页路径,可空(live 但无制作页的模板为 null,按钮提示「生日当天首页提醒你」)
+    TemplateListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          description: 按 sort 升序;含 live=false 预约态模板;空数组触发前端空状态
+          items:
+            $ref: '#/components/schemas/TemplateInfo'
+    StoryKey:
+      type: string
+      enum: ["她总给我留饭", "送我上学那些年", "她爱唠叨但都是好意", "她一个人把我带大", "我离家后她学会视频"]
+      description: 感恩信 5 个固定素材键(值与交互原型 STORY_PARAS 键一致);stories 值域即此枚举
+    LetterTone:
+      type: string
+      enum: [TEAR, FUN, CALM]
+      description: 信件语气:TEAR 戳泪点/FUN 幽默/CALM 平淡
+    LetterSource:
+      type: string
+      enum: [AI, FALLBACK]
+      description: 生成来源:AI 优先;无 Key/异常静默降级本地文案库(FALLBACK)。降级对用户无感,仅埋点用
+    LetterSegmentRole:
+      type: string
+      enum: [OPENING, STORY, CLOSING]
+      description: 段落角色:OPENING 开头/STORY 故事段/CLOSING 收尾段
+    LetterGenerateRequest:
+      type: object
+      required: [recipient, stories, tone]
+      properties:
+        recipient:
+          type: string
+          minLength: 1
+          maxLength: 12
+          description: 收信人(妈妈/岳母/婆婆/奶奶/自定义文本),1-12 字
+        stories:
+          type: array
+          minItems: 1
+          maxItems: 5
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/StoryKey'
+          description: 故事素材多选,1-5 项去重;值域=5 个固定素材键;空数组返回 40000
+        tone:
+          $ref: '#/components/schemas/LetterTone'
+    LetterSegment:
+      type: object
+      required: [index, role, variants, selected]
+      properties:
+        index:
+          type: integer
+          description: 段序(响应数组下标,顺序即信件顺序)
+        role:
+          $ref: '#/components/schemas/LetterSegmentRole'
+        storyKey:
+          allOf:
+            - $ref: '#/components/schemas/StoryKey'
+          nullable: true
+          description: 仅 role=STORY 段有值,对应请求 stories 项;OPENING/CLOSING 为 null
+        variants:
+          type: array
+          minItems: 2
+          items:
+            type: string
+          description: 本段备选写法 ≥2 项(前端「逐句点换」的数据基础,同段循环点换);每条均过违禁词表
+        selected:
+          type: string
+          description: 当前采用写法(默认=variants 之一;前端点换后仅本地态变化,定稿时写入 POST /api/cards)
+    LetterGenerateResponse:
+      type: object
+      required: [generationId, source, paragraphs, signText]
+      properties:
+        generationId:
+          type: string
+          description: 本次生成标识(幂等用途;前端定稿时随 payload 记录来源,服务端不存草稿)
+        source:
+          $ref: '#/components/schemas/LetterSource'
+        paragraphs:
+          type: array
+          minItems: 5
+          maxItems: 9
+          items:
+            $ref: '#/components/schemas/LetterSegment'
+          description: 5-9 段,顺序=开头 1+每故事 1+收尾 1;AI 输出逐段过违禁词表,命中即丢弃并以降级写法补位
+        signText:
+          type: string
+          description: 落款固定文案(如:—— 你的孩子),不可换
+    CardKind:
+      type: string
+      enum: [LETTER, DAYS_CARD, CAPSULE]
+      description: 卡片类型(可制作的三类):LETTER 感恩信/DAYS_CARD 相伴天数卡/CAPSULE 时光胶囊邀请函
+    CardStatus:
+      type: string
+      enum: [ACTIVE, DELETED]
+      description: 卡片状态:ACTIVE 正常(默认)/DELETED 软删(列表/详情/访客端均不可见)
+    CardPayload:
+      type: object
+      description: 按 templateKind 异构的卡片定稿内容(服务端按 kind 校验结构与长度,非法 40000)。LETTER 必填 recipient/tone/paragraphs/signText/styleKey(恒 NIGHT);DAYS_CARD 必填 relation/startDate/styleKey(SUNSET|NIGHT|MINT);CAPSULE 必填 capsuleId/coverHint/openDate/type/styleKey(恒 MINT)。未适用的字段不出现
+      properties:
+        recipient:
+          type: string
+          description: 仅 LETTER:收信人,1-12 字
+        tone:
+          $ref: '#/components/schemas/LetterTone'
+        paragraphs:
+          type: array
+          items:
+            type: string
+          description: 仅 LETTER:定稿段落(每段为选定写法纯文本)
+        signText:
+          type: string
+          description: 仅 LETTER:落款固定文案
+        relation:
+          type: string
+          description: 仅 DAYS_CARD:关系文本,1-12 字
+        startDate:
+          type: string
+          description: 仅 DAYS_CARD:起始日 yyyy-MM-dd(含年;独立输入或来自关联日子)
+        styleKey:
+          type: string
+          enum: [SUNSET, NIGHT, MINT]
+          description: 样式渲染键;LETTER 恒 NIGHT,DAYS_CARD 三选一,CAPSULE 恒 MINT
+        capsuleId:
+          type: integer
+          description: 仅 CAPSULE:关联 TimeCapsule id(引用非包含)
+        coverHint:
+          type: string
+          description: 仅 CAPSULE:封面提示语 1-40 字
+        openDate:
+          type: string
+          description: 仅 CAPSULE:开箱日 yyyy-MM-dd
+        type:
+          type: string
+          enum: [SELF, PARTNER]
+          description: 仅 CAPSULE:给未来的自己/给未来的 TA
+    CreateCardRequest:
+      type: object
+      required: [templateKind, payload]
+      properties:
+        templateKind:
+          $ref: '#/components/schemas/CardKind'
+        payload:
+          $ref: '#/components/schemas/CardPayload'
+        sourceDayId:
+          type: integer
+          nullable: true
+          description: 仅 DAYS_CARD 可关联 DayRecord(kind=TOGETHER);传入非本人/非 TOGETHER 日子 40000;缺省=独立输入起始日
+        capsuleId:
+          type: integer
+          nullable: true
+          description: 仅 CAPSULE 必填,须为本人 SEALED 胶囊;非本人或非 SEALED 40000/40400
+    MadeCard:
+      type: object
+      required: [id, templateKind, payload, status, createdAt, totalHearts]
+      properties:
+        id:
+          type: integer
+        templateKind:
+          $ref: '#/components/schemas/CardKind'
+        payload:
+          $ref: '#/components/schemas/CardPayload'
+        sourceDayId:
+          type: integer
+          nullable: true
+          description: 仅 DAYS_CARD:关联 DayRecord id;独立输入起始日时为 null
+        capsuleId:
+          type: integer
+          nullable: true
+          description: 仅 CAPSULE:关联 TimeCapsule id
+        shareScene:
+          type: string
+          nullable: true
+          description: 分享场景码(8-12 位 base62,卡片维度唯一);首次 POST /api/cards/{id}/share 时签发,后续恒定;软删后该 scene 访客端 40400;未签发为 null
+        status:
+          $ref: '#/components/schemas/CardStatus'
+        createdAt:
+          type: string
+          description: 创建时间 ISO 8601;列表按此降序
+        totalHearts:
+          type: integer
+          description: 收到的心:该卡片全部访客设备 VisitorUnlock hearts 之和(跨设备累计);我的页「收到的心」=各卡合计
+    MadeCardListResponse:
+      type: object
+      required: [items, total, heartsReceived]
+      properties:
+        items:
+          type: array
+          description: 仅 status=ACTIVE,按 createdAt 降序;封面渲染元数据从 payload 归并;空数组触发前端空状态
+          items:
+            $ref: '#/components/schemas/MadeCard'
+        total:
+          type: integer
+          description: 做过的卡片数(我的页统计)
+        heartsReceived:
+          type: integer
+          description: 收到的心=本人全部卡片 totalHearts 之和(我的页统计)
+    DeleteCardResponse:
+      type: object
+      required: [deleted]
+      properties:
+        deleted:
+          type: boolean
+          description: 恒 true(不存在/越权/已删返回 40400 或幂等 true;软删幂等)
+    ShareSceneResponse:
+      type: object
+      required: [scene, pagePath]
+      properties:
+        scene:
+          type: string
+          minLength: 8
+          maxLength: 12
+          description: 场景码(8-12 位 base62 高熵随机串,卡片维度唯一);幂等:首次调用生成,后续恒定;卡片软删后失效(访客端 40400)
+        pagePath:
+          type: string
+          maxLength: 40
+          description: 访客落地页路径(pages/visitor/visitor?scene=XXXXXXXX,pagePath 前缀 28 字符+scene 8-12 位,总长 ≤40);前端据此本地绘二维码/海报
+    CapsuleType:
+      type: string
+      enum: [SELF, PARTNER]
+      description: 胶囊类型:SELF 给未来的自己/PARTNER 给未来的 TA
+    CapsuleOpenRule:
+      type: string
+      enum: [ONE_YEAR_LATER, GAOKAO_SCORE_DAY, WEDDING_ANNIVERSARY, BABY_18]
+      description: 开箱规则预设(仅展示用,开箱判定唯一看 openDate):一年后/高考出分日/结婚纪念日/孩子 18 岁
+    CapsuleStatus:
+      type: string
+      enum: [SEALED, OPENED]
+      description: 胶囊状态:SEALED 封存(内容门控:任何端点不下发 contentText/photoUrl)/OPENED 已开箱(内容对本人常开)
+    CapsuleCreateRequest:
+      type: object
+      required: [type, openRule, coverHint, contentText]
+      properties:
+        type:
+          $ref: '#/components/schemas/CapsuleType'
+        openRule:
+          $ref: '#/components/schemas/CapsuleOpenRule'
+        openDate:
+          type: string
+          nullable: true
+          description: 开箱日 yyyy-MM-dd,唯一权威开箱判定字段;ONE_YEAR_LATER 由服务端按封存日+365 天计算可缺省,其余预设必填;必须>今天,否则 40000
+        coverHint:
+          type: string
+          minLength: 1
+          maxLength: 40
+          description: 封面提示语 1-40 字(预置点选或自定义),开箱人扫码第一眼所见;过违禁词表
+        contentText:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: 信件内容 1-500 字,明文存、读取由接口门控;过违禁词表(静态+运行时)
+        photoUrl:
+          type: string
+          nullable: true
+          description: 可空;允许为空串或前端自托管链接;门控同 contentText
+    TimeCapsule:
+      type: object
+      required: [id, type, openRule, openDate, coverHint, status, sealedAt, daysUntilOpen, dueNow]
+      properties:
+        id:
+          type: integer
+        type:
+          $ref: '#/components/schemas/CapsuleType'
+        openRule:
+          $ref: '#/components/schemas/CapsuleOpenRule'
+        openDate:
+          type: string
+          description: 开箱日 yyyy-MM-dd(唯一权威开箱判定字段)
+        coverHint:
+          type: string
+          description: 封面提示语,开箱人扫码第一眼所见;SEALED 态访客亦可见
+        contentText:
+          type: string
+          nullable: true
+          description: 信件内容(内容门控:status=SEALED 时任何端点不下发此字段,status=OPENED 时返回)
+        photoUrl:
+          type: string
+          nullable: true
+          description: 照片链接(门控同 contentText);可空
+        status:
+          $ref: '#/components/schemas/CapsuleStatus'
+        sealedAt:
+          type: string
+          description: 封存时间 ISO 8601;ONE_YEAR_LATER 的 openDate=sealedAt+365 天
+        openedAt:
+          type: string
+          nullable: true
+          description: 首次 POST /api/capsules/{id}/open 时间;SEALED 态为 null
+        daysUntilOpen:
+          type: integer
+          description: 今天到 openDate 的天数,≥0;=0 即到期可开(dueNow)
+        dueNow:
+          type: boolean
+          description: today≥openDate 且 status=SEALED;首页召回横幅数据源
+    CapsuleListResponse:
+      type: object
+      required: [items, dueCount]
+      properties:
+        items:
+          type: array
+          description: 按 openDate 升序,已开的按 openedAt 降序排后;SEALED 态项不含内容字段
+          items:
+            $ref: '#/components/schemas/TimeCapsule'
+        dueCount:
+          type: integer
+          description: 待开数(我的页「待开红点」角标)
+    CapsuleOpenResponse:
+      type: object
+      required: [id, type, openRule, openDate, coverHint, contentText, photoUrl, status, sealedAt, openedAt, daysUntilOpen]
+      properties:
+        id:
+          type: integer
+        type:
+          $ref: '#/components/schemas/CapsuleType'
+        openRule:
+          $ref: '#/components/schemas/CapsuleOpenRule'
+        openDate:
+          type: string
+          description: 开箱日 yyyy-MM-dd
+        coverHint:
+          type: string
+        contentText:
+          type: string
+          description: 信件本体(开箱揭示;重复调用幂等返回首次结果)
+        photoUrl:
+          type: string
+          nullable: true
+          description: 照片链接(封存时未传为 null)
+        status:
+          type: string
+          enum: [OPENED]
+          description: 恒 OPENED
+        sealedAt:
+          type: string
+        openedAt:
+          type: string
+          description: 首次开箱时间(幂等返回首次结果)
+        daysUntilOpen:
+          type: integer
+          description: 开箱后为 0
+    HeartsRequest:
+      type: object
+      required: [deviceId]
+      properties:
+        deviceId:
+          type: string
+          minLength: 32
+          maxLength: 64
+          description: 前端生成并持久化的 UUID,32-64 字符;与 VisitorUnlock.deviceId 对应(同设备同卡片唯一约束)
+    VisitorCardView:
+      type: object
+      required: [templateKind, publicPayload, lockedTeaser, hearts, unlocked]
+      properties:
+        templateKind:
+          $ref: '#/components/schemas/CardKind'
+        publicPayload:
+          $ref: '#/components/schemas/VisitorPublicPayload'
+        lockedTeaser:
+          type: string
+          description: 打码钩子提示文案(如:还有一段 TA 没发出来的话),前端渲染渐隐遮罩;过违禁词表
+        hearts:
+          type: integer
+          description: 本设备已点亮数 0-3
+        unlocked:
+          type: boolean
+          description: hearts≥3 即 true;true 时前端展示深色转化 CTA
+    VisitorPublicPayload:
+      type: object
+      description: 体面内容(按卡片可见策略脱敏,按 templateKind 异构)。LETTER=recipient+前 3 段+落款;DAYS_CARD=relation/startDate/daysTogether/styleKey;CAPSULE=type/coverHint/openDate/daysUntilOpen(不含信件本体)。未适用的字段不出现
+      properties:
+        recipient:
+          type: string
+          description: 仅 LETTER:收信人
+        paragraphs:
+          type: array
+          maxItems: 3
+          items:
+            type: string
+          description: 仅 LETTER:前 3 段定稿文本
+        signText:
+          type: string
+          description: 仅 LETTER:落款
+        relation:
+          type: string
+          description: 仅 DAYS_CARD:关系文本
+        startDate:
+          type: string
+          description: 仅 DAYS_CARD:起始日 yyyy-MM-dd
+        daysTogether:
+          type: integer
+          description: 仅 DAYS_CARD:相伴天数(服务端实时按 startDate 计算,与本人 togetherDays 同源)
+        styleKey:
+          type: string
+          description: 样式渲染键(访客页复用卡片样式)
+        type:
+          $ref: '#/components/schemas/CapsuleType'
+        coverHint:
+          type: string
+          description: 仅 CAPSULE:封面提示语
+        openDate:
+          type: string
+          description: 仅 CAPSULE:开箱日 yyyy-MM-dd
+        daysUntilOpen:
+          type: integer
+          description: 仅 CAPSULE:距开箱天数(服务端实时计算)
+    VisitorUnlockState:
+      type: object
+      required: [hearts, unlocked, remainingHint, totalHearts]
+      properties:
+        hearts:
+          type: integer
+          description: 点亮后本设备计数 0-3;已满 3 后再调恒返回 3(幂等不报错)
+        unlocked:
+          type: boolean
+          description: hearts≥3 即 true
+        remainingHint:
+          type: string
+          description: 「还差 N 颗 ❤️」或「已解锁」;过违禁词表
+        totalHearts:
+          type: integer
+          description: 该卡片累计收到的总心数(跨设备,与卡片主人 totalHearts 统计同源)
+    UnlockedContentResponse:
+      type: object
+      required: [templateKind, hiddenContent, ctaCopy]
+      properties:
+        templateKind:
+          $ref: '#/components/schemas/CardKind'
+        hiddenContent:
+          $ref: '#/components/schemas/HiddenContent'
+        ctaCopy:
+          $ref: '#/components/schemas/CtaCopy'
+    HiddenContent:
+      type: object
+      description: 隐藏内容(按 templateKind 异构)。LETTER=paragraphs(完整定稿段落)+signText;DAYS_CARD=hiddenLine(如:下一个 N 天,打算继续赖着你);CAPSULE=contentText+photoUrl(开箱日前为预置悬念文案,不含真实内容;开箱日后为信件本体+照片)。未适用的字段不出现
+      properties:
+        paragraphs:
+          type: array
+          items:
+            type: string
+          description: 仅 LETTER:完整定稿段落
+        signText:
+          type: string
+          description: 仅 LETTER:落款
+        hiddenLine:
+          type: string
+          description: 仅 DAYS_CARD:隐藏的一句话(服务端按 daysTogether 填充)
+        contentText:
+          type: string
+          description: 仅 CAPSULE:开箱日前为预置悬念文案;开箱日后为信件本体
+        photoUrl:
+          type: string
+          nullable: true
+          description: 仅 CAPSULE:照片链接,开箱日前为 null
+    CtaCopy:
+      type: object
+      required: [title, sub, buttonText]
+      properties:
+        title:
+          type: string
+          description: 深色转化 CTA 标题(如:用「念家时」打开你们的照片)
+        sub:
+          type: string
+          description: CTA 副标题(如:免费记日子·做卡片·埋时光胶囊)
+        buttonText:
+          type: string
+          description: CTA 按钮文案(如:打开念家时)
