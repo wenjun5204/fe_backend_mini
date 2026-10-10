@@ -1306,8 +1306,8 @@ components:
       required: [code, message]
       properties:
         code:
-          type: integer
-          description: 业务错误码:40000 参数错误/40100 未登录或身份失效/40300 提醒发送频控超限(>3 条/人/天,仅真实下发链路)/40400 不存在或越权(不泄露存在性)/40900 保留既有枚举
+          type: string
+          description: 业务错误码(字符串形式,与运行时序列化一致):"40000" 参数错误/"40100" 未登录或身份失效/"40300" 提醒发送频控超限(>3 条/人/天,仅真实下发链路)/"40400" 不存在或越权(不泄露存在性)/"40900" 保留既有枚举
         message:
           type: string
           description: 面向用户的错误文案,须过合规词表

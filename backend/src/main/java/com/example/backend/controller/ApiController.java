@@ -22,7 +22,12 @@ import com.example.backend.dto.DayDtos.DayReminderDueResponse;
 import com.example.backend.dto.DayDtos.DayReminderRequest;
 import com.example.backend.dto.DayDtos.DayUpsertRequest;
 import com.example.backend.dto.DayDtos.DeleteDayResponse;
+import com.example.backend.dto.ErrorDtos;
 import com.example.backend.dto.FamilyDtos.CreateFamilyRequest;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import com.example.backend.dto.FamilyDtos.FamilyDetail;
 import com.example.backend.dto.FamilyDtos.InviteInfo;
 import com.example.backend.dto.FamilyDtos.JoinFamilyRequest;
@@ -212,36 +217,43 @@ public class ApiController {
     // ---- 念家时·日子管家(契约 v1.6.0,tag=days) ----
 
     @GetMapping("/days")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DayListResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
     public DayListResponse listDays() {
         return dayService.getDays();
     }
 
     @PostMapping("/days")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DayRecord.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
     public DayRecord createDay(@RequestBody DayUpsertRequest request) {
         return dayService.create(request);
     }
 
     @GetMapping("/days/{id}")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DayRecord.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
     public DayRecord getDay(@PathVariable Long id) {
         return dayService.getDay(id);
     }
 
     @PutMapping("/days/{id}")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DayRecord.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
     public DayRecord updateDay(@PathVariable Long id, @RequestBody DayUpsertRequest request) {
         return dayService.update(id, request);
     }
 
     @DeleteMapping("/days/{id}")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DeleteDayResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
     public DeleteDayResponse deleteDay(@PathVariable Long id) {
         return dayService.delete(id);
     }
 
     @PutMapping("/days/{id}/reminder")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DayReminder.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
     public DayReminder updateDayReminder(@PathVariable Long id, @RequestBody DayReminderRequest request) {
         return dayService.updateReminder(id, request);
     }
 
     @GetMapping("/days/reminder-due")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DayReminderDueResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
     public DayReminderDueResponse getReminderDue(@RequestParam(value = "date", required = false) String date) {
         return dayService.getReminderDue(date);
     }
