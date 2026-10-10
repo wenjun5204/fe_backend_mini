@@ -1,6 +1,8 @@
 package com.example.backend.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
@@ -120,7 +122,11 @@ public final class CardDtos {
 
     public static class LetterGenerateRequest {
         private String recipient;
+        @ArraySchema(schema = @Schema(implementation = StoryKey.class),
+                arraySchema = @Schema(description = "故事素材多选,1-5 项;非法值由服务端校验回 40000"))
         private List<String> stories;
+        @Schema(implementation = LetterTone.class,
+                description = "语气;非法值由服务端校验回 40000")
         private String tone;
 
         public String getRecipient() { return recipient; }
@@ -134,6 +140,8 @@ public final class CardDtos {
     public static class LetterSegment {
         private int index;
         private LetterSegmentRole role;
+        @Schema(implementation = StoryKey.class, nullable = true,
+                description = "仅 role=STORY 段有值;OPENING/CLOSING 为 null")
         private String storyKey;
         private List<String> variants;
         private String selected;
