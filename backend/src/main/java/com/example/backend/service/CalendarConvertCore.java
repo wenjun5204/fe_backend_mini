@@ -84,8 +84,9 @@ public final class CalendarConvertCore {
 
     public static String lunarText(ChineseCalendar lunar) {
         String prefix = lunar.getMonth().isLeap() ? "闰" : "";
+        // getDisplayName(.., ARABIC) 已带「月」字(如 8月),此处不可再拼接,否则输出「8月月」
         return "农历" + prefix + lunar.getMonth().getDisplayName(java.util.Locale.SIMPLIFIED_CHINESE,
-                net.time4j.format.NumberSystem.ARABIC) + "月" + lunar.getDayOfMonth() + "日";
+                net.time4j.format.NumberSystem.ARABIC) + lunar.getDayOfMonth() + "日";
     }
 
     public static ChineseCalendar chineseDate(LocalDate date) {

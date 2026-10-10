@@ -221,7 +221,7 @@ class DaysApiIntegrationTest {
 
         assertFalse(day.get("nextDate").isNull());
         assertTrue(day.get("daysUntil").asInt() >= 0);
-        // 文本由换算核心生成,与生日簿同一格式(月名+日数值,如「农历8月月3日」)
+        // 文本由换算核心生成,与生日簿同一格式(月名+日数值,如「农历8月3日」)
         assertTrue(day.get("nextDateLunarText").asText().startsWith("农历"), day.get("nextDateLunarText").asText());
     }
 
