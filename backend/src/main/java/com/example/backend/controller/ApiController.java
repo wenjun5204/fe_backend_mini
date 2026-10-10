@@ -15,6 +15,13 @@ import com.example.backend.dto.BirthdayDtos.CalendarConvertRequest;
 import com.example.backend.dto.BirthdayDtos.CalendarConvertResponse;
 import com.example.backend.dto.BirthdayDtos.DeleteBirthdayResponse;
 import com.example.backend.dto.BirthdayDtos.UpcomingBirthdayResponse;
+import com.example.backend.dto.DayDtos.DayListResponse;
+import com.example.backend.dto.DayDtos.DayRecord;
+import com.example.backend.dto.DayDtos.DayReminder;
+import com.example.backend.dto.DayDtos.DayReminderDueResponse;
+import com.example.backend.dto.DayDtos.DayReminderRequest;
+import com.example.backend.dto.DayDtos.DayUpsertRequest;
+import com.example.backend.dto.DayDtos.DeleteDayResponse;
 import com.example.backend.dto.FamilyDtos.CreateFamilyRequest;
 import com.example.backend.dto.FamilyDtos.FamilyDetail;
 import com.example.backend.dto.FamilyDtos.InviteInfo;
@@ -34,6 +41,7 @@ import com.example.backend.dto.RankDtos.FriendRankResponse;
 import com.example.backend.service.AuthService;
 import com.example.backend.service.BaguaService;
 import com.example.backend.service.BirthdayService;
+import com.example.backend.service.DayService;
 import com.example.backend.service.FamilyService;
 import com.example.backend.service.FortuneService;
 import com.example.backend.service.InteractService;
@@ -53,7 +61,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 契约路由(与 api/openapi.yaml 一一对应,25 个 operationId;/api/ping 为部署探活,不入契约) */
+/** 契约路由(与 api/openapi.yaml 一一对应,32 个 operationId;/api/ping 为部署探活,不入契约) */
 @RestController
 @RequestMapping("/api")
 public class ApiController {
@@ -61,6 +69,7 @@ public class ApiController {
     private final AuthService authService;
     private final BaguaService baguaService;
     private final BirthdayService birthdayService;
+    private final DayService dayService;
     private final FamilyService familyService;
     private final FortuneService fortuneService;
     private final InteractService interactService;
@@ -72,6 +81,7 @@ public class ApiController {
     public ApiController(AuthService authService,
                          BaguaService baguaService,
                          BirthdayService birthdayService,
+                         DayService dayService,
                          FamilyService familyService,
                          FortuneService fortuneService,
                          InteractService interactService,
@@ -82,6 +92,7 @@ public class ApiController {
         this.authService = authService;
         this.baguaService = baguaService;
         this.birthdayService = birthdayService;
+        this.dayService = dayService;
         this.familyService = familyService;
         this.fortuneService = fortuneService;
         this.interactService = interactService;
@@ -196,6 +207,43 @@ public class ApiController {
     public BirthdayReminder updateBirthdayReminder(@PathVariable Long id,
                                                    @RequestBody BirthdayReminderRequest request) {
         return birthdayService.updateReminder(id, request);
+    }
+
+    // ---- 念家时·日子管家(契约 v1.6.0,tag=days) ----
+
+    @GetMapping("/days")
+    public DayListResponse listDays() {
+        return dayService.getDays();
+    }
+
+    @PostMapping("/days")
+    public DayRecord createDay(@RequestBody DayUpsertRequest request) {
+        return dayService.create(request);
+    }
+
+    @GetMapping("/days/{id}")
+    public DayRecord getDay(@PathVariable Long id) {
+        return dayService.getDay(id);
+    }
+
+    @PutMapping("/days/{id}")
+    public DayRecord updateDay(@PathVariable Long id, @RequestBody DayUpsertRequest request) {
+        return dayService.update(id, request);
+    }
+
+    @DeleteMapping("/days/{id}")
+    public DeleteDayResponse deleteDay(@PathVariable Long id) {
+        return dayService.delete(id);
+    }
+
+    @PutMapping("/days/{id}/reminder")
+    public DayReminder updateDayReminder(@PathVariable Long id, @RequestBody DayReminderRequest request) {
+        return dayService.updateReminder(id, request);
+    }
+
+    @GetMapping("/days/reminder-due")
+    public DayReminderDueResponse getReminderDue(@RequestParam(value = "date", required = false) String date) {
+        return dayService.getReminderDue(date);
     }
 
     @GetMapping("/bagua/status")

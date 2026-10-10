@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>念家时 · 2.1 仪式感社交版 - 交互设计稿 v2.1</title>
+<style>
+  :root {
+    --bg: #fbfaf7;
+    --card: #ffffff;
+    --ink: #1c1c28;
+    --ink-2: #55555f;
+    --ink-3: #9a9aa4;
+    --line: #eceae4;
+    --coral: #ff7a59;
+    --rose: #ff4d6d;
+    --violet: #6c5ce7;
+    --teal: #12b2a3;
+    --grad-hot: linear-gradient(135deg, #ff7a59, #ff4d6d);
+    --grad-violet: linear-gradient(135deg, #8e7cf0, #6c5ce7);
+    --grad-teal: linear-gradient(135deg, #2bc4b4, #0f9d8e);
+    --grad-night: linear-gradient(160deg, #23233a 0%, #12121f 100%);
+    --shadow: 0 4px 20px rgba(28,28,40,.07);
+    --shadow-lift: 0 12px 32px rgba(28,28,40,.12);
+    --radius: 20px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+  body {
+    font-family:-apple-system,"SF Pro Text","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:#17171f; display:flex; justify-content:center; align-items:flex-start;
+    min-height:100vh; padding:24px 12px; gap:36px; flex-wrap:wrap;
+  }
+  .phone {
+    width:375px; height:800px; background:var(--bg); border-radius:48px;
+    box-shadow:0 24px 80px rgba(0,0,0,.6), inset 0 0 0 11px #0c0c12;
+    overflow:hidden; position:relative; display:flex; flex-direction:column;
+  }
+  .phone-label { color:#8d8da0; font-size:13px; text-align:center; margin-bottom:10px; letter-spacing:1px; }
+  .statusbar { height:42px; flex-shrink:0; display:flex; justify-content:space-between; align-items:flex-end; padding:0 26px 4px; font-size:13px; font-weight:700; color:var(--ink); }
+  .notch { position:absolute; top:9px; left:50%; transform:translateX(-50%); width:118px; height:26px; background:#0c0c12; border-radius:14px; z-index:99; }
+  .screen { flex:1; position:relative; overflow:hidden; }
+
+  .page { position:absolute; inset:0; display:none; flex-direction:column; background:var(--bg); overflow-y:auto; overscroll-behavior:contain; }
+  .page.active { display:flex; }
+  .page::-webkit-scrollbar { width:0; }
+  .nav {
+    padding:12px 20px; display:flex; align-items:center; gap:12px; flex-shrink:0;
+    position:sticky; top:0; z-index:5; background:rgba(251,250,247,.92); backdrop-filter:blur(12px);
+  }
+  .nav h1 { font-size:21px; font-weight:800; color:var(--ink); letter-spacing:.2px; flex:1; }
+  .nav .back { width:36px; height:36px; border:none; border-radius:12px; background:#f1efe9; color:var(--ink); font-size:19px; cursor:pointer; flex-shrink:0; font-family:inherit; }
+  .nav .spacer { width:36px; flex-shrink:0; }
+  .nav .action { width:36px; height:36px; border:none; border-radius:12px; background:#f1efe9; color:var(--ink); font-size:16px; cursor:pointer; flex-shrink:0; font-family:inherit; }
+
+  .tabbar { height:74px; flex-shrink:0; background:rgba(255,255,255,.96); border-top:1px solid var(--line); display:flex; padding-bottom:6px; }
+  .tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:14px; color:var(--ink-3); cursor:pointer; font-weight:600; }
+  .tab svg { width:25px; height:25px; stroke-width:1.9; }
+  .tab.active { color:var(--rose); }
+
+  /* ===== 首页 ===== */
+  .greeting { padding:2px 20px 4px; font-size:14px; color:var(--ink-3); font-weight:500; }
+  .greeting b { color:var(--ink); font-weight:700; }
+
+  .capsule-due {
+    margin:12px 16px 0; border-radius:22px; padding:16px 20px; position:relative; overflow:hidden; color:#fff;
+    background:var(--grad-teal); box-shadow:0 10px 24px rgba(18,178,163,.3); cursor:pointer;
+    display:flex; align-items:center; gap:14px;
+  }
+  .capsule-due:active { transform:scale(.985); }
+  .cd-emoji { width:52px; height:52px; border-radius:17px; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.45); display:flex; align-items:center; justify-content:center; font-size:27px; animation:bob 2.2s ease-in-out infinite; flex-shrink:0; }
+  @keyframes bob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-4px); } }
+  .cd-info { flex:1; }
+  .cd-kicker { font-size:11px; font-weight:800; letter-spacing:1.5px; opacity:.85; }
+  .cd-title { font-size:18px; font-weight:900; margin-top:3px; }
+  .cd-go { font-size:14px; font-weight:900; flex-shrink:0; background:rgba(255,255,255,.22); border:1px solid rgba(255,255,255,.5); border-radius:999px; padding:8px 14px; }
+
+  .festival-banner {
+    margin:12px 16px 0; border-radius:22px; padding:18px 20px; position:relative; overflow:hidden; color:#fff;
+    background:var(--grad-hot); box-shadow:0 10px 24px rgba(255,77,109,.32); cursor:pointer;
+  }
+  .festival-banner:active { transform:scale(.985); }
+  .fb-emoji-bg { position:absolute; right:-16px; top:-20px; font-size:110px; opacity:.16; transform:rotate(-12deg); }
+  .fb-kicker { font-size:12px; font-weight:800; letter-spacing:1.5px; opacity:.9; }
+  .fb-title { font-size:22px; font-weight:900; margin-top:5px; letter-spacing:.5px; }
+  .fb-sub { font-size:13px; margin-top:6px; opacity:.92; line-height:1.5; }
+  .fb-cta { display:inline-flex; align-items:center; gap:5px; margin-top:12px; background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.5); border-radius:999px; padding:7px 15px; font-size:14px; font-weight:800; }
+  .fb-count { position:absolute; right:18px; bottom:16px; text-align:right; }
+  .fb-count strong { display:block; font-size:44px; font-weight:900; line-height:1; font-family:Georgia,serif; }
+  .fb-count span { font-size:11px; opacity:.85; }
+
+  .hero-day {
+    margin:16px 16px 0; background:var(--card); border-radius:var(--radius); padding:20px;
+    box-shadow:var(--shadow); border:1px solid var(--line); display:flex; align-items:center; gap:16px; cursor:pointer;
+  }
+  .hero-day:active { transform:scale(.99); }
+  .hd-ava { width:60px; height:60px; border-radius:19px; background:var(--grad-violet); display:flex; align-items:center; justify-content:center; font-size:30px; flex-shrink:0; color:#fff; }
+  .hd-info { flex:1; min-width:0; }
+  .hd-kicker { font-size:12px; color:var(--ink-3); font-weight:700; letter-spacing:1px; }
+  .hd-title { font-size:20px; font-weight:800; color:var(--ink); margin-top:3px; }
+  .hd-date { font-size:13px; color:var(--ink-2); margin-top:4px; }
+  .hd-days { text-align:center; flex-shrink:0; }
+  .hd-days strong { display:block; font-size:38px; font-weight:900; line-height:1; color:var(--rose); font-family:Georgia,serif; }
+  .hd-days span { font-size:11px; color:var(--ink-3); font-weight:600; }
+
+  .section-head { padding:22px 20px 12px; display:flex; justify-content:space-between; align-items:baseline; }
+  .section-head h2 { font-size:18px; font-weight:800; color:var(--ink); }
+  .section-head .more { font-size:13px; color:var(--ink-3); font-weight:600; cursor:pointer; }
+
+  .day-feed { padding:0 16px 12px; display:flex; flex-direction:column; gap:10px; }
+  .day-row {
+    background:var(--card); border:1px solid var(--line); border-radius:16px; padding:13px 15px;
+    display:flex; align-items:center; gap:12px; box-shadow:var(--shadow); cursor:pointer;
+  }
+  .day-row:active { transform:scale(.99); }
+  .dr-ava { width:46px; height:46px; border-radius:15px; display:flex; align-items:center; justify-content:center; font-size:23px; flex-shrink:0; color:#fff; }
+  .dr-info { flex:1; min-width:0; }
+  .dr-name { font-size:16px; font-weight:700; color:var(--ink); }
+  .dr-name .tag { font-size:11px; font-weight:700; padding:2px 8px; border-radius:7px; margin-left:6px; vertical-align:1px; }
+  .dr-date { font-size:12px; color:var(--ink-3); margin-top:3px; }
+  .dr-right { text-align:right; flex-shrink:0; }
+  .dr-count { font-size:18px; font-weight:800; color:var(--ink); font-family:Georgia,serif; }
+  .dr-count small { font-size:11px; color:var(--ink-3); font-family:inherit; }
+  .dr-quick { margin-top:5px; border:none; background:linear-gradient(135deg,#fff0ec,#ffe9ee); color:var(--rose); font-size:12px; font-weight:800; padding:4px 11px; border-radius:999px; cursor:pointer; font-family:inherit; }
+
+  .add-fab-row { padding:6px 16px 24px; }
+  .add-fab {
+    width:100%; min-height:54px; border:none; border-radius:17px; cursor:pointer;
+    background:var(--ink); color:#fff; font-size:17px; font-weight:800; letter-spacing:1px;
+    display:flex; align-items:center; justify-content:center; gap:7px; font-family:inherit;
+  }
+
+  /* ===== 模板馆 ===== */
+  .tpl-tabs { display:flex; gap:8px; padding:4px 16px 14px; overflow-x:auto; scrollbar-width:none; }
+  .tpl-tabs::-webkit-scrollbar { display:none; }
+  .tpl-tab { flex-shrink:0; border:none; border-radius:999px; padding:9px 17px; font-size:14px; font-weight:700; color:var(--ink-2); background:#f1efe9; cursor:pointer; font-family:inherit; }
+  .tpl-tab.on { background:var(--ink); color:#fff; }
+  .tpl-grid { padding:0 16px 12px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .tpl-card { border-radius:18px; overflow:hidden; background:var(--card); border:1px solid var(--line); box-shadow:var(--shadow); cursor:pointer; position:relative; }
+  .tpl-card:active { transform:scale(.98); }
+  .tp-cover { height:108px; display:flex; align-items:center; justify-content:center; font-size:42px; position:relative; }
+  .tp-hot { position:absolute; top:9px; left:9px; background:#fff; color:var(--rose); font-size:10px; font-weight:900; padding:3px 8px; border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+  .tp-body { padding:11px 13px 13px; }
+  .tp-name { font-size:15px; font-weight:800; color:var(--ink); }
+  .tp-sub { font-size:11.5px; color:var(--ink-3); margin-top:3px; line-height:1.45; }
+  .tp-used { display:flex; align-items:center; gap:4px; margin-top:8px; font-size:11px; color:var(--ink-3); font-weight:600; }
+
+  /* ===== 模板馆 · 节点日历横滑 ===== */
+  .festival-rail { display:flex; gap:12px; padding:14px 16px 6px; overflow-x:auto; scroll-snap-type:x mandatory; }
+  .festival-rail::-webkit-scrollbar { display:none; }
+  .fr-card {
+    flex-shrink:0; width:196px; border-radius:18px; padding:16px; color:#fff; position:relative; overflow:hidden;
+    cursor:pointer; scroll-snap-align:start; box-shadow:0 8px 20px rgba(28,28,40,.14);
+  }
+  .fr-card:active { transform:scale(.97); }
+  .fr-card .fr-bg { position:absolute; right:-14px; bottom:-18px; font-size:86px; opacity:.18; transform:rotate(-10deg); }
+  .fr-count { position:absolute; right:12px; top:12px; background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.45); padding:3px 9px; border-radius:999px; font-size:10.5px; font-weight:800; }
+  .fr-emoji { font-size:30px; position:relative; }
+  .fr-name { font-size:17px; font-weight:900; margin-top:8px; position:relative; }
+  .fr-sub { font-size:11.5px; opacity:.85; margin-top:3px; position:relative; }
+  .fr-dot { display:inline-block; width:5px; height:5px; border-radius:50%; background:#ffd76e; margin-right:5px; vertical-align:2px; }
+
+  /* 模板卡片入场动画（逐个浮入） */
+  .tpl-grid .tpl-card { animation:tplin .4s backwards; }
+  .tpl-grid .tpl-card:nth-child(1) { animation-delay:.02s; } .tpl-grid .tpl-card:nth-child(2) { animation-delay:.06s; }
+  .tpl-grid .tpl-card:nth-child(3) { animation-delay:.1s; } .tpl-grid .tpl-card:nth-child(4) { animation-delay:.14s; }
+  .tpl-grid .tpl-card:nth-child(5) { animation-delay:.18s; } .tpl-grid .tpl-card:nth-child(6) { animation-delay:.22s; }
+  @keyframes tplin { from { opacity:0; transform:translateY(12px); } }
+
+  /* ===== 模板预览弹层 ===== */
+  .tpl-sheet { display:flex; flex-direction:column; align-items:center; }
+  .pv-mini {
+    width:196px; border-radius:22px; padding:22px 18px 18px; text-align:center; color:#fff; position:relative; overflow:hidden;
+    box-shadow:0 16px 36px rgba(28,28,40,.22); animation:pop .4s cubic-bezier(.2,1.4,.4,1);
+  }
+  .pm-kicker { font-size:9.5px; letter-spacing:2px; opacity:.75; font-weight:800; }
+  .pm-emoji { font-size:38px; margin:10px 0 4px; }
+  .pm-days { font-size:40px; font-weight:900; font-family:Georgia,serif; line-height:1.1; }
+  .pm-days small { font-size:14px; font-weight:700; }
+  .pm-body { font-size:11px; margin-top:8px; opacity:.92; line-height:1.65; }
+  .pv-title { margin-top:16px; font-size:18px; font-weight:900; color:var(--ink); text-align:center; }
+  .pv-sub { text-align:center; margin-top:5px; font-size:13px; color:var(--ink-2); line-height:1.6; }
+  .pv-features { display:flex; gap:7px; margin-top:13px; flex-wrap:wrap; justify-content:center; }
+  .pv-feat { font-size:11.5px; font-weight:700; color:var(--ink-2); background:#f4f2ec; border-radius:999px; padding:5px 11px; }
+  .pv-stats { display:flex; gap:16px; margin-top:13px; font-size:12px; color:var(--ink-3); font-weight:700; }
+  .pv-hint { margin-top:12px; font-size:11.5px; color:var(--teal); font-weight:700; }
+
+  /* ===== 生成流程 ===== */
+  .gen-head { margin:4px 16px 0; border-radius:var(--radius); padding:20px; color:#fff; position:relative; overflow:hidden; }
+  .gen-head .g-kicker { font-size:12px; font-weight:800; letter-spacing:1px; opacity:.85; }
+  .gen-head .g-title { font-size:23px; font-weight:900; margin-top:5px; }
+  .gen-head .g-sub { font-size:13px; margin-top:6px; opacity:.88; line-height:1.5; }
+
+  .form-block { padding:6px 16px 4px; }
+  .f-label { display:block; margin:16px 0 9px; font-size:14px; font-weight:800; color:var(--ink); letter-spacing:.3px; }
+  .f-label small { font-weight:500; color:var(--ink-3); font-size:12px; }
+  .pick-chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .p-chip { min-height:42px; padding:0 16px; border:1.5px solid var(--line); border-radius:13px; background:var(--card); color:var(--ink-2); font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .p-chip.on { border-color:var(--rose); color:var(--rose); background:#fff3f5; }
+  .tone-cards { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .tone-card { min-height:64px; border:1.5px solid var(--line); border-radius:14px; background:var(--card); cursor:pointer; padding:10px 8px; text-align:center; font-family:inherit; }
+  .tone-card.on { border-color:var(--rose); background:#fff3f5; box-shadow:inset 0 0 0 1px var(--rose); }
+  .tone-emoji { font-size:21px; }
+  .tone-name { font-size:12.5px; font-weight:800; color:var(--ink); margin-top:4px; }
+  .tone-desc { font-size:10px; color:var(--ink-3); margin-top:2px; }
+  .seg { display:grid; grid-template-columns:1fr 1fr; padding:4px; background:#f1efe9; border-radius:14px; }
+  .seg.three { grid-template-columns:1fr 1fr 1fr; }
+  .seg button { min-height:42px; border:0; border-radius:10px; background:transparent; color:var(--ink-3); font-weight:800; font-size:14.5px; cursor:pointer; font-family:inherit; }
+  .seg button.on { background:var(--ink); color:#fff; }
+  .date-pick { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .date-pick select { width:100%; min-height:48px; border:1.5px solid var(--line); border-radius:13px; background:var(--card); font-size:16px; color:var(--ink); outline:none; font-family:inherit; }
+  .counter-preview {
+    margin:16px 16px 0; padding:18px; border-radius:18px; background:var(--grad-night); color:#fff; text-align:center; position:relative; overflow:hidden;
+  }
+  .cp-kicker { font-size:12px; letter-spacing:2px; color:rgba(255,255,255,.6); font-weight:700; }
+  .cp-days { font-size:56px; font-weight:900; font-family:Georgia,serif; margin-top:6px; background:linear-gradient(135deg,#ffd9a0,#ff9d76); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .cp-days small { font-size:18px; color:#fff; -webkit-text-fill-color:#fff; }
+  .cp-sub { font-size:13px; margin-top:4px; color:rgba(255,255,255,.75); }
+  .cp-line { font-size:15px; margin-top:12px; color:rgba(255,255,255,.9); line-height:1.6; }
+
+  .gen-next {
+    margin:20px 16px 26px; min-height:56px; border:none; border-radius:17px; width:calc(100% - 32px);
+    background:var(--grad-hot); color:#fff; font-size:18px; font-weight:900; letter-spacing:1px;
+    box-shadow:0 10px 24px rgba(255,77,109,.35); cursor:pointer; font-family:inherit; position:sticky; bottom:12px;
+  }
+  .gen-next:disabled { filter:grayscale(.8); opacity:.6; }
+
+  /* ===== AI 生成中 ===== */
+  .ai-loading { position:absolute; inset:0; z-index:30; display:none; flex-direction:column; align-items:center; justify-content:center; background:rgba(251,250,247,.97); gap:18px; }
+  .ai-loading.show { display:flex; }
+  .ai-orb {
+    width:74px; height:74px; border-radius:50%; position:relative;
+    background:conic-gradient(#ff7a59, #ff4d6d, #6c5ce7, #ff7a59);
+    animation:spin 1.1s linear infinite; filter:blur(1px);
+  }
+  .ai-orb::after { content:"✍️"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:30px; filter:blur(0); animation:spin 1.1s linear infinite reverse; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .ai-text { font-size:16px; font-weight:800; color:var(--ink); }
+  .ai-sub { font-size:13px; color:var(--ink-3); margin-top:-10px; }
+  .ai-dots { display:flex; gap:6px; }
+  .ai-dots i { width:7px; height:7px; border-radius:50%; background:var(--rose); animation:blink 1s infinite; }
+  .ai-dots i:nth-child(2) { animation-delay:.2s; } .ai-dots i:nth-child(3) { animation-delay:.4s; }
+  @keyframes blink { 0%,100% { opacity:.25; } 50% { opacity:1; } }
+
+  /* ===== 信纸预览/改稿 ===== */
+  .letter-paper {
+    margin:14px 16px 0; background:var(--card); border-radius:22px; border:1px solid var(--line);
+    box-shadow:var(--shadow-lift); padding:26px 22px 20px; position:relative;
+  }
+  .letter-paper::before {
+    content:""; position:absolute; top:0; left:22px; right:22px; height:3px; border-radius:0 0 4px 4px;
+    background:var(--grad-hot);
+  }
+  .lp-kicker { font-size:11px; letter-spacing:2.5px; color:var(--ink-3); font-weight:800; text-align:center; }
+  .lp-title { font-size:22px; font-weight:900; text-align:center; color:var(--ink); margin-top:6px; letter-spacing:1px; }
+  .lp-body { margin-top:18px; display:flex; flex-direction:column; gap:14px; }
+  .lp-para { font-size:16px; line-height:1.9; color:var(--ink); cursor:pointer; position:relative; padding:2px 26px 2px 2px; border-radius:10px; transition:background .2s; }
+  .lp-para:hover, .lp-para:active { background:#fdf2f4; }
+  .lp-para::after {
+    content:"换"; position:absolute; right:0; top:4px; width:20px; height:20px; border-radius:50%;
+    background:#f1efe9; color:var(--ink-3); font-size:10px; display:flex; align-items:center; justify-content:center; font-weight:900;
+  }
+  .lp-para.sign { text-align:right; color:var(--ink-2); font-size:14px; cursor:default; padding-right:2px; }
+  .lp-para.sign::after { display:none; }
+  .lp-para.sign:hover { background:transparent; }
+  .lp-hint { margin-top:16px; padding:10px 14px; background:#fdf2f4; border-radius:12px; font-size:12px; color:var(--rose); font-weight:700; text-align:center; }
+
+  /* ===== 海报 ===== */
+  .poster-stage { position:absolute; inset:0; background:rgba(14,14,22,.82); display:none; z-index:40; flex-direction:column; align-items:center; justify-content:flex-end; padding:20px 0 0; }
+  .poster-stage.show { display:flex; }
+  .poster {
+    width:272px; border-radius:26px; padding:26px 22px 18px; text-align:center; position:relative; overflow:hidden;
+    animation:pop .35s cubic-bezier(.2,1.4,.4,1); color:#fff;
+  }
+  @keyframes pop { from { transform:scale(.86); opacity:0; } to { transform:scale(1); opacity:1; } }
+  .poster.style-letter { background:var(--grad-night); border:1px solid rgba(255,255,255,.14); }
+  .poster.style-days { background:var(--grad-hot); }
+  .poster.style-capsule { background:var(--grad-teal); }
+  .po-kicker { font-size:11px; letter-spacing:2.5px; font-weight:800; opacity:.75; }
+  .po-title { font-size:24px; font-weight:900; margin-top:8px; letter-spacing:1px; }
+  .po-emoji { font-size:52px; margin:16px 0 6px; }
+  .po-days { font-size:60px; font-weight:900; font-family:Georgia,serif; line-height:1.05; }
+  .po-days small { font-size:19px; font-weight:700; }
+  .po-body { font-size:13.5px; line-height:1.8; margin-top:14px; color:rgba(255,255,255,.92); text-align:center; }
+  .po-body b { color:#ffd9a0; }
+  .po-divider { height:1px; background:rgba(255,255,255,.25); margin:16px 22px 12px; }
+  .po-brand-row { display:flex; align-items:center; justify-content:space-between; }
+  .po-brand { text-align:left; }
+  .po-brand .b1 { font-size:13px; font-weight:900; letter-spacing:1px; }
+  .po-brand .b2 { font-size:9.5px; opacity:.65; margin-top:2px; }
+  .qr { width:52px; height:52px; background:#fff; border-radius:8px; padding:4px; display:grid; grid-template-columns:repeat(7,1fr); grid-template-rows:repeat(7,1fr); gap:1px; }
+  .qr i { background:var(--ink); border-radius:1px; }
+  .qr i.o { background:transparent; }
+  .poster-foot { width:272px; color:rgba(255,255,255,.75); font-size:12px; text-align:center; margin-top:10px; line-height:1.5; }
+
+  .share-panel { width:100%; background:#fff; border-radius:26px 26px 0 0; margin-top:18px; padding:18px 20px 22px; transform:translateY(100%); transition:transform .3s; }
+  .share-panel.show { transform:translateY(0); }
+  .sp-title { text-align:center; font-size:16px; font-weight:800; color:var(--ink); }
+  .sp-hint { text-align:center; font-size:12px; color:var(--ink-3); margin-top:4px; }
+  .sp-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:16px; }
+  .sp-item { border:none; background:transparent; display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer; font-family:inherit; }
+  .sp-item .ico { width:52px; height:52px; border-radius:17px; display:flex; align-items:center; justify-content:center; font-size:24px; }
+  .sp-item span { font-size:11.5px; color:var(--ink-2); font-weight:600; }
+  .sp-cancel { width:100%; margin-top:16px; min-height:48px; border:none; border-radius:15px; background:#f4f2ec; color:var(--ink-2); font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; }
+
+  /* ===== 胶囊开箱 ===== */
+  .page-capsule-open { background:var(--grad-night); color:#fff; }
+  .co-nav { padding:14px 20px; display:flex; align-items:center; }
+  .co-nav h1 { font-size:18px; font-weight:800; color:#fff; flex:1; text-align:center; }
+  .co-nav .back { width:34px; height:34px; border:none; border-radius:11px; background:rgba(255,255,255,.12); color:#fff; font-size:18px; cursor:pointer; font-family:inherit; }
+  .co-body { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 30px; text-align:center; }
+  .co-kicker { font-size:11px; letter-spacing:3px; color:rgba(255,255,255,.55); font-weight:800; }
+  .co-capsule {
+    width:130px; height:130px; border-radius:50%; margin:26px 0;
+    background:radial-gradient(circle at 32% 30%, rgba(255,255,255,.35), rgba(255,255,255,.05) 55%), rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.25);
+    display:flex; align-items:center; justify-content:center; font-size:56px;
+    box-shadow:0 0 60px rgba(43,196,180,.4), inset 0 0 30px rgba(255,255,255,.1);
+  }
+  .co-capsule.shake { animation:coshake .45s ease-in-out; }
+  @keyframes coshake { 0%,100% { transform:rotate(0) scale(1); } 25% { transform:rotate(-7deg) scale(1.04); } 50% { transform:rotate(6deg) scale(1.07); } 75% { transform:rotate(-4deg) scale(1.04); } }
+  .co-capsule.opened { animation:burst .5s ease-out forwards; }
+  @keyframes burst { to { transform:scale(1.6); opacity:0; } }
+  .co-title { font-size:26px; font-weight:900; letter-spacing:1px; }
+  .co-sub { font-size:14px; color:rgba(255,255,255,.7); margin-top:10px; line-height:1.7; }
+  .co-msg {
+    display:none; margin-top:8px; padding:24px 20px; border-radius:22px;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16);
+    animation:pop .5s cubic-bezier(.2,1.4,.4,1);
+  }
+  .co-msg.show { display:block; }
+  .co-msg .m-emoji { font-size:46px; }
+  .co-msg .m-text { font-size:17px; line-height:2; margin-top:14px; color:rgba(255,255,255,.95); }
+  .co-msg .m-from { margin-top:14px; font-size:12.5px; color:rgba(255,255,255,.55); }
+  .co-btn {
+    margin-top:26px; min-height:56px; border:none; border-radius:17px; width:100%; max-width:280px;
+    background:var(--grad-teal); color:#fff; font-size:17px; font-weight:900; cursor:pointer;
+    box-shadow:0 10px 26px rgba(18,178,163,.4); font-family:inherit;
+  }
+  .co-cta-row { display:none; gap:10px; margin-top:24px; width:100%; max-width:280px; }
+  .co-cta-row.show { display:flex; }
+  .co-cta-row button { flex:1; min-height:52px; border-radius:15px; font-size:15px; font-weight:800; cursor:pointer; font-family:inherit; border:1px solid rgba(255,255,255,.35); background:transparent; color:#fff; }
+  .co-cta-row button.primary { border:none; background:var(--grad-hot); box-shadow:0 8px 20px rgba(255,77,109,.4); }
+
+  /* ===== 访客视图 ===== */
+  .visitor-page { background:var(--bg); }
+  .scan-tip { text-align:center; padding:26px 20px 0; font-size:12px; color:var(--ink-3); font-weight:700; letter-spacing:1px; }
+  .scan-tip .chip { display:inline-flex; align-items:center; gap:5px; background:#eef7f5; color:var(--teal); border-radius:999px; padding:5px 13px; font-size:12px; }
+  .v-poster { margin:16px 20px 0; border-radius:24px; padding:30px 24px; text-align:center; color:#fff; background:var(--grad-hot); }
+  .vp-kicker { font-size:11px; letter-spacing:2px; opacity:.8; font-weight:800; }
+  .vp-days { font-size:56px; font-weight:900; font-family:Georgia,serif; margin-top:8px; }
+  .vp-days small { font-size:17px; }
+  .vp-sub { font-size:13.5px; margin-top:8px; opacity:.9; line-height:1.6; }
+  .locked {
+    margin:-14px 20px 0; background:var(--card); border-radius:18px; padding:16px 18px;
+    box-shadow:var(--shadow-lift); position:relative; z-index:2; text-align:center;
+  }
+  .locked .lk-title { font-size:15.5px; font-weight:800; color:var(--ink); }
+  .lock-row { display:flex; gap:14px; justify-content:center; margin-top:12px; }
+  .lk-heart {
+    width:52px; height:52px; border-radius:17px; border:1.5px solid var(--line); background:#faf8f4;
+    font-size:23px; cursor:pointer; transition:all .18s; font-family:inherit; color:#d8d5cc;
+  }
+  .lk-heart.on { border-color:var(--rose); background:linear-gradient(135deg,#fff0ec,#ffe0e8); color:var(--rose); transform:scale(1.1); box-shadow:0 6px 14px rgba(255,77,109,.25); }
+  .lk-heart.pop { animation:hpop .3s cubic-bezier(.2,1.6,.4,1); }
+  @keyframes hpop { 50% { transform:scale(1.28); } }
+  .locked .lk-sub { font-size:12px; color:var(--ink-3); margin-top:11px; line-height:1.6; }
+  .v-cta {
+    margin:16px 20px 0; min-height:56px; border:none; border-radius:17px; width:calc(100% - 40px);
+    background:var(--grad-hot); color:#fff; font-size:17px; font-weight:900; cursor:pointer;
+    box-shadow:0 10px 24px rgba(255,77,109,.35); font-family:inherit;
+  }
+  .v-preview { margin:18px 20px 0; }
+  .v-preview .p-label { font-size:12px; font-weight:800; color:var(--ink-3); letter-spacing:1px; text-align:center; }
+  .v-reveal { margin-top:10px; border-radius:18px; padding:18px; position:relative; color:var(--ink); font-size:15px; line-height:2; background:var(--card); border:1px solid var(--line); box-shadow:var(--shadow); overflow:hidden; transition:all .4s; }
+  .v-reveal.locked-content { background:linear-gradient(135deg,#f2efe8,#e9e5dc); color:transparent; text-shadow:0 0 14px rgba(28,28,40,.5); }
+  .v-reveal.locked-content::after { content:"🔒 点上面的心解锁"; position:absolute; bottom:12px; left:0; right:0; text-align:center; font-size:12px; font-weight:800; color:var(--ink-3); }
+  .v-reveal.unlocked { background:var(--card); color:var(--ink); text-shadow:none; animation:pop .4s; }
+  .v-reveal.unlocked::after { display:none; }
+  .v-reveal .extra { display:block; color:var(--rose); font-weight:800; margin-top:6px; }
+  .v-bottom-cta { display:none; margin:20px 20px 0; border-radius:18px; padding:18px; background:var(--grad-night); color:#fff; text-align:center; }
+  .v-bottom-cta.show { display:block; animation:pop .4s; }
+  .vbc-title { font-size:16px; font-weight:900; }
+  .vbc-sub { font-size:12.5px; margin-top:6px; color:rgba(255,255,255,.7); line-height:1.6; }
+  .vbc-btn { margin-top:14px; min-height:48px; border:none; border-radius:14px; width:100%; background:var(--grad-hot); color:#fff; font-size:15px; font-weight:900; cursor:pointer; font-family:inherit; }
+
+  /* ===== 详情页 ===== */
+  .detail-card { margin:14px 16px 0; background:var(--card); border-radius:var(--radius); padding:24px 20px; box-shadow:var(--shadow); border:1px solid var(--line); text-align:center; }
+  .dt-ava { width:68px; height:68px; border-radius:22px; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:34px; color:#fff; background:var(--grad-violet); }
+  .dt-title { font-size:21px; font-weight:900; color:var(--ink); margin-top:12px; }
+  .dt-date { font-size:13px; color:var(--ink-3); margin-top:5px; }
+  .dt-days { margin-top:16px; font-size:13px; color:var(--ink-3); font-weight:700; }
+  .dt-days b { display:block; font-size:46px; font-weight:900; color:var(--rose); font-family:Georgia,serif; line-height:1.1; }
+  .dt-days b.today { color:var(--teal); font-size:30px; }
+  .dt-tags { display:flex; gap:8px; justify-content:center; margin-top:14px; flex-wrap:wrap; }
+  .dt-tag { font-size:11.5px; font-weight:800; padding:5px 12px; border-radius:999px; background:#f1efe9; color:var(--ink-2); }
+  .dt-tag.hot { background:#ffe9ee; color:var(--rose); }
+  .dt-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 16px 0; }
+  .dt-actions button { min-height:52px; border-radius:15px; font-size:15.5px; font-weight:800; cursor:pointer; font-family:inherit; border:1.5px solid var(--line); background:var(--card); color:var(--ink); box-shadow:var(--shadow); }
+  .dt-actions button.primary { border:none; background:var(--grad-hot); color:#fff; box-shadow:0 8px 20px rgba(255,77,109,.3); }
+  .dt-wishes { padding:0 16px; }
+  .wish-row {
+    width:100%; display:flex; align-items:center; gap:10px; min-height:54px; padding:10px 14px; margin-bottom:9px;
+    color:var(--ink-2); text-align:left; background:var(--card); border:1px solid var(--line);
+    border-radius:15px; font-size:15px; line-height:1.5; cursor:pointer; font-family:inherit; box-shadow:var(--shadow);
+  }
+  .wish-row b { color:var(--rose); font-size:15px; flex-shrink:0; }
+  .wish-row:active { background:#fdf2f4; }
+  .dt-danger { display:block; text-align:center; padding:18px; font-size:14px; color:#c0564a; font-weight:700; cursor:pointer; background:transparent; border:none; width:100%; font-family:inherit; }
+
+  /* ===== 记日子表单 ===== */
+  .conv-card { margin-top:14px; padding:15px 16px; color:#7b5a2e; background:linear-gradient(135deg,#fff8e8,#ffefce); border:1px solid #eed9a5; border-radius:16px; }
+  .conv-kicker { font-size:11px; font-weight:800; color:#a8873f; letter-spacing:1px; }
+  .conv-main { margin-top:4px; font-size:19px; font-weight:900; color:#6b4c1d; }
+  .conv-sub { margin-top:3px; font-size:12px; color:#a8873f; }
+  .reminder-options { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .reminder-option { min-height:46px; border:1.5px solid var(--line); border-radius:12px; color:var(--ink-2); background:var(--card); font-size:14px; font-weight:800; cursor:pointer; font-family:inherit; }
+  .reminder-option.on { color:#fff; border-color:var(--ink); background:var(--ink); }
+
+  /* ===== 新用户空状态 ===== */
+  .empty-state { margin:20px 24px 8px; text-align:center; padding:34px 16px 30px; background:var(--card); border:1.5px dashed #e3ddce; border-radius:26px; }
+  .es-art { font-size:64px; animation:bob 2.6s ease-in-out infinite; }
+  .es-title { margin-top:16px; font-size:20px; font-weight:900; color:var(--ink); }
+  .es-sub { margin-top:8px; font-size:14px; color:var(--ink-3); line-height:1.7; }
+  .es-chips { display:flex; flex-direction:column; gap:9px; margin-top:20px; }
+  .es-chip {
+    min-height:52px; border:1.5px solid var(--line); border-radius:15px; background:var(--bg);
+    font-size:16px; font-weight:800; color:var(--ink); cursor:pointer; font-family:inherit;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .es-chip:active { background:#fdf2f4; border-color:var(--rose); }
+  .es-chip.primary { border:none; background:var(--grad-hot); color:#fff; box-shadow:0 10px 22px rgba(255,77,109,.3); }
+  .es-note { margin:14px 8px 0; font-size:12px; color:var(--ink-3); line-height:1.7; }
+
+  /* ===== 我的卡片 ===== */
+  .mc-grid { padding:4px 16px 16px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .mc-card { border-radius:18px; overflow:hidden; background:var(--card); border:1px solid var(--line); box-shadow:var(--shadow); }
+  .mc-cover { height:120px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:#fff; position:relative; }
+  .mc-cover .mc-days { font-size:26px; font-weight:900; font-family:Georgia,serif; }
+  .mc-cover .mc-kicker { font-size:9px; letter-spacing:1.5px; opacity:.75; font-weight:800; }
+  .mc-body { padding:11px 12px 12px; }
+  .mc-name { font-size:14.5px; font-weight:800; color:var(--ink); }
+  .mc-when { font-size:11px; color:var(--ink-3); margin-top:3px; }
+  .mc-acts { display:flex; gap:6px; margin-top:9px; }
+  .mc-acts button { flex:1; min-height:36px; border:none; border-radius:10px; font-size:12.5px; font-weight:800; cursor:pointer; font-family:inherit; }
+  .mc-view { background:#fdf2f4; color:var(--rose); }
+  .mc-del { background:#f4f2ec; color:var(--ink-3); }
+  .mc-empty { margin:40px 30px; text-align:center; color:var(--ink-3); font-size:13.5px; line-height:1.9; }
+  .mc-empty .big { font-size:44px; display:block; margin-bottom:12px; }
+
+  /* ===== 全部日子 · 时间线/日历双视图 ===== */
+  .view-seg { margin:12px 16px 0; display:grid; grid-template-columns:1fr 1fr; padding:4px; background:#f1efe9; border-radius:14px; }
+  .view-seg button { min-height:40px; border:0; border-radius:10px; background:transparent; color:var(--ink-3); font-weight:800; font-size:14px; cursor:pointer; font-family:inherit; }
+  .view-seg button.on { background:var(--ink); color:#fff; }
+
+  /* 时间线分组 */
+  .tl-month { padding:6px 20px 8px; font-size:13px; font-weight:800; color:var(--ink-3); letter-spacing:1px; display:flex; gap:8px; align-items:baseline; }
+  .tl-month b { color:var(--ink); font-size:15px; }
+  .tl-month .cnt { font-size:11px; font-weight:600; background:#f1efe9; padding:2px 8px; border-radius:999px; }
+
+  /* 日历视图 */
+  .cal-nav { display:flex; align-items:center; justify-content:space-between; padding:14px 20px 10px; }
+  .cal-nav .cm { font-size:19px; font-weight:900; color:var(--ink); font-family:Georgia,serif; }
+  .cal-nav .cbtn { width:36px; height:36px; border:none; border-radius:12px; background:#f1efe9; color:var(--ink); font-size:17px; cursor:pointer; font-family:inherit; }
+  .cal-nav .today-link { border:none; background:transparent; color:var(--rose); font-size:13px; font-weight:800; cursor:pointer; font-family:inherit; }
+  .cal-week { display:grid; grid-template-columns:repeat(7,1fr); padding:0 10px 6px; }
+  .cal-week span { text-align:center; font-size:11px; color:var(--ink-3); font-weight:700; }
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; padding:0 10px 10px; }
+  .cal-cell {
+    height:52px; border-radius:13px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    font-size:15px; font-weight:600; color:var(--ink); cursor:default; position:relative;
+  }
+  .cal-cell.other { color:#d8d5cc; }
+  .cal-cell.today { background:var(--ink); color:#fff; font-weight:900; }
+  .cal-cell.has { cursor:pointer; background:#fdf2f4; box-shadow:inset 0 0 0 1.5px #ffd3dc; }
+  .cal-cell.has:active { transform:scale(.94); }
+  .cal-cell.today.has { background:var(--grad-hot); box-shadow:none; }
+  .cd-dot { width:7px; height:7px; border-radius:50%; }
+  .cd-dot.b { background:var(--violet); } .cd-dot.a { background:var(--teal); } .cd-dot.t { background:#fff; }
+  .cal-summary { margin:0 16px 12px; padding:12px 14px; background:#fdf2f4; border-radius:14px; font-size:13px; color:var(--rose); font-weight:700; text-align:center; }
+  .cal-empty { margin:24px 32px; text-align:center; color:var(--ink-3); font-size:13.5px; line-height:1.8; }
+
+  /* 日内事件弹层 */
+  .day-sheet .ds-row { display:flex; align-items:center; gap:12px; padding:13px 14px; border:1px solid var(--line); border-radius:15px; margin-bottom:9px; cursor:pointer; background:#fff; }
+  .day-sheet .ds-row:active { background:#fdf2f4; }
+  .day-sheet .ds-ava { width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; color:#fff; flex-shrink:0; }
+  .day-sheet .ds-name { font-size:15.5px; font-weight:800; color:var(--ink); }
+  .day-sheet .ds-sub { font-size:12px; color:var(--ink-3); margin-top:3px; }
+
+  /* ===== 提醒授权弹层 ===== */
+  .sheet-mask { display:none; position:absolute; inset:0; z-index:60; background:rgba(14,14,22,.45); }
+  .sheet-mask.show { display:block; }
+  .sheet { position:absolute; left:0; right:0; bottom:-400px; z-index:61; padding:22px 20px 26px; border-radius:26px 26px 0 0; background:#fff; transition:bottom .3s ease; box-shadow:0 -15px 35px rgba(14,14,22,.25); }
+  .sheet.show { bottom:0; }
+  .sheet h4 { color:var(--ink); font-size:19px; margin-bottom:10px; }
+  .sheet p { color:var(--ink-2); font-size:14px; line-height:1.7; }
+  .sheet-buttons { display:grid; gap:9px; margin-top:17px; }
+  .sheet-buttons button { min-height:52px; border-radius:15px; font-size:16px; font-weight:900; cursor:pointer; font-family:inherit; }
+  .sheet-allow { border:none; color:#fff; background:var(--grad-hot); }
+  .sheet-cancel { border:1.5px solid var(--line); color:var(--ink-2); background:#faf8f4; }
+
+  /* ===== 我的 ===== */
+  .me-hero { margin:10px 16px 0; border-radius:var(--radius); background:var(--card); border:1px solid var(--line); box-shadow:var(--shadow); padding:18px; display:flex; align-items:center; gap:14px; }
+  .mh-ava { width:56px; height:56px; border-radius:50%; background:var(--grad-violet); display:flex; align-items:center; justify-content:center; font-size:24px; color:#fff; font-weight:900; }
+  .mh-name { font-size:18px; font-weight:800; color:var(--ink); }
+  .mh-sub { font-size:12.5px; color:var(--ink-3); margin-top:3px; }
+  .me-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 16px 0; }
+  .ms-cell { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px 8px; text-align:center; box-shadow:var(--shadow); }
+  .ms-cell b { display:block; font-size:22px; font-weight:900; color:var(--ink); font-family:Georgia,serif; }
+  .ms-cell span { font-size:11px; color:var(--ink-3); font-weight:600; margin-top:3px; display:block; }
+  .me-rows { margin:14px 16px 24px; border-radius:16px; overflow:hidden; border:1px solid var(--line); box-shadow:var(--shadow); }
+  .mr { background:var(--card); min-height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 16px; font-size:15px; color:var(--ink); cursor:pointer; border-bottom:1px solid var(--line); position:relative; }
+  .mr:last-child { border-bottom:none; }
+  .mr .left { display:flex; align-items:center; gap:11px; font-weight:700; }
+  .mr .left .ic { font-size:19px; }
+  .mr .right { color:var(--ink-3); font-size:13px; display:flex; align-items:center; gap:5px; }
+  .mr .badge { background:#ffe9ee; color:var(--rose); font-size:10.5px; font-weight:900; padding:2px 8px; border-radius:999px; }
+
+  .toast {
+    position:absolute; top:88px; left:50%; transform:translateX(-50%) scale(.85);
+    background:rgba(28,28,40,.94); color:#fff; padding:11px 22px; border-radius:999px;
+    font-size:14px; font-weight:600; opacity:0; pointer-events:none; transition:all .22s; z-index:90; white-space:nowrap; max-width:88%;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) scale(1); }
+
+  .fdesc { color:#8d8da0; font-size:12.5px; line-height:1.9; max-width:350px; margin-top:16px; }
+  .fdesc h3 { color:#c9c9d8; font-size:14.5px; margin-bottom:6px; }
+  .fdesc b { color:#fff; }
+  .side { position:sticky; top:24px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition:none!important; animation:none!important; } }
+</style>
+</head>
+<body>
+
+<div class="side">
+  <div class="phone-label">念家时 2.1 · 仪式感社交版 · 交互设计稿 v2.1</div>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="statusbar"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="screen" id="screen">
+
+      <!-- ========== 页面1: 首页 ========== -->
+      <div class="page active" id="page-days">
+        <div class="nav"><h1>念家时</h1><button class="action" onclick="toast('提醒设置：每日 ≤3 条')">⚙</button></div>
+        <div class="greeting">晚上好，<b>小刘</b> · 再过几天，就有值得庆祝的事</div>
+
+        <!-- 胶囊到期召回横幅 -->
+        <div class="capsule-due" onclick="openCapsule()">
+          <div class="cd-emoji">⏳</div>
+          <div class="cd-info">
+            <div class="cd-kicker">TIME CAPSULE · 今天开启</div>
+            <div class="cd-title">你一年前埋的胶囊，到期了</div>
+          </div>
+          <div class="cd-go">开箱 →</div>
+        </div>
+
+        <!-- 节日热点横幅 -->
+        <div class="festival-banner" onclick="openTemplate('letter')">
+          <div class="fb-emoji-bg">🌷</div>
+          <div class="fb-kicker">本周热点 · 母亲节</div>
+          <div class="fb-title">写一封信，给妈妈</div>
+          <div class="fb-sub">AI 帮你把说不出口的话写成信<br>生成信纸海报，发给妈妈或朋友圈</div>
+          <div class="fb-cta">✍️ 去写信 →</div>
+          <div class="fb-count"><strong>6</strong><span>天后母亲节</span></div>
+        </div>
+
+        <!-- 最近的日子 -->
+        <div class="hero-day" id="heroDay" onclick="openDetail(1)">
+          <div class="hd-ava" style="background:var(--grad-violet);">👩</div>
+          <div class="hd-info">
+            <div class="hd-kicker">最近的日子</div>
+            <div class="hd-title">妈妈的生日</div>
+            <div class="hd-date" id="heroDate">10月18日 · 农历九月廿六 · 家人可见</div>
+          </div>
+          <div class="hd-days"><strong>8</strong><span>天后</span></div>
+        </div>
+
+        <!-- 新用户空状态（无任何日子时显示，横幅保留） -->
+        <div class="empty-state" id="emptyState" style="display:none;">
+          <div class="es-art">🗓️</div>
+          <div class="es-title">记下第一个重要的日子</div>
+          <div class="es-sub">家人的生日、在一起的那天、结婚纪念日…<br>记下来，日子到了会提前提醒你</div>
+          <div class="es-chips">
+            <button class="es-chip primary" onclick="openAdd()">＋ 记一个日子</button>
+            <button class="es-chip" onclick="showPage('tpl')">💌 先看看能做什么卡片</button>
+          </div>
+          <div class="es-note">💚 不用打字，点一点就能记好<br>也可以先去「模板馆」逛逛，回来再记</div>
+        </div>
+
+        <div class="section-head" id="allSectionHead"><h2>所有日子</h2><div class="more" onclick="openAllDays()">查看全部 ›</div></div>
+        <div class="day-feed" id="dayFeed"></div>
+        <div class="add-fab-row"><button class="add-fab" onclick="openAdd()">＋ 记一个日子</button></div>
+      </div>
+
+      <!-- ========== 页面1b: 全部日子 · 时间线/日历 ========== -->
+      <div class="page" id="page-alldays">
+        <div class="nav"><button class="back" data-back="days">‹</button><h1>所有日子</h1><button class="action" onclick="openAdd()">＋</button></div>
+        <div class="view-seg">
+          <button class="on" id="segList" onclick="switchView('list')">📅 按时间线</button>
+          <button id="segCal" onclick="switchView('calendar')">🗓 按日历看</button>
+        </div>
+
+        <!-- 时间线视图 -->
+        <div id="viewList"></div>
+
+        <!-- 日历视图 -->
+        <div id="viewCalendar" style="display:none;">
+          <div class="cal-nav">
+            <button class="cbtn" onclick="calMove(-1)">‹</button>
+            <div class="cm" id="calMonth">10月 2026</div>
+            <button class="cbtn" onclick="calMove(1)">›</button>
+          </div>
+          <div class="cal-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+          <div class="cal-grid" id="calGrid"></div>
+          <div class="cal-summary" id="calSummary"></div>
+        </div>
+      </div>
+
+      <!-- ========== 页面2: 模板馆 ========== -->
+      <div class="page" id="page-tpl">
+        <div class="nav"><h1>模板馆</h1><button class="action" onclick="toast('草稿箱：感恩信写了一半，继续写？')">📁</button></div>
+
+        <!-- 节点日历 · 横滑（借势营销主入口，随日历自动更新） -->
+        <div class="festival-rail">
+          <div class="fr-card" style="background:var(--grad-hot);" onclick="openTplPreview('letter')">
+            <div class="fr-bg">🌷</div>
+            <div class="fr-count">6 天后</div>
+            <div class="fr-emoji">🌷</div>
+            <div class="fr-name">母亲节</div>
+            <div class="fr-sub"><span class="fr-dot"></span>感恩信 · 12.4 万人已写</div>
+          </div>
+          <div class="fr-card" style="background:linear-gradient(135deg,#1f3a5f,#16233d);" onclick="openTplPreview('father')">
+            <div class="fr-bg">👔</div>
+            <div class="fr-count">38 天后</div>
+            <div class="fr-emoji">👔</div>
+            <div class="fr-name">父亲节</div>
+            <div class="fr-sub"><span class="fr-dot"></span>硬话模板 · 可预约</div>
+          </div>
+          <div class="fr-card" style="background:linear-gradient(135deg,#7a4e8f,#4a2a63);" onclick="openTplPreview('qixi')">
+            <div class="fr-bg">🌉</div>
+            <div class="fr-count">72 天后</div>
+            <div class="fr-emoji">🌉</div>
+            <div class="fr-name">七夕</div>
+            <div class="fr-sub"><span class="fr-dot"></span>情侣模板 · 可预约</div>
+          </div>
+        </div>
+
+        <div class="section-head" style="padding-top:14px;"><h2>全部模板</h2><div class="more" onclick="toast('已切换：按热门排序')">🔥 热门优先 ›</div></div>
+        <div class="tpl-tabs">
+          <button class="tpl-tab on" onclick="filterTpl(this,'all')">全部</button>
+          <button class="tpl-tab" onclick="filterTpl(this,'festival')">节日</button>
+          <button class="tpl-tab" onclick="filterTpl(this,'family')">家人</button>
+          <button class="tpl-tab" onclick="filterTpl(this,'couple')">情侣</button>
+          <button class="tpl-tab" onclick="filterTpl(this,'fun')">整活</button>
+        </div>
+        <div class="tpl-grid">
+          <div class="tpl-card" data-cat="festival" onclick="openTplPreview('letter')">
+            <div class="tp-cover" style="background:linear-gradient(135deg,#2a2a42,#16162a);"><span style="filter:drop-shadow(0 4px 10px rgba(255,157,118,.4));">💌</span><span class="tp-hot">🔥 母亲节</span></div>
+            <div class="tp-body"><div class="tp-name">给妈妈的感恩信</div><div class="tp-sub">AI 代笔，3 分钟写出一封信</div><div class="tp-used">🔥 12.4 万人已写</div></div>
+          </div>
+          <div class="tpl-card" data-cat="couple" onclick="openTplPreview('days')">
+            <div class="tp-cover" style="background:var(--grad-hot);"><span>💕</span><span class="tp-hot">🔥 热门</span></div>
+            <div class="tp-body"><div class="tp-name">相伴天数卡</div><div class="tp-sub">在一起的第 N 天，一键出图</div><div class="tp-used">🔥 8.1 万人已做</div></div>
+          </div>
+          <div class="tpl-card" data-cat="fun" onclick="openTplPreview('capsule')">
+            <div class="tp-cover" style="background:var(--grad-teal);">⏳</div>
+            <div class="tp-body"><div class="tp-name">时光胶囊邀请函</div><div class="tp-sub">写给一年后的 TA，扫码开箱</div><div class="tp-used">✨ 3.6 万人埋下了</div></div>
+          </div>
+          <div class="tpl-card" data-cat="family" onclick="openTplPreview('father')">
+            <div class="tp-cover" style="background:linear-gradient(135deg,#1f3a5f,#16233d);">👔<span class="tp-hot">预约</span></div>
+            <div class="tp-body"><div class="tp-name">给爸爸的一句硬话</div><div class="tp-sub">父爱无言，帮他翻译出来</div><div class="tp-used">⭐ 6 月上线</div></div>
+          </div>
+          <div class="tpl-card" data-cat="family" onclick="openTplPreview('birthday')">
+            <div class="tp-cover" style="background:var(--grad-violet);">🎂</div>
+            <div class="tp-body"><div class="tp-name">生日福卡</div><div class="tp-sub">家人生日当天，生成专属卡</div><div class="tp-used">🎂 2.9 万人已送</div></div>
+          </div>
+          <div class="tpl-card" data-cat="couple" onclick="openTplPreview('wedding')">
+            <div class="tp-cover" style="background:linear-gradient(135deg,#7a4e8f,#4a2a63);">💍<span class="tp-hot">预约</span></div>
+            <div class="tp-body"><div class="tp-name">结婚纪念日卡</div><div class="tp-sub">N 周年专属称谓与祝福</div><div class="tp-used">⭐ 敬请期待</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 页面3: 我的 ========== -->
+      <div class="page" id="page-me">
+        <div class="nav"><h1>我的</h1><button class="spacer"></button></div>
+        <div class="me-hero">
+          <div class="mh-ava">刘</div>
+          <div>
+            <div class="mh-name">小刘</div>
+            <div class="mh-sub">微信登录 · 2026年加入</div>
+          </div>
+        </div>
+        <div class="me-stats">
+          <div class="ms-cell" onclick="openAllDays()"><b>6</b><span>记着的日子</span></div>
+          <div class="ms-cell" onclick="openMyCards()"><b id="mcStatCount">3</b><span>做过的卡片</span></div>
+          <div class="ms-cell" onclick="toast('收到的❤️：来自 5 位好友')"><b>12</b><span>收到的心</span></div>
+        </div>
+        <div class="me-rows">
+          <div class="mr" onclick="openMyCards()">
+            <span class="left"><span class="ic">🖼️</span>我的卡片</span><span class="right" id="mcCount">3 张 ›</span>
+          </div>
+          <div class="mr" onclick="openCapsule()">
+            <span class="left"><span class="ic">⏳</span>我的时光胶囊</span><span class="right"><span class="badge">1 个待开</span>›</span>
+          </div>
+          <div class="mr" onclick="toast('提醒设置：每日最多 3 条，可单独关闭')">
+            <span class="left"><span class="ic">🔔</span>提醒设置</span><span class="right">3 条/天 ›</span>
+          </div>
+          <div class="mr" onclick="toast('隐私：2 个日子仅自己可见；海报不露手机号')">
+            <span class="left"><span class="ic">🔒</span>隐私设置</span><span class="right">›</span>
+          </div>
+          <div class="mr" onclick="toast('意见已记录，谢谢')">
+            <span class="left"><span class="ic">💬</span>反馈与建议</span><span class="right">›</span>
+          </div>
+          <div class="mr" onclick="toast('念家时 v2.1 · 把重要的日子，记在心上')">
+            <span class="left"><span class="ic">ℹ️</span>关于念家时</span><span class="right">v2.1 ›</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 页面3b: 我的卡片 ========== -->
+      <div class="page" id="page-mycards">
+        <div class="nav"><button class="back" data-back="me">‹</button><h1>我的卡片</h1><button class="spacer"></button></div>
+        <div class="mc-grid" id="mcGrid"></div>
+        <div class="mc-empty" id="mcEmpty" style="display:none;">
+          <span class="big">🖼️</span>
+          还没有做过卡片<br>
+          去「模板馆」做第一张——<b style="color:var(--rose);">3 分钟就好</b>
+          <div style="margin-top:16px;"><button class="es-chip primary" style="min-height:48px;width:70%;" onclick="showPage('tpl')">去模板馆 →</button></div>
+        </div>
+      </div>
+
+      <!-- ========== 页面4: 记日子 ========== -->
+      <div class="page" id="page-add">
+        <div class="nav"><button class="back" data-back="days">‹</button><h1>记一个日子</h1><button class="spacer"></button></div>
+        <div class="form-block">
+          <label class="f-label">这位家人是您的… <small>也可自定义</small></label>
+          <div class="pick-chips" id="relChips"></div>
+
+          <label class="f-label">是什么日子？</label>
+          <div class="seg three" id="kindSeg">
+            <button type="button" class="on" data-kind="BIRTHDAY">生日</button>
+            <button type="button" data-kind="ANNIVERSARY">纪念日</button>
+            <button type="button" data-kind="TOGETHER">在一起 💕</button>
+          </div>
+
+          <div id="dateArea">
+            <label class="f-label">按哪种日历</label>
+            <div class="seg" id="calSeg">
+              <button type="button" class="on" data-cal="SOLAR">公历</button>
+              <button type="button" data-cal="LUNAR">农历</button>
+            </div>
+            <label class="f-label">月和日</label>
+            <div class="date-pick">
+              <select id="monthSelect"></select>
+              <select id="daySelect"></select>
+            </div>
+            <div class="conv-card">
+              <div class="conv-kicker" id="convKicker">下一次这个日子</div>
+              <div class="conv-main" id="convMain">正在计算…</div>
+              <div class="conv-sub" id="convSub"></div>
+            </div>
+          </div>
+
+          <label class="f-label">提前提醒 <small>默认关闭</small></label>
+          <div class="reminder-options" id="remOptions">
+            <button type="button" data-r="7">提前 7 天</button>
+            <button type="button" data-r="3">提前 3 天</button>
+            <button type="button" data-r="0">当天提醒</button>
+          </div>
+
+          <label class="f-label">谁可以看到？</label>
+          <div class="pick-chips" id="visChips">
+            <button type="button" class="p-chip on" data-vis="FAMILY">家人可见</button>
+            <button type="button" class="p-chip" data-vis="PRIVATE">只我可见</button>
+          </div>
+        </div>
+        <button class="gen-next" id="saveDay">保存这个日子</button>
+      </div>
+
+      <!-- ========== 页面5: 日子详情 ========== -->
+      <div class="page" id="page-detail">
+        <div class="nav"><button class="back" data-back="days">‹</button><h1>日子详情</h1><button class="action" onclick="openAdd()">✎</button></div>
+        <div class="detail-card">
+          <div class="dt-ava" id="dtAva">👩</div>
+          <div class="dt-title" id="dtTitle">妈妈的生日</div>
+          <div class="dt-date" id="dtDate"></div>
+          <div class="dt-days" id="dtDaysWrap"><b>--</b>天后</div>
+          <div class="dt-tags" id="dtTags"></div>
+        </div>
+        <div class="dt-actions">
+          <button onclick="openTemplate('days')">✨ 做一张卡片</button>
+          <button class="primary" onclick="toast('提醒已开启：提前 3 天 · 当天')">🔔 提醒我</button>
+        </div>
+        <div class="section-head"><h2>到时候送这句话</h2></div>
+        <div class="dt-wishes" id="wishList"></div>
+        <button class="dt-danger" onclick="deleteDay()">删除这个日子</button>
+      </div>
+
+      <!-- ========== 页面6: 感恩信 · 选素材 ========== -->
+      <div class="page" id="page-gen-letter">
+        <div class="nav"><button class="back" data-back="tpl">‹</button><h1>给妈妈的感恩信</h1><button class="spacer"></button></div>
+        <div class="gen-head" style="background:var(--grad-night);">
+          <div class="g-kicker">✉ MOTHER'S DAY LETTER</div>
+          <div class="g-title">写一封信，给妈妈</div>
+          <div class="g-sub">AI 根据你的选择代笔，生成一封信<br>你只需要点头或改两个字</div>
+        </div>
+        <div class="form-block">
+          <label class="f-label">写给谁</label>
+          <div class="pick-chips" data-single>
+            <button class="p-chip on">妈妈</button>
+            <button class="p-chip" onclick="toast('可自定义称呼')">岳母 / 婆婆</button>
+            <button class="p-chip" onclick="toast('可自定义称呼')">奶奶</button>
+            <button class="p-chip" onclick="toast('可自定义称呼')">自定义 +</button>
+          </div>
+          <label class="f-label">你们之间的故事 <small>点选会写进信里，可多选</small></label>
+          <div class="pick-chips" id="storyChips">
+            <button class="p-chip on">她总给我留饭</button>
+            <button class="p-chip on">送我上学那些年</button>
+            <button class="p-chip">她爱唠叨但都是好意</button>
+            <button class="p-chip">她一个人把我带大</button>
+            <button class="p-chip">我离家后她学会视频</button>
+          </div>
+          <label class="f-label">想要什么语气</label>
+          <div class="tone-cards" id="toneCards">
+            <button class="tone-card on" data-tone="tear"><div class="tone-emoji">🥹</div><div class="tone-name">戳泪点</div><div class="tone-desc">看到会哭</div></button>
+            <button class="tone-card" data-tone="fun"><div class="tone-emoji">😄</div><div class="tone-name">幽默</div><div class="tone-desc">笑着笑着哭了</div></button>
+            <button class="tone-card" data-tone="calm"><div class="tone-emoji">🕊️</div><div class="tone-name">平淡</div><div class="tone-desc">克制的深情</div></button>
+          </div>
+        </div>
+        <button class="gen-next" onclick="generateLetter()">✨ AI 帮我写这封信</button>
+      </div>
+
+      <!-- ========== 页面7: 感恩信 · 预览改稿 ========== -->
+      <div class="page" id="page-letter">
+        <div class="nav"><button class="back" data-back="gen-letter">‹</button><h1>看看这封信</h1><button class="action" onclick="generateLetter(true)">🔄</button></div>
+        <div class="letter-paper">
+          <div class="lp-kicker">A LETTER TO MOM</div>
+          <div class="lp-title">写给妈妈的信</div>
+          <div class="lp-body" id="letterBody"></div>
+          <div class="lp-hint">👆 不满意哪句，点那句话换一句</div>
+        </div>
+        <button class="gen-next" onclick="showPoster('letter')">✨ 生成信纸海报</button>
+      </div>
+
+      <!-- ========== 页面8: 相伴天数卡 ========== -->
+      <div class="page" id="page-gen-days">
+        <div class="nav"><button class="back" data-back="tpl">‹</button><h1>相伴天数卡</h1><button class="spacer"></button></div>
+        <div class="gen-head" style="background:var(--grad-hot);">
+          <div class="g-kicker">💕 DAYS TOGETHER</div>
+          <div class="g-title">在一起的第 N 天</div>
+          <div class="g-sub">发朋友圈、纪念日、表白日都能用<br>每天数字自动 +1，永不过期</div>
+        </div>
+        <div class="form-block">
+          <label class="f-label">关系</label>
+          <div class="pick-chips" data-single>
+            <button class="p-chip on">恋人 ❤️</button>
+            <button class="p-chip">结婚 💍</button>
+            <button class="p-chip">闺蜜 🌸</button>
+            <button class="p-chip">好友 🤝</button>
+          </div>
+          <label class="f-label">在一起的日子</label>
+          <div class="date-pick">
+            <select id="togYear"><option>2019 年</option><option>2020 年</option><option>2021 年</option><option>2022 年</option><option>2023 年</option></select>
+            <select id="togDate"><option>10 月 22 日</option><option>11 月 5 日</option><option>12 月 30 日</option></select>
+          </div>
+          <label class="f-label">样式</label>
+          <div class="pick-chips" data-single id="daysStyle">
+            <button class="p-chip on" data-style="style-days">霞橘渐变 🌅</button>
+            <button class="p-chip" data-style="style-letter">深夜星河 🌌</button>
+            <button class="p-chip" data-style="style-capsule">薄荷清晨 🌿</button>
+          </div>
+        </div>
+        <div class="counter-preview" id="daysPreview">
+          <div class="cp-kicker">DAYS TOGETHER</div>
+          <div class="cp-days" id="cpDays">2480<small> 天</small></div>
+          <div class="cp-sub">2019.10.22 · 至今 · 每天自动 +1</div>
+          <div class="cp-line">"第 2480 天，依然觉得遇见你真好。"</div>
+        </div>
+        <button class="gen-next" onclick="showPoster('days')">✨ 生成天数卡片</button>
+      </div>
+
+      <!-- ========== 页面9: 时光胶囊 ========== -->
+      <div class="page" id="page-gen-capsule">
+        <div class="nav"><button class="back" data-back="tpl">‹</button><h1>时光胶囊</h1><button class="spacer"></button></div>
+        <div class="gen-head" style="background:var(--grad-teal);">
+          <div class="g-kicker">⏳ TIME CAPSULE</div>
+          <div class="g-title">写给一年后的 TA</div>
+          <div class="g-sub">写一段话 + 放一张照片，封存一年<br>生成「邀请函海报」发给 TA，扫码就能看</div>
+        </div>
+        <div class="form-block">
+          <label class="f-label">胶囊类型</label>
+          <div class="seg">
+            <button class="on" onclick="toast('写给自己，一年后自己开')">给未来的自己</button>
+            <button onclick="toast('发给 TA，TA 扫码开箱')">给未来的 TA</button>
+          </div>
+          <label class="f-label">什么时候打开</label>
+          <div class="pick-chips" data-single>
+            <button class="p-chip on">一年后</button>
+            <button class="p-chip">高考出分日</button>
+            <button class="p-chip">结婚纪念日</button>
+            <button class="p-chip">宝宝 18 岁</button>
+          </div>
+          <label class="f-label">封面提示语 <small>开箱人扫码第一眼看到的</small></label>
+          <div class="pick-chips" data-single>
+            <button class="p-chip on">"一年不见，你还挺想我吧"</button>
+            <button class="p-chip">"立个 flag 在这儿了"</button>
+          </div>
+        </div>
+        <div class="counter-preview" style="background:var(--grad-night);">
+          <div class="cp-kicker">SEALED UNTIL 2027.10.10</div>
+          <div class="cp-days" style="font-size:44px;">🔒 365<small> 天后开启</small></div>
+          <div class="cp-line">"这里面有一句话，和一张你等着看的照片。"</div>
+        </div>
+        <button class="gen-next" onclick="toast('胶囊已封存 🔒 · 邀请函海报已生成');setTimeout(()=>showPoster('capsule'),600)">✨ 封存并生成邀请函</button>
+      </div>
+
+      <!-- ========== 页面10: 胶囊开箱日 ========== -->
+      <div class="page page-capsule-open" id="page-capsule-open">
+        <div class="co-nav"><button class="back" data-back="days">‹</button><h1>时光胶囊 · 开箱日</h1><span style="width:34px"></span></div>
+        <div class="co-body" id="coBody">
+          <div class="co-kicker">SEALED ON 2025.10.10 · 365 DAYS AGO</div>
+          <div class="co-capsule" id="coCapsule">⏳</div>
+          <div class="co-title" id="coTitle">到日子了</div>
+          <div class="co-sub" id="coSub">你一年前埋下的胶囊<br>今天，可以打开了</div>
+          <button class="co-btn" id="coOpenBtn" onclick="openCapsuleBox()">开启胶囊</button>
+          <div class="co-msg" id="coMsg">
+            <div class="m-emoji">🏔️</div>
+            <div class="m-text">"一年前的你说：今年一定要去看一次雪山。<br>照片我先替你存在这儿——<br>现在，该你去了。"</div>
+            <div class="m-from">来自 2025.10.10 的小刘</div>
+          </div>
+          <div class="co-cta-row" id="coCtas">
+            <button onclick="openTemplate('capsule')">⏳ 我也埋一个</button>
+            <button class="primary" onclick="toast('开箱海报已生成，分享给 TA 📤');setTimeout(()=>showPoster('capsule'),500)">📤 分享开箱</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 页面11: 访客视图（扫码落地页） ========== -->
+      <div class="page visitor-page" id="page-visitor">
+        <div class="scan-tip"><span class="chip">📷 来自朋友圈分享 · 安心打开</span></div>
+        <div class="v-poster">
+          <div class="vp-kicker">DAYS TOGETHER · 来自小刘的分享</div>
+          <div class="vp-days">2480<small> 天</small></div>
+          <div class="vp-sub">"从 2019.10.22 到今天"<br>小刘 想让你看看这个数字</div>
+        </div>
+        <div class="locked">
+          <div class="lk-title">还有一段 TA 没发出来的话</div>
+          <div class="lock-row" id="heartRow">
+            <button class="lk-heart" data-h="1">🤍</button>
+            <button class="lk-heart" data-h="2">🤍</button>
+            <button class="lk-heart" data-h="3">🤍</button>
+          </div>
+          <div class="lk-sub" id="lkSub">点亮 3 颗心即可查看 · 无需注册</div>
+        </div>
+        <div class="v-preview">
+          <div class="p-label" id="vLabel">—— 藏在卡片里的话 ——</div>
+          <div class="v-reveal locked-content" id="vReveal">
+            "第 2480 天，依然觉得遇见你真好。<br>下一个 2480 天，打算继续赖着你。"
+            <span class="extra">—— 还有一张只给你们俩看的照片 ——</span>
+          </div>
+        </div>
+        <div class="v-bottom-cta" id="vBottomCta">
+          <div class="vbc-title">用「念家时」打开你们的照片</div>
+          <div class="vbc-sub">免费记日子 · 做卡片 · 埋时光胶囊<br>你们的日子，永久保存</div>
+          <button class="vbc-btn" onclick="toast('进入小程序注册流程（略）')">打开念家时 →</button>
+        </div>
+        <div style="text-align:center; padding:18px 0 26px; font-size:12px; color:var(--ink-3);">念家时 · 把重要的日子，记在心上</div>
+      </div>
+
+      <!-- ========== 海报舞台 ========== -->
+      <div class="poster-stage" id="posterStage">
+        <div class="poster" id="posterEl">
+          <div class="po-kicker" id="poKicker"></div>
+          <div class="po-title" id="poTitle"></div>
+          <div class="po-emoji" id="poEmoji"></div>
+          <div class="po-days" id="poDays"></div>
+          <div class="po-body" id="poBody"></div>
+          <div class="po-divider"></div>
+          <div class="po-brand-row">
+            <div class="po-brand">
+              <div class="b1">念家时</div>
+              <div class="b2">把重要的日子，记在心上</div>
+            </div>
+            <div class="qr" id="qrBox"></div>
+          </div>
+        </div>
+        <div class="poster-foot" id="poFoot">长按识别二维码 · 立即做一张你的</div>
+        <div class="share-panel" id="sharePanel">
+          <div class="sp-title">分享这张海报</div>
+          <div class="sp-hint">好友扫码即可查看，无需注册</div>
+          <div class="sp-actions">
+            <button class="sp-item" onclick="doShare('微信好友')"><span class="ico" style="background:#e8f7e8;">💬</span><span>微信好友</span></button>
+            <button class="sp-item" onclick="doShare('朋友圈')"><span class="ico" style="background:#fff3df;">🌈</span><span>朋友圈</span></button>
+            <button class="sp-item" onclick="doShare('面对面扫码')"><span class="ico" style="background:#eef0fc;">📱</span><span>面对面</span></button>
+            <button class="sp-item" onclick="doShare('保存到相册')"><span class="ico" style="background:#fdeef3;">⬇️</span><span>保存图片</span></button>
+          </div>
+          <button class="sp-cancel" onclick="closePoster()">取消</button>
+        </div>
+      </div>
+
+      <!-- AI 生成中 -->
+      <div class="ai-loading" id="aiLoading">
+        <div class="ai-orb"></div>
+        <div class="ai-text" id="aiText">AI 正在替你写信…</div>
+        <div class="ai-dots"><i></i><i></i><i></i></div>
+        <div class="ai-sub" id="aiSub">把你选的故事，写成想说的话</div>
+      </div>
+
+      <!-- 提醒授权 -->
+      <div class="sheet-mask" id="sheetMask"></div>
+      <div class="sheet" id="permSheet">
+        <h4>开启日子提醒</h4>
+        <p>到了你选的时间，我们会发一条消息提醒你。每人每天最多 3 条，家人看不到，也不会打扰你。</p>
+        <div class="sheet-buttons">
+          <button class="sheet-allow" id="permAllow">同意并开启</button>
+          <button class="sheet-cancel" id="permCancel">暂不开启</button>
+        </div>
+      </div>
+
+      <!-- 模板预览弹层：先看成品，再决定做不做 -->
+      <div class="sheet tpl-sheet" id="tplSheet">
+        <div class="pv-mini" id="pvMini">
+          <div class="pm-kicker" id="pvKicker"></div>
+          <div class="pm-emoji" id="pvEmoji"></div>
+          <div class="pm-days" id="pvDays"></div>
+          <div class="pm-body" id="pvBody"></div>
+        </div>
+        <div class="pv-title" id="pvTitle"></div>
+        <div class="pv-sub" id="pvSub"></div>
+        <div class="pv-features" id="pvFeats"></div>
+        <div class="pv-stats" id="pvStats"></div>
+        <div class="pv-hint" id="pvHint"></div>
+        <div class="sheet-buttons" style="width:100%;">
+          <button class="sheet-allow" id="pvGo">✨ 开始制作</button>
+          <button class="sheet-cancel" id="pvLater">先收藏</button>
+        </div>
+      </div>
+
+      <!-- 日历 · 点某天的事件弹层 -->
+      <div class="sheet day-sheet" id="daySheet">
+        <h4 id="daySheetTitle">这一天</h4>
+        <div id="daySheetRows"></div>
+        <div class="sheet-buttons">
+          <button class="sheet-cancel" onclick="closeSheets()">关闭</button>
+        </div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+    </div>
+
+    <!-- TabBar -->
+    <div class="tabbar">
+      <div class="tab active" data-page="days" onclick="switchTab(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>日子
+      </div>
+      <div class="tab" data-page="tpl" onclick="switchTab(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>模板馆
+      </div>
+      <div class="tab" data-page="me" onclick="switchTab(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>我的
+      </div>
+    </div>
+  </div>
+
+  <div class="fdesc">
+    <h3>👉 v2.1 补全的交互</h3>
+    ① <b>「我的」页</b>：资料 + 数据 + 我的卡片 / 胶囊 / 提醒 / 隐私<br>
+    ② <b>感恩信两步走</b>：选素材 → <b>AI 生成中动画</b> → 信纸预览 → <b>逐句点换</b>（点哪句换哪句）→ 海报<br>
+    ③ <b>胶囊开箱日</b>：首页召回横幅 → 摇晃开启动画 → 信件揭示 → 二次裂变（"我也埋一个"）<br>
+    ④ <b>访客 3 颗心可点</b>：逐颗点亮（带弹跳）→ 内容解锁 → 深色转化 CTA<br>
+    ⑤ <b>记日子完整流程</b>：关系点选 → 三种类型（含「在一起」自动计数）→ 公农历换算 → 提醒授权弹层 → 保存进列表<br>
+    ⑥ <b>日子详情页</b>：倒计时 / 周年标签 / 祝福语点选 / 做卡片 / 删除<br><br>
+    <h3>裂变闭环（v2.1 版）</h3>
+    做卡片 → 海报（带码）→ 扫码 → 访客点亮 3 心解锁 → CTA 装小程序 → 新用户做卡片 →（循环）<br>
+    胶囊支线：封存 → 一年后召回横幅 → 开箱 → 分享开箱海报 →（循环）<br><br>
+    <h3>试玩路径</h3>
+    ① 首页「开箱 →」体验胶囊全流程<br>
+    ② 首页横幅「去写信」→ 选素材 → AI 生成 → 点信里的句子换一句 → 生成海报<br>
+    ③ 「＋ 记一个日子」→ 完整表单 → 保存后看列表变化<br>
+    ④ 日子列表点「相伴中」行 → 详情页 → 做卡片<br>
+    ⑤ 海报分享面板点「面对面扫码」→ 访客视图 → 点亮 3 颗心<br>
+    ⑥ 「我的 → 我的卡片」→ 做过的卡片 → 再次分享<br>
+    ⑦ <button onclick="demoNewUser()" style="background:#2a2a3a;color:#ffd9a0;border:1px solid #4a4a60;border-radius:8px;padding:3px 10px;cursor:pointer;">🆕 切新用户视图</button>
+    <button onclick="demoRestore()" style="background:#2a2a3a;color:#9fe8dc;border:1px solid #4a4a60;border-radius:8px;padding:3px 10px;cursor:pointer;">↩ 恢复数据</button>
+    （空状态 = 每个新用户看到的第一屏）
+  </div>
+</div>
+
+<script>
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
+  const pages = ['days','tpl','me','add','detail','gen-letter','letter','gen-days','gen-capsule','capsule-open','visitor','alldays','mycards'];
+
+  function showPage(name) {
+    pages.forEach(p => $('#page-' + p).classList.toggle('active', p === name));
+    $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.page === name));
+    const el = $('#page-' + name); if (el) el.scrollTop = 0;
+  }
+  function switchTab(el) { showPage(el.dataset.page); }
+  $$('[data-back]').forEach(b => b.onclick = () => showPage(b.dataset.back));
+
+  let toastTimer;
+  function toast(msg) {
+    const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  /* ========== 点选通用 ========== */
+  $$('.pick-chips').forEach(group => {
+    const single = group.hasAttribute('data-single');
+    group.addEventListener('click', e => {
+      const chip = e.target.closest('.p-chip'); if (!chip) return;
+      if (chip.textContent.includes('自定义') || chip.textContent.includes('岳母') || chip.textContent.includes('奶奶')) return;
+      if (single) { group.querySelectorAll('.p-chip').forEach(c => c.classList.remove('on')); chip.classList.add('on'); }
+      else chip.classList.toggle('on');
+      if (group.id === 'daysStyle') syncDaysStyle();
+    });
+  });
+  $$('#toneCards .tone-card').forEach(card => card.onclick = () => {
+    $$('#toneCards .tone-card').forEach(c => c.classList.remove('on')); card.classList.add('on');
+  });
+
+  /* ========== 日子数据 ========== */
+  const RELATIONS = ['妈妈','爸爸','老伴','儿子','女儿','孙子','孙女','亲家','我自己'];
+  const EMOJI = { '妈妈':'👩','爸爸':'👨','老伴':'👴','儿子':'🧑','女儿':'👧','孙子':'👦','孙女':'👧','亲家':'🤝','我自己':'😊' };
+  const KIND_LABEL = { BIRTHDAY:'生日', ANNIVERSARY:'纪念日', TOGETHER:'在一起' };
+  const WISHES = {
+    BIRTHDAY: ['生日快乐，天天都有好心情。','身体健康，吃得香、睡得甜。','平平安安，一家人常相见。'],
+    ANNIVERSARY: ['风风雨雨这么多年，还像当年一样好。','一家人和和美美，日子越过越甜。','平安顺遂，来年更胜今年。'],
+    TOGETHER: ['在一起的第 N 天，依然觉得很好。','下一个 N 天，继续赖着你。'],
+  };
+  const state = {
+    records: [
+      { id:1, rel:'妈妈', emoji:'👩', kind:'BIRTHDAY', cal:'SOLAR', month:10, day:18, vis:'FAMILY', rems:[3,0] },
+      { id:2, rel:'小宝', emoji:'👦', kind:'BIRTHDAY', cal:'LUNAR', month:10, day:3, vis:'FAMILY', rems:[7,0] },
+      { id:3, rel:'爸妈', emoji:'💍', kind:'ANNIVERSARY', cal:'SOLAR', month:12, day:20, vis:'FAMILY', rems:[7] },
+      { id:4, rel:'我和她', emoji:'💕', kind:'TOGETHER', cal:'SOLAR', month:10, day:22, vis:'FAMILY', rems:[] },
+    ],
+    addState: { rel:'妈妈', kind:'BIRTHDAY', cal:'SOLAR', rems:[] },
+    selectedId: null,
+  };
+
+  /* 农历换算 */
+  function solarDate(y,m,d){ return new Date(y,m-1,d,12); }
+  function lunarInfo(date){
+    const parts = new Intl.DateTimeFormat('zh-CN-u-ca-chinese',{month:'long',day:'numeric'}).formatToParts(date);
+    const mt = parts.find(p=>p.type==='month')?.value||'', dt = parts.find(p=>p.type==='day')?.value||'';
+    const isLeap = mt.includes('闰');
+    const cm = mt.replace('闰','').replace('月','');
+    const map = {'正':1,'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'十一':11,'冬':11,'十二':12,'腊':12};
+    let m = map[cm]; if(!m){ const x=cm.match(/\d+/); m = x?Number(x[0]):1; }
+    const nums = {'初一':1,'初二':2,'初三':3,'初四':4,'初五':5,'初六':6,'初七':7,'初八':8,'初九':9,'初十':10,'十一':11,'十二':12,'十三':13,'十四':14,'十五':15,'十六':16,'十七':17,'十八':18,'十九':19,'二十':20,'廿一':21,'廿二':22,'廿三':23,'廿四':24,'廿五':25,'廿六':26,'廿七':27,'廿八':28,'廿九':29,'三十':30};
+    return { month:m, day:nums[dt]||1, isLeap, text:`农历${mt}${dt}` };
+  }
+  function fmt(d){ return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`; }
+  function findLunar(m,d,start=new Date()){
+    const c = new Date(start.getFullYear(),start.getMonth(),start.getDate(),12);
+    for(let i=0;i<760;i++){ const info=lunarInfo(c); if(info.month===Number(m)&&info.day===Number(d)) return new Date(c); c.setDate(c.getDate()+1); }
+    return null;
+  }
+  function nextOf(r){
+    const t = new Date(); t.setHours(12,0,0,0);
+    if(r.cal==='LUNAR') return findLunar(r.month,r.day);
+    let d = solarDate(t.getFullYear(),r.month,r.day);
+    if(d < t) d = solarDate(t.getFullYear()+1,r.month,r.day);
+    return d;
+  }
+  function diffDays(d){ const t=new Date(); t.setHours(12,0,0,0); return Math.max(0,Math.round((d-t)/86400000)); }
+  function dateText(r){
+    if(r.kind==='TOGETHER'){ const start=solarDate(2019,10,22); const now=new Date(); const days=Math.floor((now-start)/86400000); return `2019年10月22日 · 已相伴 ${days} 天`; }
+    const d = nextOf(r); if(!d) return '日期无法换算';
+    const lunar = lunarInfo(d).text;
+    return r.cal==='SOLAR' ? `${r.month}月${r.day}日 · ${lunar}` : `${lunar} · ${fmt(d)}`;
+  }
+  function togetherDays(){ return Math.max(1, Math.floor((new Date() - solarDate(2019,10,22))/86400000)); }
+
+  function renderDays() {
+    // 空状态：新用户没记任何日子
+    const isEmpty = state.records.length === 0;
+    $('#emptyState').style.display = isEmpty ? 'block' : 'none';
+    $('#allSectionHead').style.display = isEmpty ? 'none' : 'flex';
+    $('#heroDay').style.display = isEmpty ? 'none' : 'flex';
+    if (isEmpty) { $('#dayFeed').innerHTML = ''; return; }
+    const feed = $('#dayFeed');
+    const sorted = [...state.records].sort((a,b)=>{
+      if(a.kind==='TOGETHER') return 1; if(b.kind==='TOGETHER') return -1;
+      return diffDays(nextOf(a)) - diffDays(nextOf(b));
+    });
+    feed.innerHTML = sorted.map(r => {
+      const isTog = r.kind==='TOGETHER';
+      const days = isTog ? togetherDays() : diffDays(nextOf(r));
+      const grad = r.kind==='TOGETHER' ? 'var(--grad-hot)' : r.kind==='ANNIVERSARY' ? 'var(--grad-teal)' : 'var(--grad-violet)';
+      const tagColor = r.kind==='TOGETHER' ? 'background:#ffe9ee;color:var(--rose)' : r.kind==='ANNIVERSARY' ? 'background:#e6f7f4;color:var(--teal)' : 'background:#efeefc;color:var(--violet)';
+      const right = isTog
+        ? `<button class="dr-quick" onclick="event.stopPropagation();openDetail(${r.id})">做卡片</button>`
+        : `<div class="dr-count">${days}<small> 天后</small></div>`;
+      return `<div class="day-row" onclick="openDetail(${r.id})">
+        <div class="dr-ava" style="background:${grad};">${r.emoji}</div>
+        <div class="dr-info">
+          <div class="dr-name">${isTog ? `和在一起的第 ${days} 天` : `${r.rel}的${KIND_LABEL[r.kind]}`}<span class="tag" style="${tagColor}">${isTog?'相伴中':KIND_LABEL[r.kind]}</span></div>
+          <div class="dr-date">${dateText(r)}</div>
+        </div>
+        <div class="dr-right">${right}</div>
+      </div>`;
+    }).join('');
+    const hero = sorted.find(r=>r.kind!=='TOGETHER');
+    if(hero){
+      $('#heroDate').textContent = dateText(hero);
+      $('#heroDay').onclick = () => openDetail(hero.id);
+      $('#heroDay').querySelector('.hd-days strong').textContent = diffDays(nextOf(hero));
+    }
+  }
+
+  /* ========== 记日子 ========== */
+  function openAdd() {
+    state.addState = { rel:'妈妈', kind:'BIRTHDAY', cal:'SOLAR', rems:[] };
+    $('#relChips').innerHTML = RELATIONS.map(r =>
+      `<button type="button" class="p-chip ${r===state.addState.rel?'on':''}">${r}</button>`).join('');
+    $('#relChips').querySelectorAll('.p-chip').forEach(c => c.onclick = () => {
+      $('#relChips').querySelectorAll('.p-chip').forEach(x=>x.classList.remove('on'));
+      c.classList.add('on'); state.addState.rel = c.textContent;
+    });
+    $$('#kindSeg button').forEach(b => { b.classList.toggle('on', b.dataset.kind==='BIRTHDAY'); });
+    $$('#calSeg button').forEach(b => { b.classList.toggle('on', b.dataset.cal==='SOLAR'); });
+    $('#monthSelect').innerHTML = Array.from({length:12},(_,i)=>`<option value="${i+1}">${i+1} 月</option>`).join('');
+    $('#monthSelect').value = new Date().getMonth()+1;
+    fillDays(new Date().getDate());
+    $$('#remOptions button').forEach(b => b.classList.remove('on'));
+    $$('#visChips .p-chip').forEach(c => c.classList.toggle('on', c.dataset.vis==='FAMILY'));
+    showPage('add');
+  }
+  function fillDays(sel){
+    const n = state.addState.cal==='SOLAR' ? new Date(2028, Number($('#monthSelect').value||1), 0).getDate() : 30;
+    $('#daySelect').innerHTML = Array.from({length:n},(_,i)=>`<option value="${i+1}">${i+1} 日</option>`).join('');
+    if(sel) $('#daySelect').value = Math.min(sel,n);
+    updateConv();
+  }
+  function updateConv(){
+    const m = Number($('#monthSelect').value), d = Number($('#daySelect').value);
+    if(state.addState.cal==='SOLAR'){
+      const t = new Date(); let dt = solarDate(t.getFullYear(),m,d);
+      if(dt < new Date(t.getFullYear(),t.getMonth(),t.getDate(),12)) dt = solarDate(t.getFullYear()+1,m,d);
+      $('#convKicker').textContent = '下一次这个日子 · 农历';
+      $('#convMain').textContent = lunarInfo(dt).text;
+      $('#convSub').textContent = `对应公历 ${fmt(dt)} · ${diffDays(dt)} 天后`;
+    } else {
+      const dt = findLunar(m,d);
+      $('#convKicker').textContent = '下一次这个日子 · 公历';
+      $('#convMain').textContent = dt ? fmt(dt) : '无法换算';
+      $('#convSub').textContent = dt ? `${diffDays(dt)} 天后` : '请检查日期';
+    }
+  }
+  $$('#kindSeg button').forEach(b => b.onclick = () => {
+    $$('#kindSeg button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+    state.addState.kind = b.dataset.kind;
+    $('#dateArea').style.display = b.dataset.kind==='TOGETHER' ? 'none' : 'block';
+  });
+  $$('#calSeg button').forEach(b => b.onclick = () => {
+    $$('#calSeg button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+    state.addState.cal = b.dataset.cal; fillDays();
+  });
+  $$('#remOptions button').forEach(b => b.onclick = () => {
+    if(b.classList.contains('on')) { b.classList.remove('on'); return; }
+    window.pendingRem = b; $('#sheetMask').classList.add('show'); $('#permSheet').classList.add('show');
+  });
+  $('#permAllow').onclick = () => { window.pendingRem.classList.add('on'); closeSheets(); toast('提醒已开启 · 会先经订阅授权'); };
+  $('#permCancel').onclick = () => { closeSheets(); toast('提醒保持关闭'); };
+  function closeSheets(){ $('#sheetMask').classList.remove('show'); $$('.sheet').forEach(s => s.classList.remove('show')); }
+  $('#monthSelect').addEventListener('change', () => fillDays());
+  $('#daySelect').addEventListener('change', updateConv);
+
+  $('#saveDay').onclick = () => {
+    const a = state.addState;
+    if(a.kind !== 'TOGETHER' && (!$('#monthSelect').value || !$('#daySelect').value)) { toast('先选好月和日'); return; }
+    const rec = { id:Date.now(), rel:a.rel, emoji:EMOJI[a.rel]||'😊', kind:a.kind, cal:a.cal,
+      month:Number($('#monthSelect').value), day:Number($('#daySelect').value), vis:'FAMILY',
+      rems:[...$$('#remOptions button.on')].map(b=>b.dataset.r) };
+    if(a.kind==='TOGETHER'){ rec.cal='SOLAR'; rec.month=10; rec.day=22; }
+    state.records.push(rec);
+    toast('日子记好了 ✨');
+    renderDays(); openDetail(rec.id);
+  };
+
+  /* ========== 详情页 ========== */
+  function openDetail(id) {
+    const r = state.records.find(x=>x.id===id); if(!r) return;
+    state.selectedId = id;
+    $('#dtAva').textContent = r.emoji;
+    $('#dtAva').style.background = r.kind==='TOGETHER' ? 'var(--grad-hot)' : r.kind==='ANNIVERSARY' ? 'var(--grad-teal)' : 'var(--grad-violet)';
+    $('#dtTitle').textContent = r.kind==='TOGETHER' ? `在一起的第 ${togetherDays()} 天` : `${r.rel}的${KIND_LABEL[r.kind]}`;
+    $('#dtDate').textContent = `${dateText(r)} · ${r.vis==='PRIVATE'?'只我可见':'家人可见'}`;
+    const days = diffDays(nextOf(r));
+    $('#dtDaysWrap').innerHTML = r.kind==='TOGETHER'
+      ? `<b style="color:var(--rose);font-size:46px;">${togetherDays()}</b>天，每天 +1`
+      : days===0 ? `<b class="today">就是今天 🎉</b>` : `<b>${days}</b>天后`;
+    const tags = [`${KIND_LABEL[r.kind]}${r.kind==='ANNIVERSARY'?' · 40 周年':''}`, r.cal==='LUNAR'?'农历':'公历', `提醒 ${r.rems.length||0} 个`];
+    $('#dtTags').innerHTML = tags.map((t,i)=>`<span class="dt-tag ${i===0?'hot':''}">${t}</span>`).join('');
+    $('#wishList').innerHTML = (WISHES[r.kind]||WISHES.BIRTHDAY).map((w,i)=>
+      `<button class="wish-row" onclick="toast('已复制：「${w.slice(0,8)}…」')"><b>${i+1}</b>${w}</button>`).join('');
+    showPage('detail');
+  }
+  window.deleteDay = function(){
+    const r = state.records.find(x=>x.id===state.selectedId);
+    if(confirm(`确定删除「${r.rel}的${KIND_LABEL[r.kind]}」吗？提醒也会停止。`)){
+      state.records = state.records.filter(x=>x.id!==state.selectedId);
+      toast('已删除'); renderDays(); showPage('days');
+    }
+  };
+
+  /* ========== 感恩信：素材 → AI → 改稿 ========== */
+  const STORY_PARAS = {
+    '她总给我留饭': ['这些年您总给我留饭，热了又热，怕我回来吃凉的。','每次回家，锅里永远温着我那碗。'],
+    '送我上学那些年': ['送我上学那些年，您比闹钟还准时，风雨没缺过一天。','小时候的早餐，是一碗您五点起来熬的粥。'],
+    '她爱唠叨但都是好意': ['您爱唠叨，降温了、吃早饭了，每一句其实都是牵挂。','那些唠叨我现在才听懂，都是"我想你"。'],
+    '她一个人把我带大': ['您一个人把我带大，从没喊过累，也没让我缺过什么。','那些年您一个人扛，我现在才知道有多重。'],
+    '我离家后她学会视频': ['我离家以后，您学会了视频通话，每次接通都先问我"吃了没"。','您打字慢，就总发语音，六十秒，全是要紧事。'],
+  };
+  const TONE_END = {
+    tear: ['妈，以前是您惦记我，往后换我来惦记您。','妈，您把我养大，接下来的日子，我陪您变老。'],
+    fun: ['放心，您儿子/闺女在外面混得还行，就是饭没您做的好吃。','妈，别的都不敢保证，但你儿子/闺女想家这件事，保质期是永久。'],
+    calm: ['不多说了，您照顾好自己，我常回来。','就写到这。天冷了，您添衣。'],
+  };
+  let letterParas = [];
+  function generateLetter(isRegen){
+    $('#aiLoading').classList.add('show');
+    const texts = ['AI 正在替你写信…','把你们的故事，写成想说的话…','斟酌一下语气…'];
+    $('#aiText').textContent = texts[Math.floor(Math.random()*texts.length)];
+    setTimeout(() => {
+      $('#aiLoading').classList.remove('show');
+      const stories = [...$$('#storyChips .p-chip.on')].map(c=>c.textContent);
+      const tone = $('#toneCards .tone-card.on')?.dataset.tone || 'tear';
+      letterParas = [
+        ['妈，见字如面。','亲爱的妈：','妈，提笔的时候想了很久，'],
+        ...(stories.length ? stories.map(s=>STORY_PARAS[s]) : [STORY_PARAS['她总给我留饭']]),
+        TONE_END[tone],
+      ];
+      renderLetter();
+      showPage('letter');
+      if(!isRegen) toast('写好了 · 不满意的句子点一下换');
+    }, 1500);
+  }
+  function renderLetter(){
+    $('#letterBody').innerHTML = letterParas.map((variants,idx)=>{
+      const text = variants[Math.floor(Math.random()*variants.length)];
+      return `<div class="lp-para ${idx===letterParas.length-1?'sign':''}" data-idx="${idx}">${text}${idx===letterParas.length-1?'<br>—— 你的孩子':''}</div>`;
+    }).join('');
+    $$('#letterBody .lp-para:not(.sign)').forEach(p => p.onclick = () => {
+      const idx = Number(p.dataset.idx);
+      const variants = letterParas[idx];
+      const cur = p.textContent;
+      const next = variants[(variants.indexOf(cur)+1) % variants.length];
+      p.textContent = next;
+      p.style.animation = 'none'; void p.offsetWidth; p.style.animation = 'hpop .25s';
+    });
+  }
+
+  /* ========== 模板入口 / 海报 ========== */
+  function openTemplate(kind){ showPage('gen-'+kind); }
+  function filterTpl(el,cat){
+    $$('.tpl-tab').forEach(t=>t.classList.remove('on')); el.classList.add('on');
+    $$('.tpl-card').forEach(c => c.style.display = (cat==='all'||c.dataset.cat===cat)?'':'none');
+  }
+
+  /* ========== 模板预览：先看成品，再决定 ========== */
+  const TPL_DATA = {
+    letter: { name:'给妈妈的感恩信', page:'gen-letter', live:true,
+      mini:{ bg:'var(--grad-night)', kicker:'A LETTER TO MOM', emoji:'💌', days:'', body:'"妈，这些年您总给我留饭，<br>我离家以后，您学会了视频…"' },
+      sub:'AI 根据你选的故事代笔，写完直接生成信纸海报',
+      feats:['选你们的故事','AI 代笔','逐句可改','一键出海报'],
+      stats:['🔥 12.4 万人已写','⏱ 约 3 分钟','✅ 免费'],
+      hint:'💌 母亲节前 3 天做的人最多，现在做正合适' },
+    days: { name:'相伴天数卡', page:'gen-days', live:true,
+      mini:{ bg:'var(--grad-hot)', kicker:'DAYS TOGETHER', emoji:'', days:'2480<small> 天</small>', body:'"从 2019.10.22 到今天"' },
+      sub:'在一起的第 N 天，每天自动 +1，永不过期',
+      feats:['三种渐变样式','数字每天 +1','扫码可看'],
+      stats:['🔥 8.1 万人已做','⏱ 约 1 分钟','✅ 免费'],
+      hint:'💕 情侣和已婚的最爱，发朋友圈自带话题' },
+    capsule: { name:'时光胶囊邀请函', page:'gen-capsule', live:true,
+      mini:{ bg:'var(--grad-teal)', kicker:'TIME CAPSULE', emoji:'⏳', days:'365<small> 天后开启</small>', body:'"这里面有一句话，<br>和一张你等着看的照片。"' },
+      sub:'写一段话 + 放一张照片，封存到指定日子，生成开箱邀请函',
+      feats:['指定开箱日','邀请 TA 扫码','开箱日自动提醒'],
+      stats:['✨ 3.6 万人埋下了','⏱ 约 2 分钟','✅ 免费'],
+      hint:'⏳ 埋下的那天起，TA 就有了一个盼头' },
+    birthday: { name:'生日福卡', page:null, live:true,
+      mini:{ bg:'var(--grad-violet)', kicker:'HAPPY BIRTHDAY', emoji:'🎂', days:'', body:'"祝妈妈生日快乐，<br>天天都有好心情。"' },
+      sub:'家人生日当天，自动提醒你生成专属福卡',
+      feats:['生日当天提醒','家人可见','收到的人可回 ❤️'],
+      stats:['🎂 2.9 万人已送','⏱ 约 1 分钟','✅ 免费'],
+      hint:'🔔 已在你记的日子到期时自动出现' },
+    father: { name:'给爸爸的一句硬话', page:null, live:false, when:'6 月父亲节',
+      mini:{ bg:'linear-gradient(135deg,#1f3a5f,#16233d)', kicker:'FOR DAD', emoji:'👔', days:'', body:'"爸，这些话我替你说了。"' },
+      sub:'父爱无言，AI 帮你把他没说出口的翻译出来',
+      feats:['父亲节限定','AI 代笔','一键出海报'],
+      stats:['⭐ 6 月上线','👥 2.3 万人想用'],
+      hint:' Father\'s Day · 6 月第三个周日' },
+    wedding: { name:'结婚纪念日卡', page:null, live:false, when:'近期上线',
+      mini:{ bg:'linear-gradient(135deg,#7a4e8f,#4a2a63)', kicker:'ANNIVERSARY', emoji:'💍', days:'40<small> 周年</small>', body:'"红宝石婚 · 一起走过 40 年"' },
+      sub:'N 周年自动匹配称谓（银婚/金婚/红宝石婚…）',
+      feats:['周年称谓自动配','双人生日同步','可印制'],
+      stats:['⭐ 近期上线','👥 1.8 万人想用'],
+      hint:'💍 记住结婚日，周年当天自动提醒' },
+  };
+  window.openTplPreview = function(key){
+    const t = TPL_DATA[key]; if(!t) return;
+    const mini = $('#pvMini');
+    mini.style.background = t.mini.bg;
+    $('#pvKicker').textContent = t.mini.kicker;
+    $('#pvEmoji').textContent = t.mini.emoji;
+    $('#pvDays').innerHTML = t.mini.days;
+    $('#pvBody').innerHTML = t.mini.body;
+    $('#pvTitle').textContent = t.name;
+    $('#pvSub').textContent = t.sub;
+    $('#pvFeats').innerHTML = t.feats.map(f=>`<span class="pv-feat">${f}</span>`).join('');
+    $('#pvStats').textContent = t.stats.join('  ·  ');
+    $('#pvHint').textContent = t.hint;
+    const go = $('#pvGo'), later = $('#pvLater');
+    go.textContent = t.live ? '✨ 开始制作' : `🔔 ${t.when}提醒我`;
+    go.onclick = () => {
+      closeSheets();
+      if(t.live && t.page) showPage(t.page);
+      else if(t.live) toast('生日当天会在首页提醒你');
+      else toast(`已预约 · ${t.when}上线时通知你`);
+    };
+    later.onclick = () => { closeSheets(); toast('已收藏到「我的 · 模板收藏」'); };
+    $('#sheetMask').classList.add('show');
+    $('#tplSheet').classList.add('show');
+  };
+
+  function syncDaysStyle(){
+    const on = $('#daysStyle .p-chip.on')?.dataset.style || 'style-days';
+    const preview = $('#daysPreview');
+    preview.style.background = on==='style-days' ? 'var(--grad-hot)' : on==='style-letter' ? 'var(--grad-night)' : 'var(--grad-teal)';
+  }
+
+  function drawQr(){
+    const box = $('#qrBox'); if(box.children.length) return;
+    const pat = [[1,1,1,0,1,1,1],[1,0,1,0,1,0,1],[1,1,1,0,1,1,1],[0,0,0,0,0,0,0],[1,0,1,1,0,1,0],[0,1,0,1,0,1,1],[1,1,0,0,1,0,1]];
+    box.innerHTML = pat.flatMap((row,y)=>row.map((v,x)=>`<i class="${v?'':'o'}" style="grid-area:${y+1}/${x+1}"></i>`)).join('');
+  }
+
+  const POSTERS = {
+    letter: {
+      style:'style-letter', kicker:'✉ A LETTER TO MOM', title:'写给妈妈的信', emoji:'💌', days:'',
+      body(){ return letterParas.map(v=>v[0]).slice(0,3).join('<br>').replace(/^/,'"') + '…"'; },
+      foot:'长按识别二维码 · 看完这封信的结尾'
+    },
+    days: {
+      style:'style-days', kicker:'DAYS TOGETHER', title:'在一起的第 N 天', emoji:'',
+      days:`<span id="poDaysNum"></span>`, body:'"从 2019.10.22 到今天<br>下一个 N 天，继续赖着你。"',
+      foot:'长按识别二维码 · 做一张你们的'
+    },
+    capsule: {
+      style:'style-capsule', kicker:'⏳ TIME CAPSULE', title:'一年后见', emoji:'🔒',
+      days:'365<small> 天后开启</small>', body:'"这里面有一句话<br>和一张你等着看的照片。"',
+      foot:'长按识别二维码 · 亲手开启'
+    },
+  };
+
+  function showPoster(kind){
+    const p = POSTERS[kind];
+    const styleSel = $('#daysStyle .p-chip.on')?.dataset.style;
+    $('#posterEl').className = 'poster ' + (kind==='days' && styleSel ? styleSel : p.style);
+    $('#poKicker').textContent = p.kicker;
+    $('#poTitle').textContent = p.title;
+    $('#poEmoji').textContent = p.emoji;
+    $('#poDays').innerHTML = p.days;
+    if(kind==='days') $('#poDays').innerHTML = `${togetherDays()}<small> 天</small>`;
+    $('#poBody').innerHTML = typeof p.body==='function' ? p.body() : p.body;
+    $('#poFoot').textContent = p.foot;
+    drawQr();
+    window.currentPosterKind = kind;
+    $('#posterStage').classList.add('show');
+    setTimeout(() => $('#sharePanel').classList.add('show'), 300);
+  }
+  function closePoster(){
+    $('#sharePanel').classList.remove('show');
+    setTimeout(() => $('#posterStage').classList.remove('show'), 220);
+  }
+  function doShare(target){
+    pushMadeCard(window.currentPosterKind);
+    closePoster();
+    if(target==='面对面扫码'){ showPage('visitor'); return; }
+    toast('海报已发出 · 好友扫码即可查看');
+  }
+
+  /* ========== 我的卡片：存档 + 二次分享 ========== */
+  let madeCards = [
+    { id:1, kind:'days',  when:'3 天前' },
+    { id:2, kind:'days',  when:'上周',  style:'style-letter' },
+    { id:3, kind:'letter',when:'母亲节前' },
+  ];
+  function pushMadeCard(kind){
+    if(!kind) return;
+    if(madeCards.some(c=>c.kind===kind && c.today)) return; // 当日去重
+    madeCards.unshift({ id:Date.now(), kind, when:'刚刚', today:true });
+    renderMyCards();
+  }
+  const MC_META = {
+    days: { name:'相伴天数卡', bg:'var(--grad-hot)', kicker:'DAYS TOGETHER', days:()=>`${togetherDays()}<small> 天</small>`, emoji:'' },
+    letter: { name:'给妈妈的感恩信', bg:'var(--grad-night)', kicker:'A LETTER TO MOM', days:()=>'💌', emoji:'' },
+    capsule: { name:'时光胶囊邀请函', bg:'var(--grad-teal)', kicker:'TIME CAPSULE', days:()=>'365<small> 天后</small>', emoji:'⏳' },
+  };
+  function renderMyCards(){
+    const grid = $('#mcGrid'), empty = $('#mcEmpty');
+    if(!madeCards.length){ grid.style.display='none'; empty.style.display='block'; return; }
+    grid.style.display=''; empty.style.display='none';
+    grid.innerHTML = madeCards.map(c=>{
+      const m = MC_META[c.kind]; if(!m) return '';
+      return `<div class="mc-card">
+        <div class="mc-cover" style="background:${c.style==='style-letter'?'var(--grad-night)':m.bg};">
+          <div class="mc-kicker">${m.kicker}</div>
+          <div class="mc-days">${m.days()}</div>
+        </div>
+        <div class="mc-body">
+          <div class="mc-name">${m.name}</div>
+          <div class="mc-when">${c.when}制作</div>
+          <div class="mc-acts">
+            <button class="mc-view" onclick="showPoster('${c.kind}')">再次分享</button>
+            <button class="mc-del" onclick="delCard(${c.id})">删除</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    $('#mcCount').textContent = `${madeCards.length} 张 ›`;
+    const stat = $('#mcStatCount'); if (stat) stat.textContent = madeCards.length;
+  }
+  window.openMyCards = function(){ renderMyCards(); showPage('mycards'); };
+  window.delCard = function(id){
+    madeCards = madeCards.filter(c=>c.id!==id);
+    renderMyCards(); toast('已删除');
+  };
+
+  /* ========== 胶囊开箱 ========== */
+  function openCapsule(){
+    $('#coMsg').classList.remove('show');
+    $('#coCtas').classList.remove('show');
+    const cap = $('#coCapsule');
+    cap.className = 'co-capsule'; cap.textContent = '⏳';
+    $('#coTitle').textContent = '到日子了';
+    $('#coSub').innerHTML = '你一年前埋下的胶囊<br>今天，可以打开了';
+    $('#coOpenBtn').style.display = '';
+    showPage('capsule-open');
+  }
+  window.openCapsuleBox = function(){
+    const cap = $('#coCapsule');
+    cap.classList.add('shake');
+    setTimeout(()=>{ cap.textContent='✨'; }, 400);
+    setTimeout(()=>{
+      cap.classList.add('opened');
+      setTimeout(()=>{
+        cap.style.display='none';
+        $('#coMsg').classList.add('show');
+        $('#coCtas').classList.add('show');
+        $('#coTitle').textContent = '来自一年前的你';
+        $('#coSub').innerHTML = '胶囊已开启 · 内容只有你和邀请的人可见';
+        $('#coOpenBtn').style.display = 'none';
+      }, 400);
+    }, 800);
+  };
+
+  /* ========== 访客解锁 ========== */
+  let hearts = 0;
+  $$('#heartRow .lk-heart').forEach(h => h.onclick = () => {
+    if(h.classList.contains('on')) return;
+    h.classList.add('on','pop');
+    h.textContent = '❤️';
+    hearts++;
+    if(hearts===1) toast('还差 2 颗 ❤️');
+    if(hearts===2) toast('还差 1 颗 ❤️');
+    if(hearts>=3){
+      setTimeout(()=>{
+        $('#vReveal').classList.remove('locked-content');
+        $('#vReveal').classList.add('unlocked');
+        $('#lkSub').textContent = '已解锁 · 无需注册，看完就好';
+        $('#vLabel').textContent = '—— TA 藏在卡片里的话 ——';
+        $('#vBottomCta').classList.add('show');
+        toast('已解锁 ✨');
+      },350);
+    }
+  });
+
+  /* ========== 全部日子 · 时间线/日历 ========== */
+  let calY = new Date().getFullYear(), calM = new Date().getMonth(); // 当前展示月
+  function openAllDays(){ renderAllDays(); showPage('alldays'); }
+  window.openAllDays = openAllDays;
+
+  function occurrenceInMonth(r, y, m){
+    // 返回 r 在 y年m月 内的落点（若该月恰有 occurrence）
+    const d = nextOf(r); if(!d) return null;
+    return (d.getFullYear()===y && d.getMonth()===m) ? d : null;
+  }
+
+  function renderAllDays(){
+    // 时间线视图
+    const sorted = [...state.records].sort((a,b)=>{
+      if(a.kind==='TOGETHER') return 1; if(b.kind==='TOGETHER') return -1;
+      return diffDays(nextOf(a)) - diffDays(nextOf(b));
+    });
+    const groups = {};
+    sorted.forEach(r=>{
+      const d = nextOf(r) || new Date();
+      if(r.kind==='TOGETHER') return;
+      const key = `${d.getFullYear()}年${d.getMonth()+1}月`;
+      (groups[key] = groups[key] || []).push(r);
+    });
+    let html = '';
+    Object.keys(groups).sort((a,b)=>a.localeCompare(b,'zh')).forEach((key,idx)=>{
+      if(idx===0) html += `<div style="height:10px"></div>`;
+      html += `<div class="tl-month"><b>${key}</b><span class="cnt">${groups[key].length} 个日子</span></div><div class="day-feed">${groups[key].map(r=>{
+        const d = nextOf(r); const days = diffDays(d);
+        const grad = r.kind==='ANNIVERSARY' ? 'var(--grad-teal)' : 'var(--grad-violet)';
+        const tag = r.kind==='ANNIVERSARY' ? 'background:#e6f7f4;color:var(--teal)' : 'background:#efeefc;color:var(--violet)';
+        return `<div class="day-row" onclick="openDetail(${r.id})">
+          <div class="dr-ava" style="background:${grad};">${r.emoji}</div>
+          <div class="dr-info">
+            <div class="dr-name">${r.rel}的${KIND_LABEL[r.kind]}<span class="tag" style="${tag}">${r.cal==='LUNAR'?'农历':'公历'}</span></div>
+            <div class="dr-date">${dateText(r)}</div>
+          </div>
+          <div class="dr-right"><div class="dr-count">${days===0?'今天':days+'<small> 天后</small>'}</div></div>
+        </div>`;
+      }).join('')}</div>`;
+    });
+    if(state.records.some(r=>r.kind==='TOGETHER')){
+      const t = state.records.find(r=>r.kind==='TOGETHER');
+      html += `<div class="tl-month"><b>每天</b><span class="cnt">相伴中</span></div>
+        <div class="day-feed">
+          <div class="day-row" onclick="openDetail(${t.id})">
+            <div class="dr-ava" style="background:var(--grad-hot);">${t.emoji}</div>
+            <div class="dr-info"><div class="dr-name">和在一起的第 ${togetherDays()} 天</div><div class="dr-date">${dateText(t)}</div></div>
+            <div class="dr-right"><button class="dr-quick">做卡片</button></div>
+          </div>
+        </div>`;
+    }
+    $('#viewList').innerHTML = html;
+    renderCalendar();
+  }
+
+  function renderCalendar(){
+    $('#calMonth').textContent = `${calM+1}月 ${calY}`;
+    const first = new Date(calY, calM, 1);
+    const startWeek = first.getDay();
+    const daysInMonth = new Date(calY, calM+1, 0).getDate();
+    const today = new Date();
+    // 事件按天索引
+    const dayEvents = {};
+    state.records.forEach(r=>{
+      if(r.kind==='TOGETHER') return;
+      const d = occurrenceInMonth(r, calY, calM);
+      if(d) (dayEvents[d.getDate()] = dayEvents[d.getDate()] || []).push(r);
+    });
+    let cells = '';
+    for(let i=0;i<startWeek;i++) cells += `<div class="cal-cell other"></div>`;
+    for(let d=1; d<=daysInMonth; d++){
+      const evs = dayEvents[d];
+      const isToday = today.getFullYear()===calY && today.getMonth()===calM && today.getDate()===d;
+      const dotCls = { BIRTHDAY:'b', ANNIVERSARY:'a' };
+      const dots = evs ? `<div style="display:flex;gap:3px">${evs.map(e=>`<span class="cd-dot ${dotCls[e.kind]||'b'}"></span>`).join('')}</div>` : '';
+      cells += `<div class="cal-cell ${isToday?'today':''} ${evs?'has':''}" ${evs?`onclick="openDaySheet(${d})"`:''}>${d}${dots}</div>`;
+    }
+    $('#calGrid').innerHTML = cells;
+    const total = Object.keys(dayEvents).length;
+    $('#calSummary').textContent = total
+      ? `本月有 ${total} 天值得记住${Object.keys(dayEvents).some(d=>{const evs=dayEvents[d];return evs.some(e=>diffDays(nextOf(e))===0)}) ? ' · 今天有日子 🎉':''}`
+      : '这个月暂无日子 · 右滑看看别的月，或 ＋ 记一个';
+  }
+  function calMove(delta){
+    calM += delta;
+    if(calM<0){ calM=11; calY--; } if(calM>11){ calM=0; calY++; }
+    renderCalendar();
+  }
+  function switchView(mode){
+    $('#segList').classList.toggle('on', mode==='list');
+    $('#segCal').classList.toggle('on', mode==='calendar');
+    $('#viewList').style.display = mode==='list' ? '' : 'none';
+    $('#viewCalendar').style.display = mode==='calendar' ? '' : 'none';
+  }
+  window.switchView = switchView; window.calMove = calMove;
+  window.openDaySheet = function(d){
+    const evs = state.records.filter(r=>{
+      if(r.kind==='TOGETHER') return false;
+      const occ = occurrenceInMonth(r, calY, calM);
+      return occ && occ.getDate()===d;
+    });
+    if(!evs.length) return;
+    $('#daySheetTitle').textContent = `${calM+1}月${d}日`;
+    $('#daySheetRows').innerHTML = evs.map(r=>{
+      const grad = r.kind==='ANNIVERSARY' ? 'var(--grad-teal)' : 'var(--grad-violet)';
+      return `<div class="ds-row" onclick="closeSheets();openDetail(${r.id})">
+        <div class="ds-ava" style="background:${grad};">${r.emoji}</div>
+        <div><div class="ds-name">${r.rel}的${KIND_LABEL[r.kind]}</div><div class="ds-sub">${dateText(r)}${diffDays(nextOf(r))===0?' · 就是今天':''}</div></div>
+      </div>`;
+    }).join('');
+    $('#sheetMask').classList.add('show');
+    $('#daySheet').classList.add('show');
+  };
+
+  /* ========== 新用户视图演示（审阅用） ========== */
+  window.demoNewUser = function(){
+    window._savedRecords = state.records;
+    state.records = [];
+    renderDays(); showPage('days');
+    toast('已切换到新用户视图');
+  };
+  window.demoRestore = function(){
+    if(window._savedRecords){ state.records = window._savedRecords; renderDays(); showPage('days'); toast('已恢复数据'); }
+  };
+
+  /* ========== 初始化 ========== */
+  renderDays();
+  renderMyCards();
+</script>
+</body>
+</html>

@@ -1,11 +1,15 @@
 openapi: 3.0.3
 info:
   title: 全家福·接福气 API
-  version: 1.5.0
+  version: 1.6.0
   description: |
     中老年家庭祈福互动小程序「全家福·接福气」接口契约(唯一事实源)。
     v1.5.0 增量:八卦集福阵(只读进度)/转罗盘卦位(仅卡面主题)/解忧册文案下发(幂等)/订阅消息授权登记。
+    v1.6.0 增量(念家时 v2.0 日子管家):日子记录(生日/纪念日/在一起)CRUD、按人提醒配置、到期计算;复用既有 /api/calendar/convert 与 /api/notify/*。
     合规约束:文案禁用迷信词(见 .agents/docs/conventions.md,含 v1.5 追加:卦象/卦运/宜忌/生门/吉位/凶位/能成/不行/会有/注定/天意/预示/破财/有灾),错误 message 面向用户须过合规词表。
+tags:
+  - name: days
+    description: 念家时 v2.0 日子管家(生日/纪念日/在一起三类日子,自由关系文本,按人提醒配置与到期计算)
 paths:
   /api/auth/login:
     post:
@@ -386,6 +390,220 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotifyStatusResponse'
+  /api/days:
+    get:
+      tags: [days]
+      operationId: listDays
+      summary: 日子列表(本人创建的全部+同家族他人 visibility=FAMILY;服务端排序:非 TOGETHER 按 daysUntil 升序,TOGETHER 固定底部)
+      responses:
+        '200':
+          description: 已排序的日子列表;空数组触发前端空状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DayListResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [days]
+      operationId: createDay
+      summary: 记一个日子(kind=TOGETHER 时 calendarType 固定 SOLAR 且 month/day 可省,服务端取当天为起始日)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DayUpsertRequest'
+      responses:
+        '200':
+          description: 已保存的日子记录(含计算字段)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DayRecord'
+        '400':
+          description: 参数错误(40000:month/day 越界、kind/calendarType/reminders 非法、TOGETHER 传 LUNAR、字段缺失)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/days/{id}:
+    get:
+      tags: [days]
+      operationId: getDay
+      summary: 日子详情(PRIVATE 记录仅创建人可见,对他人等价不存在)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 日子详情(含当前用户视角 reminders)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DayRecord'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 日子不存在、PRIVATE 对家人不可见、越权访问(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [days]
+      operationId: updateDay
+      summary: 编辑日子(创建人;FAMILY 可见记录户主亦可编辑;全量覆盖式;reminders 不经此端点,走 /api/days/{id}/reminder)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DayUpsertRequest'
+      responses:
+        '200':
+          description: 已更新的日子记录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DayRecord'
+        '400':
+          description: 参数错误(40000)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 日子不存在或无权编辑(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [days]
+      operationId: deleteDay
+      summary: 删除日子及当前用户的提醒配置(权限同 PUT;前端删除前需二次确认)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 删除结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteDayResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 日子不存在或无权删除(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/days/{id}/reminder:
+    put:
+      tags: [days]
+      operationId: updateDayReminder
+      summary: 设置当前用户对该日子的提醒时点(幂等覆盖,空数组=关闭,默认关闭;沿用生日簿 /api/birthdays/{id}/reminder 模型,FAMILY 记录每位家人各自配置)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DayReminderRequest'
+      responses:
+        '200':
+          description: 当前用户的提醒设置
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DayReminder'
+        '400':
+          description: 参数错误(40000:重复值/越界值/超 3 项)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 日子不存在或对当前用户不可见(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/days/reminder-due:
+    get:
+      tags: [days]
+      operationId: getReminderDue
+      summary: 到期计算(给定日期应提醒清单,命中用户配置提前量的日子;服务端调度与联调自测用,小程序端不调用;发送频控 ≤3 条/人/天在此结果上计算)
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            description: 指定日期 yyyy-MM-dd,缺省为当天
+      responses:
+        '200':
+          description: 应提醒清单;items 已含 kind/relation/daysTo/daysSince,可直接支撑「今天有什么日子」横幅
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DayReminderDueResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
     LoginRequest:
@@ -906,3 +1124,190 @@ components:
         dailyLimit:
           type: integer
           description: 每日上限(4);设置页展示「您每天最多收到 4 条提醒,不会多打扰」
+    DayKind:
+      type: string
+      enum: [BIRTHDAY, ANNIVERSARY, TOGETHER]
+      description: 日子类型:BIRTHDAY 生日/ANNIVERSARY 纪念日/TOGETHER 在一起(记起始日,展示累计天数)
+    DayVisibility:
+      type: string
+      enum: [FAMILY, PRIVATE]
+      description: FAMILY 家人可见(默认;未加入家族的用户传 FAMILY 被服务端降级为 PRIVATE),PRIVATE 仅创建人可见
+    DayUpsertRequest:
+      type: object
+      required: [relation, kind, calendarType, visibility]
+      properties:
+        relation:
+          type: string
+          minLength: 1
+          maxLength: 12
+          description: 关系文本(妈妈/老伴/我自己/自定义),1-12 字
+        emoji:
+          type: string
+          description: 1 个表情;缺省由服务端按 relation 预置映射(妈妈=👩 等),自定义关系默认 😊
+        kind:
+          $ref: '#/components/schemas/DayKind'
+        calendarType:
+          $ref: '#/components/schemas/CalendarType'
+        month:
+          type: integer
+          description: 1-12;kind≠TOGETHER 时必填,TOGETHER 可省(服务端取创建当天为起始日)
+        day:
+          type: integer
+          description: 1-31,按日历口径校验;kind≠TOGETHER 时必填,TOGETHER 可省
+        visibility:
+          $ref: '#/components/schemas/DayVisibility'
+        reminders:
+          type: array
+          maxItems: 3
+          uniqueItems: true
+          items:
+            type: integer
+            enum: [7, 3, 0]
+          description: 创建人初始提醒配置,⊆{7,3,0} 去重 ≤3 项,缺省空数组(关闭);仅创建(POST)生效,PUT 忽略此字段(改提醒走 /api/days/{id}/reminder)
+    DayRecord:
+      type: object
+      required: [id, userId, relation, emoji, kind, calendarType, month, day, visibility, reminders, createdAt, nextDate, nextDateLunarText, daysUntil, togetherDays]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+          description: 创建人;家族归属由用户唯一家族推导(每人限 1 家族)
+        relation:
+          type: string
+          description: 关系文本,1-12 字
+        emoji:
+          type: string
+          description: 1 个表情;缺省由 relation 预置映射
+        kind:
+          $ref: '#/components/schemas/DayKind'
+        calendarType:
+          $ref: '#/components/schemas/CalendarType'
+          description: TOGETHER 固定 SOLAR;不含 isLeapMonth(农历落点按月日数值匹配,沿用生日簿算法,服务端职责)
+        month:
+          type: integer
+          description: 1-12;TOGETHER 冗余存起始日当月
+        day:
+          type: integer
+          description: 1-31 按日历口径;TOGETHER 冗余存起始日当日
+        visibility:
+          $ref: '#/components/schemas/DayVisibility'
+        reminders:
+          type: array
+          items:
+            type: integer
+            enum: [7, 3, 0]
+          description: 当前用户视角的提醒提前天数,⊆{7,3,0},空数组=关闭;底层为 day_reminder 表
+        createdAt:
+          type: string
+          description: 创建时间 ISO 8601;TOGETHER 的完整起始日期=createdAt 年+month/day
+        nextDate:
+          type: string
+          nullable: true
+          description: 下次落点公历日期 yyyy-MM-dd(农历按月日数值匹配,服务端换算);TOGETHER 为 null
+        nextDateLunarText:
+          type: string
+          nullable: true
+          description: 下次落点农历显示文本(如 农历八月十五);TOGETHER 为 null
+        daysUntil:
+          type: integer
+          nullable: true
+          description: 距下次落点天数,≥0,0=就是今天;TOGETHER 为 null
+        togetherDays:
+          type: integer
+          nullable: true
+          description: 仅 TOGETHER:今天-起始日(下限 1),每天自动 +1;其余 kind 为 null
+    DayListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          description: 已排序:非 TOGETHER 按 daysUntil 升序,TOGETHER 固定底部;空数组触发前端空状态
+          items:
+            $ref: '#/components/schemas/DayRecord'
+    DayReminderRequest:
+      type: object
+      required: [reminders]
+      properties:
+        reminders:
+          type: array
+          maxItems: 3
+          uniqueItems: true
+          items:
+            type: integer
+            enum: [7, 3, 0]
+          description: 提前天数,⊆{7,3,0} 去重 ≤3 项;空数组表示关闭提醒;重复值/越界值/超 3 项返回 40000
+    DayReminder:
+      type: object
+      required: [dayId, reminders]
+      properties:
+        dayId:
+          type: integer
+        reminders:
+          type: array
+          items:
+            type: integer
+            enum: [7, 3, 0]
+          description: 回显当前用户配置
+    DayReminderDueItem:
+      type: object
+      required: [dayId, userId, remindOffset, title, actionText, kind, relation, daysTo, daysSince]
+      properties:
+        dayId:
+          type: integer
+        userId:
+          type: integer
+          description: 提醒接收人=配置人;服务端调度与联调自测用
+        remindOffset:
+          type: integer
+          enum: [7, 3, 0]
+          description: 命中的提前天数(0=当天)
+        title:
+          type: string
+          description: 展示标题(如:妈妈的生日),过合规词表
+        actionText:
+          type: string
+          maxLength: 24
+          description: 行动建议文案(如:打个电话说声生日快乐),过合规词表
+        kind:
+          $ref: '#/components/schemas/DayKind'
+        relation:
+          type: string
+          description: 关系文本,横幅展示用
+        daysTo:
+          type: integer
+          nullable: true
+          description: 距下次落点天数(0=今天);TOGETHER 为 null;横幅「今天有什么日子」用
+        daysSince:
+          type: integer
+          nullable: true
+          description: 仅 TOGETHER:在一起累计天数;其余为 null
+    DayReminderDueResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DayReminderDueItem'
+        total:
+          type: integer
+          description: 应提醒总条数;发送频控 ≤3 条/人/天在此结果上计算
+    DeleteDayResponse:
+      type: object
+      required: [deleted]
+      properties:
+        deleted:
+          type: boolean
+          description: 恒 true(不存在/越权返回 40400)
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: integer
+          description: 业务错误码:40000 参数错误/40100 未登录或身份失效/40300 提醒发送频控超限(>3 条/人/天,仅真实下发链路)/40400 不存在或越权(不泄露存在性)/40900 保留既有枚举
+        message:
+          type: string
+          description: 面向用户的错误文案,须过合规词表

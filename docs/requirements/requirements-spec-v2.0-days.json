@@ -1,0 +1,686 @@
+{
+  "schema_version": "1.0",
+  "status": "approved",
+  "change_id": "念家时-v2.0-日子管家",
+  "scope": {
+    "complexity": "M",
+    "subsystems": [
+      "miniprogram-nianjiashi 前端(新建原生小程序,三Tab骨架,本change仅实现日子Tab)",
+      "backend 服务(Spring Boot 原地演进,新增 day_record/day_reminder)",
+      "OpenAPI 契约层(v1.5 → v2.0 增量,新增 /api/days*)"
+    ],
+    "cross_team_dependencies": [],
+    "split_required": false,
+    "split_decision": "coupled",
+    "in_scope_frs": [
+      "FR-1",
+      "FR-2",
+      "FR-3",
+      "FR-12"
+    ],
+    "exclusions": [
+      {
+        "item": "模板馆全部功能(预览/节点日历/感恩信/相伴天数卡/时光胶囊)",
+        "destination": "Change 2"
+      },
+      {
+        "item": "海报与裂变(海报生成/访客视图/我的卡片)",
+        "destination": "Change 2"
+      },
+      {
+        "item": "节日借势横幅数据驱动(节点日历同源数据)",
+        "destination": "Change 2;本change横幅仅保留结构位"
+      },
+      {
+        "item": "解忧册模块删除(JieyouService/端点/契约条目/前端页面)",
+        "destination": "独立收尾change(先改契约再删代码)"
+      },
+      {
+        "item": "小程序改名提审/类目调整/隐私指引更新",
+        "destination": "运营动作"
+      },
+      {
+        "item": "周年称谓(FR-2子项,依赖起始年份数据)",
+        "destination": "V1.2 周年称谓库"
+      }
+    ]
+  },
+  "clarification": {
+    "round": 0,
+    "max_rounds": 3,
+    "note": "输入为已定稿 PRD(docs/PRD-念家时.md v2.0, 2026-10-10 定稿),无未决澄清问题;round=0 表示未发生澄清轮次,questions 为空。",
+    "questions": [],
+    "answers": [],
+    "confirmed_facts": [
+      {
+        "fact": "三类日子 kind=BIRTHDAY(生日)/ANNIVERSARY(纪念日)/TOGETHER(在一起,起始日后每天自动+1);录入零键盘:关系标签点选(妈妈/爸爸/老伴/儿子/女儿/孙子/孙女/亲家/我自己+自定义),月日下拉选择;kind=TOGETHER 时日期区隐藏(原型 openAdd/saveDay 交互)",
+        "source": "user_document"
+      },
+      {
+        "fact": "公农历任选一侧实时换算另一侧+显示「X天后」;农历支持下次落点换算,沿用既有生日簿算法(复用 POST /api/calendar/convert);原型不暴露闰月选择",
+        "source": "user_document"
+      },
+      {
+        "fact": "可见性 visibility=FAMILY(默认)/PRIVATE;提醒默认关闭,开启前弹授权说明(内容/频控≤3条天/仅发给自己),提前量 7天/3天/当天多选(⊆{7,3,0});拒绝授权静默降级",
+        "source": "user_document"
+      },
+      {
+        "fact": "首页列表:非 TOGETHER 按距下次落点 daysUntil 升序,TOGETHER 固定底部显示「第 N 天」;最近一条以 hero 卡放大;daysUntil=0 详情页显示「就是今天」;全部日子页时间线(按落点月份分组)⇄日历双视图,日历仅标记用户自己记的日子(不标公共节假日),点有日子的日期弹当日事件清单;删除需确认且提醒一并停止;祝福语点选即复制(文案内置前端常量)",
+        "source": "user_document"
+      },
+      {
+        "fact": "提醒频控每人每日≤3条(v2.0 口径,区别于 v1.5 通知的 4 条);当天提醒文案带行动建议;本 change 只做配置存取+到期计算,真实 subscribeMessage.send 下发属 Stage 9 部署联调",
+        "source": "user_document"
+      },
+      {
+        "fact": "新用户空状态:无任何日子时首页保留节日横幅区域,日子区替换为引导卡(主CTA记日子+次选逛模板馆+「不用打字」顾虑消除文案)",
+        "source": "user_document"
+      },
+      {
+        "fact": "新建 miniprogram-nianjiashi 目录,原生小程序,AppID 沿用现有(project.config.json 指向现有 AppID),新视觉体系从零搭建不迁移旧样式;旧 miniprogram/ 保留作参考;三Tab骨架=日子/模板馆/我的,本 change 仅实现日子Tab全部页面,模板馆/我的为占位页",
+        "source": "user_document"
+      },
+      {
+        "fact": "后端原地演进(Spring Boot 不新建):新增表 day_record+day_reminder;复用登录链路(X-WX-OPENID)、家族/成员模型、部署(云托管+MySQL cloud profile);契约驱动不变,新接口先入 OpenAPI 走 Stage 2 checkpoint",
+        "source": "user_document"
+      },
+      {
+        "fact": "DayRecord 是既有 BirthdayRecord 的超集(kind 含 BIRTHDAY 并新增 ANNIVERSARY/TOGETHER;可见性/公农历/per-user 提醒模型一致,但改为自由关系文本不绑定成员/亲友主体);MVP 阶段两表并存,新前端走 /api/days*,旧 /api/birthdays* 与旧前端不动,不做数据迁移",
+        "source": "code"
+      },
+      {
+        "fact": "既有契约错误码五枚:40000 参数/40100 未登录/40300 频控/40400 资源不存在/40900 状态冲突;公农历换算既有 POST /api/calendar/convert 支持 calendarType+month+day 形态返回下次落点 solarDate/lunarText;订阅授权既有 POST /api/notify/subscribe 与 GET /api/notify/status 可直接复用",
+        "source": "code"
+      }
+    ],
+    "decisions": [
+      {
+        "id": "D1",
+        "decision": "DayRecord 不含年份(沿用月日循环心智与原型数据结构):TOGETHER 起始日=记录当天(createdAt 年+month/day);周年称谓无法计算延至 V1.2;Change 2 需含年份起始日的模板时再增补字段"
+      },
+      {
+        "id": "D2",
+        "decision": "新旧并存:/api/days* 全新链路,/api/birthdays* 与旧前端不动,不做数据迁移(家庭内老数据割裂为已接受产品决策)"
+      },
+      {
+        "id": "D3",
+        "decision": "提醒配置 per-user(dayId+userId,沿用生日簿提醒模型):FAMILY 记录上每个家人各自配置各自收提醒;创建时的 reminders 即创建人初始配置"
+      },
+      {
+        "id": "D4",
+        "decision": "FR-3 交付边界=配置存取+到期计算(含 GET /api/days/reminder-due 调度端点);真实订阅消息下发属 Stage 9"
+      },
+      {
+        "id": "D5",
+        "decision": "农历不暴露闰月选择,落点换算按农历月/日数值匹配(对齐原型 findLunar 与既有生日簿算法);如 Stage 2 评审认定需 isLeapMonth 属契约增量"
+      }
+    ],
+    "assumptions": [
+      {
+        "assumption": "日子提醒的订阅消息模板 ID 需在微信后台新申请,开发期用占位模板 ID 联调(复用 /api/notify/subscribe 的 templateId 机制)",
+        "needs_verification": true
+      },
+      {
+        "assumption": "未加入家族的新用户允许直接记日子(visibility 强制 PRIVATE);本 change 我的Tab为占位页,无建家/入家入口,家族关系沿用后端既有数据",
+        "needs_verification": true
+      },
+      {
+        "assumption": "空状态与首页的节日横幅区域在本 change 无服务端节日数据源,展示形态(静态默认卡或隐藏)以 Stage 2 视觉稿为准",
+        "needs_verification": false
+      }
+    ],
+    "unresolved_questions": [],
+    "coverage": {
+      "goal_value": "covered",
+      "users_permissions": "covered",
+      "scope": "covered",
+      "main_flow": "covered",
+      "state": "covered",
+      "data": "covered",
+      "exceptions": "covered",
+      "interaction": "covered",
+      "dependencies": "covered",
+      "non_functional": "covered",
+      "acceptance": "covered"
+    }
+  },
+  "contract_readiness": {
+    "api_draft": [
+      {
+        "path": "/api/days",
+        "method": "GET",
+        "operationId": "listDays",
+        "summary": "本人可见的日子列表(本人创建的全部+同家族他人 visibility=FAMILY);服务端排好序:非 TOGETHER 按 daysUntil 升序,TOGETHER 固定底部",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "items",
+            "type": "array<DayRecordView>",
+            "required": true,
+            "bounds": "已排序;空数组触发前端空状态(FR-12)"
+          }
+        ],
+        "error_codes": [
+          "40100"
+        ]
+      },
+      {
+        "path": "/api/days",
+        "method": "POST",
+        "operationId": "createDay",
+        "summary": "记一个日子;kind=TOGETHER 时 calendarType 固定 SOLAR 且 month/day 可省(服务端取当天为起始日)",
+        "request": [
+          {
+            "name": "relation",
+            "type": "string",
+            "required": true,
+            "bounds": "1-12 字,关系文本(妈妈/爸爸/自定义等)"
+          },
+          {
+            "name": "emoji",
+            "type": "string",
+            "required": false,
+            "bounds": "1 个表情;缺省由服务端按 relation 预置映射"
+          },
+          {
+            "name": "kind",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 BIRTHDAY|ANNIVERSARY|TOGETHER"
+          },
+          {
+            "name": "calendarType",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 SOLAR|LUNAR;TOGETHER 固定 SOLAR,传 LUNAR 返回 40000"
+          },
+          {
+            "name": "month",
+            "type": "integer",
+            "required": "TOGETHER 之外必填",
+            "bounds": "1-12"
+          },
+          {
+            "name": "day",
+            "type": "integer",
+            "required": "TOGETHER 之外必填",
+            "bounds": "1-31,按日历口径校验"
+          },
+          {
+            "name": "visibility",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 FAMILY|PRIVATE,默认 FAMILY;未加入家族用户传 FAMILY 被降级为 PRIVATE"
+          },
+          {
+            "name": "reminders",
+            "type": "array<integer>",
+            "required": false,
+            "bounds": "⊆{7,3,0},去重,≤3 项,缺省空数组(关闭);即创建人初始提醒配置"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "DayRecordView",
+            "type": "object",
+            "required": true,
+            "bounds": "见实体定义,含 nextDate/daysUntil/togetherDays 计算字段"
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40100"
+        ]
+      },
+      {
+        "path": "/api/days/{id}",
+        "method": "GET",
+        "operationId": "getDay",
+        "summary": "日子详情;PRIVATE 记录仅创建人可见,对他人等价不存在",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "DayRecordView",
+            "type": "object",
+            "required": true,
+            "bounds": "含当前用户视角 reminders"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/days/{id}",
+        "method": "PUT",
+        "operationId": "updateDay",
+        "summary": "编辑日子(创建人;FAMILY 可见记录户主亦可);请求体同 POST(reminders 不经此端点,走 /reminder);全量覆盖式",
+        "request": "同 DayUpsertRequest",
+        "response_fields": [
+          {
+            "name": "DayRecordView",
+            "type": "object",
+            "required": true,
+            "bounds": ""
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40100",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/days/{id}",
+        "method": "DELETE",
+        "operationId": "deleteDay",
+        "summary": "删除日子及当前用户的提醒配置(权限同 PUT);前端删除前需二次确认",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "deleted",
+            "type": "boolean",
+            "required": true,
+            "bounds": "恒 true"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/days/{id}/reminder",
+        "method": "PUT",
+        "operationId": "updateDayReminder",
+        "summary": "设置当前用户对该日子的提醒时点(幂等覆盖,空数组=关闭;默认关闭);FAMILY 记录每个家人各自配置(沿用生日簿 /api/birthdays/{id}/reminder 模型)",
+        "request": [
+          {
+            "name": "reminders",
+            "type": "array<integer>",
+            "required": true,
+            "bounds": "⊆{7,3,0},去重,≤3 项;传重复值/越界值/超 3 项返回 40000"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "dayId",
+            "type": "integer",
+            "required": true,
+            "bounds": ""
+          },
+          {
+            "name": "reminders",
+            "type": "array<integer>",
+            "required": true,
+            "bounds": "回显当前配置"
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40100",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/days/reminder-due",
+        "method": "GET",
+        "operationId": "getReminderDue",
+        "summary": "到期计算:给定日期应提醒清单(命中用户配置提前量的日子);服务端调度与 Stage 9 联调自测用,小程序端不调用;频控口径 ≤3 条/人/天在此结果上计算",
+        "request": [
+          {
+            "name": "date",
+            "type": "string(query)",
+            "required": false,
+            "bounds": "yyyy-MM-dd,缺省=当天"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "items",
+            "type": "array<object>",
+            "required": true,
+            "bounds": "每项含 dayId/userId/remindOffset(7|3|0)/title/actionText(行动建议文案,过合规词表)"
+          },
+          {
+            "name": "total",
+            "type": "integer",
+            "required": true,
+            "bounds": "应提醒总条数"
+          }
+        ],
+        "error_codes": [
+          "40100"
+        ]
+      }
+    ],
+    "reused_endpoints": [
+      {
+        "path": "/api/auth/login",
+        "note": "登录链路不变"
+      },
+      {
+        "path": "/api/calendar/convert",
+        "note": "公农历互算/下次落点;请求用 calendarType+month+day 形态,响应 solarDate/lunarText;添加页实时换算直接复用,契约不改"
+      },
+      {
+        "path": "/api/notify/subscribe",
+        "note": "提醒授权登记;templateId 换「日子提醒」模板(开发期占位),拒绝登记静默降级"
+      },
+      {
+        "path": "/api/notify/status",
+        "note": "设置页提醒额度透明展示;dailyLimit 配置为 3(日子提醒口径)"
+      }
+    ],
+    "entities": [
+      {
+        "name": "DayRecord",
+        "table": "day_record",
+        "fields": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "bounds": "主键"
+          },
+          {
+            "name": "userId",
+            "type": "integer",
+            "required": true,
+            "bounds": "创建人;家族归属由用户唯一家族推导(既有模型每人限 1 家族)"
+          },
+          {
+            "name": "relation",
+            "type": "string",
+            "required": true,
+            "bounds": "1-12 字,关系文本(妈妈/老伴/我自己/自定义)"
+          },
+          {
+            "name": "emoji",
+            "type": "string",
+            "required": true,
+            "bounds": "1 个表情;缺省由 relation 预置映射(妈妈=👩 等),自定义关系默认 😊"
+          },
+          {
+            "name": "kind",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 BIRTHDAY(生日)/ANNIVERSARY(纪念日)/TOGETHER(在一起)"
+          },
+          {
+            "name": "calendarType",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 SOLAR|LUNAR;TOGETHER 固定 SOLAR;不含 isLeapMonth(决策 D5)"
+          },
+          {
+            "name": "month",
+            "type": "integer",
+            "required": true,
+            "bounds": "1-12;TOGETHER 冗余存起始日当月"
+          },
+          {
+            "name": "day",
+            "type": "integer",
+            "required": true,
+            "bounds": "1-31 按日历口径校验;TOGETHER 冗余存起始日当日"
+          },
+          {
+            "name": "visibility",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 FAMILY(家人可见,默认)|PRIVATE(只我可见);无家族用户强制 PRIVATE"
+          },
+          {
+            "name": "reminders",
+            "type": "array<integer>",
+            "required": true,
+            "bounds": "视图字段(当前用户视角)⊆{7,3,0},默认空(关闭);底层为 day_reminder 表"
+          },
+          {
+            "name": "createdAt",
+            "type": "string",
+            "required": true,
+            "bounds": "ISO 时间;TOGETHER 起始完整日期=createdAt 年+month/day(决策 D1)"
+          }
+        ],
+        "computed_view_fields": [
+          {
+            "name": "nextDate",
+            "type": "string",
+            "bounds": "yyyy-MM-dd,下次落点(农历按月日数值匹配,沿用生日簿算法);TOGETHER 为 null"
+          },
+          {
+            "name": "nextDateLunarText",
+            "type": "string",
+            "bounds": "下次落点农历显示文本(如 农历八月十五);TOGETHER 为 null"
+          },
+          {
+            "name": "daysUntil",
+            "type": "integer",
+            "bounds": "距下次落点天数,≥0;=0 表示就是今天;TOGETHER 为 null"
+          },
+          {
+            "name": "togetherDays",
+            "type": "integer",
+            "bounds": "仅 TOGETHER:今天-起始日(下限 1),每天自动 +1;其余为 null"
+          }
+        ],
+        "states": [
+          "提醒:关闭(reminders 空) → 开启(⊆{7,3,0});可见性:PRIVATE → FAMILY → PRIVATE 可切换",
+          "与 BirthdayRecord 关系:超集(kind 新增两类+自由关系文本),MVP 两表并存,不迁移不互通"
+        ]
+      },
+      {
+        "name": "DayReminder",
+        "table": "day_reminder",
+        "fields": [
+          {
+            "name": "dayId",
+            "type": "integer",
+            "required": true,
+            "bounds": "关联 DayRecord;dayId+userId 唯一"
+          },
+          {
+            "name": "userId",
+            "type": "integer",
+            "required": true,
+            "bounds": "提醒接收人=配置人;删除日子时本人配置一并清除"
+          },
+          {
+            "name": "reminders",
+            "type": "array<integer>",
+            "required": true,
+            "bounds": "⊆{7,3,0},去重,≤3 项,空=关闭"
+          }
+        ],
+        "states": [
+          "到期计算:daysUntil(record) ∈ 用户 reminders → 产生一条应提醒项;发送频控 ≤3 条/人/天(40300 仅 Stage 9 下发链路)"
+        ]
+      }
+    ],
+    "error_codes": [
+      {
+        "code": "40000",
+        "meaning": "参数错误(month/day 越界、kind/calendarType/reminders 非法、TOGETHER 传 LUNAR、字段缺失)"
+      },
+      {
+        "code": "40100",
+        "meaning": "未登录或身份失效"
+      },
+      {
+        "code": "40300",
+        "meaning": "提醒发送频控超限(>3 条/人/天;仅 Stage 9 真实下发链路,本 change 到期计算只计数不发送)"
+      },
+      {
+        "code": "40400",
+        "meaning": "日子不存在、PRIVATE 记录对家人不可见、越权操作(等价不存在,不泄露存在性)"
+      },
+      {
+        "code": "40900",
+        "meaning": "本 change 无新增场景,保留既有枚举"
+      }
+    ]
+  },
+  "document": {
+    "approved": true,
+    "quality_gate": "passed",
+    "quality_gate_detail": {
+      "complexity": "M",
+      "coverage": {
+        "FR-1": "covered",
+        "FR-2": "covered",
+        "FR-3": "covered",
+        "FR-12": "covered"
+      },
+      "risks": [
+        {
+          "id": "R1",
+          "risk": "DayRecord 无年份:TOGETHER 只能从记录当天起算,无法补录历史起始日;周年称谓延后。Change 2 的天数卡/感恩信需要含年份的起始日,届时需增补字段或独立实体,存在数据模型二次演进成本",
+          "severity": "medium",
+          "mitigation": "契约预留 kind/calendarType 枚举可扩展;Change 2 契约评审时统一裁定"
+        },
+        {
+          "id": "R2",
+          "risk": "DayRecord 不含 isLeapMonth,农历闰月出生者的落点换算按月日数值匹配,与既有 BirthdayRecord(含 isLeapMonth)语义存在偏差,闰月场景可能提醒/落点不准",
+          "severity": "low",
+          "mitigation": "Stage 2 与既有 CalendarConvert 算法对齐口径;原交互未暴露闰月,风险限于极少数日期"
+        },
+        {
+          "id": "R3",
+          "risk": "新旧前端双表双接口并存(旧生日簿 vs 新日子),同一家庭在两端的记录互相不可见,存在用户困惑",
+          "severity": "medium",
+          "mitigation": "已定为产品决策(MVP 不迁移);提审窗口期短,Change 2 后旧目录移入 legacy/"
+        },
+        {
+          "id": "R4",
+          "risk": "订阅消息「日子提醒」模板 ID 未申请(开发期占位),若微信审核不通过或模板字段受限,Stage 9 提醒链路验收阻塞",
+          "severity": "medium",
+          "mitigation": "本 change 交付到期计算端点可独立验收;模板申请与占位联调提前并行"
+        },
+        {
+          "id": "R5",
+          "risk": "三 Tab 中两 Tab 为占位页,小程序提审存在「功能不完整」被拒风险;改名提审属运营动作但与本 change 上线强相关",
+          "severity": "medium",
+          "mitigation": "占位页做有内容的功能预告;提审时机与改名/Change 2 排期协调"
+        }
+      ]
+    },
+    "frs": [
+      {
+        "id": "FR-1",
+        "name": "记一个日子",
+        "user_story": "作为离家在外的子女,我想零打字地记下妈妈的生日,并让全家都能看到、提前被提醒,这样我就永不错过重要日子。",
+        "details": [
+          "三类日子 kind=BIRTHDAY/ANNIVERSARY/TOGETHER(起始日后每天自动+1)",
+          "输入零键盘:关系标签点选(妈妈/爸爸/老伴/儿子/女儿/孙子/孙女/亲家/我自己+自定义)+月日下拉;kind=TOGETHER 时日期区隐藏,起始日=记录当天",
+          "公农历任选一侧实时换算另一侧+「X天后」;复用 POST /api/calendar/convert;不暴露闰月",
+          "可见性 FAMILY(默认)/PRIVATE;无家族用户强制 PRIVATE",
+          "提醒默认关闭;开启前弹授权说明(内容/频控≤3条天/仅发给自己);提前量⊆{7,3,0}多选;拒绝静默降级",
+          "emoji 按 relation 预置映射;创建成功直达详情页"
+        ],
+        "acceptance_criteria": [
+          "三类日子各建 1 条全部成功,响应含正确 nextDate/daysUntil",
+          "录入全程零键盘(无任何 text input 组件)",
+          "公历侧选 10-18 实时显示农历文本+落点+X天后;农历侧选八月初三实时显示公历落点+X天后",
+          "默认 FAMILY 可切 PRIVATE;无家族用户建 FAMILY 被服务端降级且可解释",
+          "提醒默认关闭;开启 7 天前出现授权说明弹层;拒绝后配置不变",
+          "reminders 传 4 项/重复值/非{7,3,0}值均 40000",
+          "TOGETHER 建成后 togetherDays=1,次日 +1"
+        ]
+      },
+      {
+        "id": "FR-2",
+        "name": "日子列表与详情",
+        "user_story": "作为记了多个日子的用户,我想按最近要到的日子浏览全部日子并点开看详情,这样我知道接下来该为哪个日子做准备。",
+        "details": [
+          "首页列表:非 TOGETHER 按 daysUntil 升序,TOGETHER 固定底部显示第 N 天;最近一条 hero 卡放大",
+          "详情页:倒计时大数字;daysUntil=0 显示「就是今天」;TOGETHER 显示 N 天每天+1;类型/公农历/提醒个数标签行;祝福语点选复制(内置前端常量,按 kind 分组);做一张卡片直达模板馆(本 change 跳占位页);提醒开关;删除需二次确认且提示提醒会停止",
+          "全部日子页:时间线(按落点月份分组)⇄日历双视图;日历仅标用户自己的日子(生日/纪念日双色点,不标公共节假日),月切换,点有日子日期弹当日事件清单",
+          "可见性:列表=本人全部+同家族他人 FAMILY;PRIVATE 对家人不可见且不泄露存在性",
+          "权限:创建人可操作;FAMILY 记录户主亦可编辑/删除;他人越权返回 40400"
+        ],
+        "acceptance_criteria": [
+          "列表顺序=非 TOGETHER 按 daysUntil 升序,TOGETHER 固定底部",
+          "daysUntil=0 的详情页显示「就是今天 🎉」",
+          "PRIVATE 记录不出现在家人账号列表/详情(40400)",
+          "非创建人非户主编辑/删除 FAMILY 记录返回 40400",
+          "删除有确认弹层,删除后本人提醒配置一并清除",
+          "时间线按落点月份分组;日历仅标用户自己的日子(含跨月切换、当日事件弹层)",
+          "祝福语点选复制成功(剪贴板内容一致)"
+        ]
+      },
+      {
+        "id": "FR-3",
+        "name": "提醒推送(本 change 边界:配置存取+到期计算)",
+        "user_story": "作为容易忘记日子的用户,我提前选好提醒时点,到期当天收到带行动建议的提醒。",
+        "details": [
+          "配置 per-user(dayId+userId,沿用生日簿提醒模型);reminders⊆{7,3,0},空=关闭",
+          "到期计算(服务端):daysUntil 命中用户配置提前量即产生应提醒项,含行动建议文案(过合规词表)",
+          "频控 ≤3 条/人/天(v2.0 口径)",
+          "真实 subscribeMessage.send 下发属 Stage 9;授权登记复用 /api/notify/subscribe,拒绝静默降级"
+        ],
+        "acceptance_criteria": [
+          "PUT /api/days/{id}/reminder 幂等覆盖,响应回显当前配置",
+          "GET /api/days/reminder-due 对当天+提前7/3命中的日子各返回一条应提醒项,含行动建议文案",
+          "同一用户当日应提醒项>3 时按频控规则截断且不越 3 条",
+          "本 change 交付代码中无任何 subscribeMessage.send 真实下发调用",
+          "授权拒绝登记不影响日子功能(静默降级)"
+        ]
+      },
+      {
+        "id": "FR-12",
+        "name": "新用户空状态",
+        "user_story": "作为刚打开小程序的新用户,我没有任何日子时看到明确引导,理解记日子不用打字,一步开始。",
+        "details": [
+          "列表为空时:首页保留节日横幅区域(本 change 无数据源,展示形态以 Stage 2 视觉稿为准),日子区替换为引导卡",
+          "引导卡:主 CTA 记第一个日子 + 次选去模板馆逛逛(跳占位 Tab) + 「不用打字」顾虑消除文案",
+          "有任意一条日子后空状态永不出现"
+        ],
+        "acceptance_criteria": [
+          "空账号首页展示引导卡(主CTA/次选/不用打字文案齐备)",
+          "记下第一个日子后空状态消失,列表即时刷新",
+          "有日子的账号永不出现空状态"
+        ]
+      }
+    ],
+    "pages": [
+      {
+        "path": "pages/days/days",
+        "tab": "日子(首页)",
+        "scope": "hero卡+日子列表+空状态+记日子FAB"
+      },
+      {
+        "path": "pages/add/add",
+        "tab": "日子",
+        "scope": "记一个日子:关系标签/类型分段/公农历分段/月日下拉/实时换算卡/可见性/提醒授权"
+      },
+      {
+        "path": "pages/alldays/alldays",
+        "tab": "日子",
+        "scope": "全部日子:时间线⇄日历双视图+当日事件弹层"
+      },
+      {
+        "path": "pages/detail/detail",
+        "tab": "日子",
+        "scope": "日子详情:倒计时/标签行/祝福语复制/做卡片入口/提醒开关/删除确认"
+      },
+      {
+        "path": "pages/templates/templates",
+        "tab": "模板馆",
+        "scope": "占位页(Change 2 接管)"
+      },
+      {
+        "path": "pages/mine/mine",
+        "tab": "我的",
+        "scope": "占位页(Change 2 接管)"
+      }
+    ],
+    "non_functional": [
+      "合规红线:提醒默认关闭+每日≤3条+订阅前说明内容;隐私最小化;文案过合规词表",
+      "性能:首屏(含空状态)≤1.5s",
+      "视觉规范 v2:暖白底#fbfaf7+墨字#1c1c28;主色霞橘渐变#ff7a59→#ff4d6d;动画≤2.5s且可跳过"
+    ]
+  }
+}
