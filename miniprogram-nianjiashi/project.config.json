@@ -1,0 +1,36 @@
+{
+  "compileType": "miniprogram",
+  "miniprogramRoot": "./",
+  "appid": "wx5e93c2b8cd8ef2bc",
+  "projectname": "nianjiashi",
+  "description": "念家时(日子管家):AppID 沿用现有小程序 wx5e93c2b8cd8ef2bc 不变,改名提审属运营动作;本地存储 key 一律 njs_ 前缀,与旧 miniprogram/ 目录在同 AppID 下互相隔离",
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "urlCheck": false,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
+}

@@ -1,0 +1,12 @@
+<view class="page-tpl">
+  <view class="tpl-empty">
+    <view class="es-art">💌</view>
+    <view class="es-title">模板馆准备中</view>
+    <view class="es-sub">做卡片、写感恩信、时光胶囊</view>
+    <view class="es-sub">这些好玩的，Change 2 跟您见面</view>
+    <view class="es-chips">
+      <button class="es-chip" bindtap="goDays">先回「日子」看看 ›</button>
+    </view>
+    <view class="es-note">先把重要的日子记下来，到时候直接用</view>
+  </view>
+</view>

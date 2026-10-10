@@ -1,0 +1,43 @@
+<view class="page-me">
+  <view class="me-hero">
+    <view class="mh-ava">{{initial}}</view>
+    <view class="mh-info">
+      <view class="mh-name">{{nickname}}</view>
+      <view class="mh-sub">微信登录 · 念家时</view>
+    </view>
+  </view>
+
+  <view class="me-stats">
+    <view class="ms-cell" bindtap="goDays">
+      <text class="ms-num num-font">{{dayCount}}</text>
+      <text class="ms-label">记着的日子</text>
+    </view>
+    <view class="ms-cell" bindtap="toastReminder">
+      <text class="ms-num num-font">3</text>
+      <text class="ms-label">每天最多提醒</text>
+    </view>
+    <view class="ms-cell" bindtap="toastAbout">
+      <text class="ms-num">❤</text>
+      <text class="ms-label">把日子记在心上</text>
+    </view>
+  </view>
+
+  <view class="me-rows">
+    <view class="mr" bindtap="toastReminder">
+      <view class="mr-left"><text class="ic">🔔</text>提醒设置</view>
+      <view class="mr-right">3 条/天 ›</view>
+    </view>
+    <view class="mr" bindtap="toastPrivacy">
+      <view class="mr-left"><text class="ic">🔒</text>隐私说明</view>
+      <view class="mr-right">›</view>
+    </view>
+    <view class="mr" bindtap="toastFeedback">
+      <view class="mr-left"><text class="ic">💬</text>反馈与建议</view>
+      <view class="mr-right">›</view>
+    </view>
+    <view class="mr" bindtap="toastAbout">
+      <view class="mr-left"><text class="ic">ℹ️</text>关于念家时</view>
+      <view class="mr-right">›</view>
+    </view>
+  </view>
+</view>
