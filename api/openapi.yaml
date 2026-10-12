@@ -1,12 +1,13 @@
 openapi: 3.0.3
 info:
   title: 全家福·接福气 API
-  version: 1.7.0
+  version: 1.8.0
   description: |
     中老年家庭祈福互动小程序「全家福·接福气」接口契约(唯一事实源)。
     v1.5.0 增量:八卦集福阵(只读进度)/转罗盘卦位(仅卡面主题)/解忧册文案下发(幂等)/订阅消息授权登记。
     v1.6.0 增量(念家时 v2.0 日子管家):日子记录(生日/纪念日/在一起)CRUD、按人提醒配置、到期计算;复用既有 /api/calendar/convert 与 /api/notify/*。
     v1.7.0 增量(念家时 v2.1 模板馆引擎):模板馆清单(服务端配置驱动)、感恩信 AI 生成(逐句备选)、三类卡片定稿存档/详情/删除/分享场景码、时光胶囊封存/开箱、免鉴权访客落地/点亮心/解锁内容(/api/visitor/* 不要求登录 token)。
+    v1.8.0 增量(念家时 v2.2 家人空间):节日/上线预约登记与到期清单(/api/festivals/*)、照片上传与免鉴权回显(base64 JSON 解码后 ≤500KB,/api/photos/*)、家人瞬间时间线与真好/收藏互动(/api/moments/* 与 /api/days/{id}/moments 素材池);既有授权扩展:CardKind +BIRTHDAY_CARD(生日福卡,随时可生成,生日当天由提醒自然触达)、DayRecord +year 与周年称谓计算字段、时光胶囊 +photoId、访客端 BIRTHDAY_CARD 体面内容形态。
     合规约束:文案禁用迷信词(见 .agents/docs/conventions.md,含 v1.5 追加:卦象/卦运/宜忌/生门/吉位/凶位/能成/不行/会有/注定/天意/预示/破财/有灾),错误 message 面向用户须过合规词表。
 tags:
   - name: days
@@ -17,6 +18,12 @@ tags:
     description: 念家时 v2.1 时光胶囊——封存/列表/详情(内容门控)/到期开箱(幂等)
   - name: visitor
     description: 念家时 v2.1 免鉴权访客组(/api/visitor/*)——扫码落地/点亮心(42900 软频控)/解锁取隐藏内容;不要求登录 token,永不返回 40100
+  - name: festival
+    description: 念家时 v2.2 节日与上线预约(/api/festivals/*)——「上线提醒我」与节日提醒共用登记(幂等)、我的预约清单、0-7 天窗口到期清单(首页节日横幅/节点倒计时数据源)
+  - name: photos
+    description: 念家时 v2.2 照片管道(/api/photos/*)——base64 JSON 上传(解码后 ≤500KB,每日每人 ≤20 张)与免鉴权回显(photoId 高熵 capability URL,<image> 直挂;不要求登录 token)
+  - name: moments
+    description: 念家时 v2.2 家人瞬间(/api/moments/*)——照片+一句话家族时间线、真好(点赞,限 1 次)、收藏进日子(生日福卡素材池,含 /api/days/{id}/moments)
 paths:
   /api/auth/login:
     post:
@@ -433,7 +440,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DayRecord'
         '400':
-          description: 参数错误(40000:month/day 越界、kind/calendarType/reminders 非法、TOGETHER 传 LUNAR、字段缺失)
+          description: 参数错误(40000:month/day 越界、kind/calendarType/reminders 非法、TOGETHER 传 LUNAR、字段缺失、year 越界)
           content:
             application/json:
               schema:
@@ -693,7 +700,7 @@ paths:
     post:
       tags: [cards]
       operationId: createCard
-      summary: 卡片定稿存档(三类统一:LETTER 定稿/DAYS_CARD 生成/CAPSULE 邀请函);payload 按 templateKind 异构校验;当日同 kind 去重由前端做,服务端不去重
+      summary: 卡片定稿存档(四类统一:LETTER 定稿/DAYS_CARD 生成/CAPSULE 邀请函/BIRTHDAY_CARD 生日福卡);payload 按 templateKind 异构校验;当日同 kind 去重由前端做,服务端不去重
       requestBody:
         required: true
         content:
@@ -708,7 +715,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/MadeCard'
         '400':
-          description: 参数错误(40000:templateKind 非法、payload 结构与 templateKind 不符、sourceDayId 非本人或非 TOGETHER 日子、CAPSULE 未传 capsuleId)
+          description: 参数错误(40000:templateKind 非法、payload 结构与 templateKind 不符、sourceDayId 非本人或非 TOGETHER 日子、CAPSULE 未传 capsuleId、BIRTHDAY_CARD 的 dayId 非 BIRTHDAY/本人不可见、blessingText 越界或违禁、momentIds 不在该 dayId 收藏素材池)
           content:
             application/json:
               schema:
@@ -835,7 +842,7 @@ paths:
     post:
       tags: [capsules]
       operationId: sealCapsule
-      summary: 封存时光胶囊(openDate>封存日;contentText 明文存,读取由接口门控);开箱日订阅提醒复用既有 /api/notify/subscribe 语义(拒绝登记静默降级)
+      summary: 封存时光胶囊(openDate>封存日;contentText 明文存,读取由接口门控;v1.8 可附照片:photoId 优先,photoUrl 直传旧形态保留兜底);开箱日订阅提醒复用既有 /api/notify/subscribe 语义(拒绝登记静默降级)
       requestBody:
         required: true
         content:
@@ -850,7 +857,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/TimeCapsule'
         '400':
-          description: 参数错误(40000:openDate 缺失/格式非法/≤今天、type/openRule 非法、coverHint/contentText 越界或命中违禁词)
+          description: 参数错误(40000:openDate 缺失/格式非法/≤今天、type/openRule 非法、coverHint/contentText 越界或命中违禁词、photoId 非本人或 scene≠CAPSULE 或已绑定)
           content:
             application/json:
               schema:
@@ -1013,7 +1020,7 @@ paths:
     get:
       tags: [visitor]
       operationId: getUnlockedContent
-      summary: 解锁后取隐藏内容【免鉴权公开端点:不要求登录 token,永不返回 40100】;LETTER=完整段落,DAYS_CARD=隐藏一句话,CAPSULE=开箱前为封存信摘要、开箱日后为信件本体+照片;未解锁 40900
+      summary: 解锁后取隐藏内容【免鉴权公开端点:不要求登录 token,永不返回 40100】;LETTER=完整段落,DAYS_CARD=隐藏一句话,CAPSULE=开箱前为封存信摘要、开箱日后为信件本体+照片,BIRTHDAY_CARD=祝福语;未解锁 40900
       description: 免鉴权公开端点(/api/visitor/* 组);capsule 类卡片开箱日前的隐藏内容为预置悬念文案,不含真实信件内容(内容门控)
       parameters:
         - name: scene
@@ -1049,6 +1056,486 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
           description: 状态冲突(40900:本设备未解锁,hearts<3 不可取隐藏内容)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/festivals/reservations:
+    post:
+      tags: [festival]
+      operationId: reserveFestival
+      summary: 预约登记(live=false 未上线模板「上线提醒我」与 festivalDate 节日提醒共用此登记;幂等:重复预约返回既有记录不报错,真实推送下发属后续调度,本端点仅登记)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FestivalReservationRequest'
+      responses:
+        '200':
+          description: 登记成功(含幂等回显:重复预约返回首次登记时间,恒 reserved=true)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FestivalReservation'
+        '400':
+          description: 参数错误(40000:请求体缺失/非法)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: templateKey 不在模板配置值域内(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [festival]
+      operationId: listMyFestivalReservations
+      summary: 我的预约清单(我的页/模板馆预约状态展示);按 reservedAt 降序
+      responses:
+        '200':
+          description: 本人全部预约(含 live=false 上线提醒与 festivalDate 节日提醒两类;空数组触发前端空状态)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationListResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/festivals/reservations/{templateKey}:
+    delete:
+      tags: [festival]
+      operationId: cancelFestivalReservation
+      summary: 取消预约(幂等:未预约再取消也返回 deleted=true);真实推送下发名单随之排除,取消仅删登记行
+      parameters:
+        - name: templateKey
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/TemplateKey'
+          description: 目标模板键
+      responses:
+        '200':
+          description: 取消结果(恒 deleted=true,幂等)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelReservationResponse'
+        '400':
+          description: 参数错误(40000:templateKey 非法)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/festivals/due:
+    get:
+      tags: [festival]
+      operationId: getFestivalDue
+      summary: 到期清单(服务端算「今天该展示什么」):festivalDate 落在 0-7 天窗口内的节日模板+本人预约标记;前端消费此清单自显首页节日横幅与节点倒计时;date 参数供调度自测
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 指定日期 yyyy-MM-dd,缺省为当天
+      responses:
+        '200':
+          description: 窗口内节日清单(按 daysUntil 升序;dueSoon=本人已预约且 ≤3 天,预约到期真实推送属后续调度,本端点仅数据)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FestivalDueResponse'
+        '400':
+          description: 参数错误(40000:date 格式非法)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/photos:
+    post:
+      tags: [photos]
+      operationId: uploadPhoto
+      summary: 照片上传(base64 JSON 请求体):校验解码后 ≤500KB 与 mime;每日每人 ≤20 张(40300);返回 photoId 与 capability 形态 photoUrl;photoId 为 16-20 位 base62 高熵随机串,全局唯一
+      requestBody:
+        required: true
+        description: 请求体为 base64 JSON(解码后图片字节 ≤500KB=512000 字节,超限 40000)。注意:微信小程序 wx.request/callContainer 对 JSON 请求体有网关层大小上限(约 1MB 或更小,以网关配置为准;500KB 图片 base64 后约 680KB,仍在限内但需联调时以实测确认,勿放大图)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhotoUploadRequest'
+      responses:
+        '200':
+          description: 上传成功(photoId 即回图 capability URL 令牌;照片内容不可变,同 id 不复用)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhotoUploadResponse'
+        '400':
+          description: 参数错误(40000:imageBase64 缺失/解码失败/解码后超 512000 字节、scene 非法、mimeType 缺省时字节头无法嗅探)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 硬频控(40300:每日每人上传 >20 张)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/photos/{photoId}:
+    get:
+      tags: [photos]
+      operationId: getPhoto
+      summary: 照片回显【免鉴权公开端点:不要求登录 token,永不返回 40100】;直出字节流,Content-Type=image/{mime},Cache-Control 长缓存(photoId 内容不可变);<image> 标签直挂
+      description: 免鉴权 capability URL(photoId 为 16-20 位 base62 高熵随机串,不可枚举,语义对齐 /api/visitor/* 免鉴权组);非 JSON 包装,直接返回图片字节;照片被清理(DELETED/ORPHAN 超时回收)后 40400
+      parameters:
+        - name: photoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 上传时返回的照片标识(16-20 位 base62)
+      responses:
+        '200':
+          description: 图片字节流直出(Content-Type：image/jpeg|image/png|image/webp;Cache-Control：max-age 长缓存——photoId 内容不可变,可放心长缓存)
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Cache-Control:
+              description: 长缓存指令(如 max-age=2592000);photoId 内容不可变,同 id 恒同图
+              schema:
+                type: string
+        '404':
+          description: photoId 无效或照片已被清理(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/moments:
+    post:
+      tags: [moments]
+      operationId: createMoment
+      summary: 发一条家人瞬间(照片+一句话,家人可见);photoId 须为本人上传且 scene=MOMENT 且未绑定,创建即绑定照片;须已加入家族(40900);每日每人 ≤10 条(40300)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MomentCreateRequest'
+      responses:
+        '200':
+          description: 已发布的瞬间(likeCount=0,likedByMe=false,collectedCount=0,collectedByMeDayIds=[])
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyMomentView'
+        '400':
+          description: 参数错误(40000:photoId 非本人/scene 不符/已绑定、text 超长或命中违禁词表)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 硬频控(40300:每日每人发布 >10 条)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 状态冲突(40900:未加入家族不可发瞬间)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [moments]
+      operationId: listFamilyMoments
+      summary: 家族时间线:本家族全部成员的 ACTIVE 瞬间,createdAt 倒序 cursor 分页;无家族用户返回空列表(不报错,家人页展示空状态)
+      parameters:
+        - name: beforeId
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: 游标=上一页最后一条 id,取更早的记录
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+          description: 每页条数 1-20,缺省 10
+      responses:
+        '200':
+          description: 家族时间线(倒序;含当前用户视角的 likeCount/likedByMe/collectedCount/collectedByMeDayIds;空数组触发前端空状态)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MomentListResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/moments/{id}:
+    delete:
+      tags: [moments]
+      operationId: deleteMoment
+      summary: 删除瞬间(仅本人,隐私权红线:户主/家人均不可删他人;非本人 40400);软删+联动照片置 DELETED(回图 40400);幂等
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 瞬间 id
+      responses:
+        '200':
+          description: 删除结果(恒 true,重复删除幂等;素材池中该瞬间项即时消失)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteMomentResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 瞬间不存在或非本人(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/moments/{id}/like:
+    post:
+      tags: [moments]
+      operationId: likeMoment
+      summary: 真好互动:每人对每条限 1 次(momentId+userId 唯一约束物理保证);重复调用幂等不增数;仅本家族瞬间可点(跨家族 40400)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 瞬间 id
+      responses:
+        '200':
+          description: 点亮后该瞬间累计点赞数与本人点赞态(likedByMe 恒 true,幂等)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MomentLikeResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 瞬间不存在或非本家族(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [moments]
+      operationId: unlikeMoment
+      summary: 取消真好(删点赞行,幂等:未点过再取消也成功)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 瞬间 id
+      responses:
+        '200':
+          description: 取消后该瞬间累计点赞数与本人点赞态(likedByMe 恒 false,幂等)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MomentLikeResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 瞬间不存在或非本家族(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/moments/{id}/collect:
+    post:
+      tags: [moments]
+      operationId: collectMoment
+      summary: 收藏进日子:momentId 关联 DayRecord 形成生日福卡素材;dayId 须为本人可见的 kind=BIRTHDAY 日子(其他 kind 40000);momentId+dayId+userId 唯一;同一瞬间可被不同家人收藏到同一/不同日子(共享素材)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 瞬间 id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MomentCollectRequest'
+      responses:
+        '200':
+          description: 收藏后该瞬间累计收藏数与本人对该日子的收藏态(collectedByMe 恒 true,幂等)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MomentCollectResponse'
+        '400':
+          description: 参数错误(40000:dayId 缺失、目标日子非 BIRTHDAY)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 瞬间不存在或非本家族、目标日子不可见(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [moments]
+      operationId: uncollectMoment
+      summary: 取消收藏(query 传 dayId,幂等);取消后素材池与该瞬间 collectedCount 即时反映
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 瞬间 id
+        - name: dayId
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: 目标日子 id
+      responses:
+        '200':
+          description: 取消后该瞬间累计收藏数与本人对该日子的收藏态(collectedByMe 恒 false,幂等)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MomentCollectResponse'
+        '400':
+          description: 参数错误(40000:dayId 缺失/非法)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 瞬间不存在或非本家族、目标日子不可见(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/days/{id}/moments:
+    get:
+      tags: [moments]
+      operationId: listDayCollectedMoments
+      summary: 该 BIRTHDAY 日子的收藏素材池(生日福卡制作选照片数据源):全家人收藏到该日子的瞬间(共享素材语义,不限收藏人);本人不可见该日子 40400,非 BIRTHDAY 40000
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 日子 id(须 kind=BIRTHDAY 且本人可见)
+      responses:
+        '200':
+          description: 素材池(按 collectedAt 倒序;瞬间被删则其素材项即时消失;空数组触发前端空状态)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DayCollectedMomentsResponse'
+        '400':
+          description: 参数错误(40000:目标日子非 BIRTHDAY)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 日子不存在或对本人不可见(40400,不泄露存在性)
           content:
             application/json:
               schema:
@@ -1605,6 +2092,10 @@ components:
           description: 1-31,按日历口径校验;kind≠TOGETHER 时必填,TOGETHER 可省
         visibility:
           $ref: '#/components/schemas/DayVisibility'
+        year:
+          type: integer
+          nullable: true
+          description: 可选,1900..当年,越界 40000;创建可填、编辑可补(全量覆盖);kind=ANNIVERSARY=称谓计算基数;kind=TOGETHER=补录起始年(提供时起始完整日期=year+month/day,togetherDays 随之,缺省仍 createdAt 年兼容既有数据);kind=BIRTHDAY=仅存档不输出任何年龄派生字段(隐私红线);缺省 null
         reminders:
           type: array
           maxItems: 3
@@ -1615,7 +2106,7 @@ components:
           description: 创建人初始提醒配置,⊆{7,3,0} 去重 ≤3 项,缺省空数组(关闭);仅创建(POST)生效,PUT 忽略此字段(改提醒走 /api/days/{id}/reminder)
     DayRecord:
       type: object
-      required: [id, userId, relation, emoji, kind, calendarType, month, day, visibility, reminders, createdAt, nextDate, nextDateLunarText, daysUntil, togetherDays]
+      required: [id, userId, relation, emoji, kind, calendarType, month, day, visibility, reminders, createdAt, nextDate, nextDateLunarText, daysUntil, togetherDays, year, anniversaryNumber, anniversaryTitle, anniversaryLabel]
       properties:
         id:
           type: integer
@@ -1665,7 +2156,23 @@ components:
         togetherDays:
           type: integer
           nullable: true
-          description: 仅 TOGETHER:今天-起始日(下限 1),每天自动 +1;其余 kind 为 null
+          description: 仅 TOGETHER:今天-起始日(下限 1),每天自动 +1;其余 kind 为 null;提供 year 时改按 year+month/day 起算(缺省仍 createdAt 年,兼容既有数据)
+        year:
+          type: integer
+          nullable: true
+          description: 可空;存档年份(1900..当年)。ANNIVERSARY=称谓计算基数;TOGETHER=补录起始年;BIRTHDAY=仅存档,响应不输出任何年龄派生字段(隐私红线);可反复修改(PUT 全量覆盖),改后周年字段即时重算;既有无 year 数据完全兼容
+        anniversaryNumber:
+          type: integer
+          nullable: true
+          description: 计算字段:仅 kind=ANNIVERSARY 且 year 非空时=N(nextDate 公历年−year,公农历落点换算后取公历年);其余恒 null
+        anniversaryTitle:
+          type: string
+          nullable: true
+          description: 计算字段:仅 ANNIVERSARY 且 N 命中服务端称谓库时输出(如 40=红宝石婚);未收录年份与其余 kind 恒 null(前端只显 label)
+        anniversaryLabel:
+          type: string
+          nullable: true
+          description: 计算字段:仅 ANNIVERSARY 且 year 非空时为「N 周年」文本;详情页与倒计时标签(「距 N 周年还有 X 天」由前端组合 daysUntil);其余 kind 恒 null
     DayListResponse:
       type: object
       required: [items]
@@ -1756,14 +2263,14 @@ components:
       properties:
         code:
           type: string
-          description: 业务错误码(字符串形式,与运行时序列化一致):"40000" 参数错误/"40100" 未登录或身份失效(免鉴权 /api/visitor/* 端点组不适用)/"40300" 硬频控超限(提醒发送 >3 条/人/天,仅真实下发链路;感恩信生成每日每人 >5 次,AI 与降级路径统一计数)/"40400" 不存在或越权(不泄露存在性)/"40900" 状态冲突(胶囊未到期开箱、访客未解锁取隐藏内容)/"42900" 软频控——访客点亮心过于频繁(单设备对单卡片 >3 次/分钟),提示稍后再点,不阻断解锁目标
+          description: 业务错误码(字符串形式,与运行时序列化一致):"40000" 参数错误(imageBase64 超限/非法 mime、photoId 非本人或 scene 不符或已绑定、瞬间 text 超长或违禁、收藏目标非 BIRTHDAY、momentIds 不在素材池、blessingText 违禁、year 越界等)/"40100" 未登录或身份失效(免鉴权 /api/visitor/* 与 /api/photos/{photoId} 端点组不适用)/"40300" 硬频控超限(提醒发送 >3 条/人/天,仅真实下发链路;感恩信生成每日每人 >5 次,AI 与降级路径统一计数;瞬间发布每日每人 >10 条;照片上传每日每人 >20 张)/"40400" 不存在或越权(不泄露存在性)/"40900" 状态冲突(胶囊未到期开箱、访客未解锁取隐藏内容、未加入家族发瞬间、)/"42900" 软频控——访客点亮心过于频繁(单设备对单卡片 >3 次/分钟),提示稍后再点,不阻断解锁目标
         message:
           type: string
           description: 面向用户的错误文案,须过合规词表
     TemplateKey:
       type: string
       enum: [LETTER, DAYS_CARD, CAPSULE, BIRTHDAY_CARD, HARD_FOR_DAD, WEDDING_CARD]
-      description: 模板键(服务端配置主键):感恩信/相伴天数卡/时光胶囊邀请函/生日福卡/给爸爸的一句硬话/结婚纪念日卡;后三者为预告态(live=false,预约展示)
+      description: 模板键(服务端配置主键):感恩信/相伴天数卡/时光胶囊邀请函/生日福卡/给爸爸的一句硬话/结婚纪念日卡;生日福卡随时可经 POST /api/cards 生成(无独立制作页,生日当天由提醒/横幅自然触达);后两者为预告态(live=false,预约展示)
     TemplateCategory:
       type: string
       enum: [FESTIVAL, FAMILY, COUPLE, FUN]
@@ -1817,7 +2324,7 @@ components:
           $ref: '#/components/schemas/TemplateCategory'
         live:
           type: boolean
-          description: 上下架;false=预约态(主按钮「上线提醒我」,预约仅前端本地收藏)
+          description: 上下架;false=预约态(主按钮「上线提醒我」,v1.8 起预约为服务端登记:/api/festivals/reservations,取消走 DELETE;不再前端本地收藏)
         sort:
           type: integer
           description: 展示序,升序
@@ -1923,15 +2430,15 @@ components:
           description: 落款固定文案(如:—— 你的孩子),不可换
     CardKind:
       type: string
-      enum: [LETTER, DAYS_CARD, CAPSULE]
-      description: 卡片类型(可制作的三类):LETTER 感恩信/DAYS_CARD 相伴天数卡/CAPSULE 时光胶囊邀请函
+      enum: [LETTER, DAYS_CARD, CAPSULE, BIRTHDAY_CARD]
+      description: 卡片类型(可制作的四类):LETTER 感恩信/DAYS_CARD 相伴天数卡/CAPSULE 时光胶囊邀请函/BIRTHDAY_CARD 生日福卡(v1.8 新增,随时可生成,收藏瞬间照片做封面)
     CardStatus:
       type: string
       enum: [ACTIVE, DELETED]
       description: 卡片状态:ACTIVE 正常(默认)/DELETED 软删(列表/详情/访客端均不可见)
     CardPayload:
       type: object
-      description: 按 templateKind 异构的卡片定稿内容(服务端按 kind 校验结构与长度,非法 40000)。LETTER 必填 recipient/tone/paragraphs/signText/styleKey(恒 NIGHT);DAYS_CARD 必填 relation/startDate/styleKey(SUNSET|NIGHT|MINT);CAPSULE 必填 capsuleId/coverHint/openDate/type/styleKey(恒 MINT)。未适用的字段不出现
+      description: 按 templateKind 异构的卡片定稿内容(服务端按 kind 校验结构与长度,非法 40000)。LETTER 必填 recipient/tone/paragraphs/signText/styleKey(恒 NIGHT);DAYS_CARD 必填 relation/startDate/styleKey(SUNSET|NIGHT|MINT);CAPSULE 必填 capsuleId/coverHint/openDate/type/styleKey(恒 MINT);BIRTHDAY_CARD 必填 dayId/relation/blessingText/momentIds/styleKey(WARM|MINT)。未适用的字段不出现
       properties:
         recipient:
           type: string
@@ -1948,14 +2455,14 @@ components:
           description: 仅 LETTER:落款固定文案
         relation:
           type: string
-          description: 仅 DAYS_CARD:关系文本,1-12 字
+          description: 仅 DAYS_CARD 与 BIRTHDAY_CARD:关系文本,1-12 字;BIRTHDAY_CARD 取自 dayId 对应 DayRecord
         startDate:
           type: string
           description: 仅 DAYS_CARD:起始日 yyyy-MM-dd(含年;独立输入或来自关联日子)
         styleKey:
           type: string
-          enum: [SUNSET, NIGHT, MINT]
-          description: 样式渲染键;LETTER 恒 NIGHT,DAYS_CARD 三选一,CAPSULE 恒 MINT
+          enum: [SUNSET, NIGHT, MINT, WARM]
+          description: 样式渲染键;LETTER 恒 NIGHT,DAYS_CARD 三选一,CAPSULE 恒 MINT,BIRTHDAY_CARD 二选一(WARM 霞橘|MINT 青金)
         capsuleId:
           type: integer
           description: 仅 CAPSULE:关联 TimeCapsule id(引用非包含)
@@ -1969,6 +2476,22 @@ components:
           type: string
           enum: [SELF, PARTNER]
           description: 仅 CAPSULE:给未来的自己/给未来的 TA
+        dayId:
+          type: integer
+          description: 仅 BIRTHDAY_CARD:关联 DayRecord id(须 kind=BIRTHDAY 且本人可见且当天 daysUntil=0,否则 40900)
+        blessingText:
+          type: string
+          minLength: 1
+          maxLength: 40
+          description: 仅 BIRTHDAY_CARD:祝福语 1-40 字;过违禁词表,命中 40000
+        momentIds:
+          type: array
+          minItems: 1
+          maxItems: 3
+          uniqueItems: true
+          items:
+            type: integer
+          description: 仅 BIRTHDAY_CARD:选中的瞬间 id 1-3 项;生成时均须在该 dayId 收藏素材池中,否则 40000;素材瞬间后续被删不影响已存档 payload(访客端解析时跳过失效素材)
     CreateCardRequest:
       type: object
       required: [templateKind, payload]
@@ -2084,13 +2607,17 @@ components:
           minLength: 1
           maxLength: 500
           description: 信件内容 1-500 字,明文存、读取由接口门控;过违禁词表(静态+运行时)
+        photoId:
+          type: string
+          nullable: true
+          description: 可空;v1.8 新增,须为本人上传且 scene=CAPSULE 的未绑定照片(ORPHAN),否则 40000;传入则优先于 photoUrl 直传旧形态(保留兜底兼容存量);绑定后照片置 ACTIVE
         photoUrl:
           type: string
           nullable: true
-          description: 可空;允许为空串或前端自托管链接;门控同 contentText
+          description: 可空;photoId 直传旧形态,允许为空串或前端自托管链接;门控同 contentText;photoId 存在时读侧此计算字段恒为 /api/photos/{photoId}
     TimeCapsule:
       type: object
-      required: [id, type, openRule, openDate, coverHint, status, sealedAt, daysUntilOpen, dueNow]
+      required: [id, type, openRule, openDate, coverHint, status, sealedAt, daysUntilOpen, dueNow, photoId]
       properties:
         id:
           type: integer
@@ -2108,10 +2635,14 @@ components:
           type: string
           nullable: true
           description: 信件内容(内容门控:status=SEALED 时任何端点不下发此字段,status=OPENED 时返回)
+        photoId:
+          type: string
+          nullable: true
+          description: 关联照片 id(门控同 contentText);封存时未传为 null;胶囊删除联动照片置 DELETED(回图 40400)
         photoUrl:
           type: string
           nullable: true
-          description: 照片链接(门控同 contentText);可空
+          description: 照片链接(门控同 contentText);可空;photoId 存在时恒为 /api/photos/{photoId},否则为封存时 photoUrl 直传旧值
         status:
           $ref: '#/components/schemas/CapsuleStatus'
         sealedAt:
@@ -2157,10 +2688,14 @@ components:
         contentText:
           type: string
           description: 信件本体(开箱揭示;重复调用幂等返回首次结果)
+        photoId:
+          type: string
+          nullable: true
+          description: 关联照片 id(封存时未传为 null)
         photoUrl:
           type: string
           nullable: true
-          description: 照片链接(封存时未传为 null)
+          description: 照片链接(封存时未传为 null;photoId 存在时恒为 /api/photos/{photoId})
         status:
           type: string
           enum: [OPENED]
@@ -2201,7 +2736,7 @@ components:
           description: hearts≥3 即 true;true 时前端展示深色转化 CTA
     VisitorPublicPayload:
       type: object
-      description: 体面内容(按卡片可见策略脱敏,按 templateKind 异构)。LETTER=recipient+前 3 段+落款;DAYS_CARD=relation/startDate/daysTogether/styleKey;CAPSULE=type/coverHint/openDate/daysUntilOpen(不含信件本体)。未适用的字段不出现
+      description: 体面内容(按卡片可见策略脱敏,按 templateKind 异构)。LETTER=recipient+前 3 段+落款;DAYS_CARD=relation/startDate/daysTogether/styleKey;CAPSULE=type/coverHint/openDate/daysUntilOpen(不含信件本体);BIRTHDAY_CARD=relation/photoUrls(≤3,capability 路径)/kicker(恒「生日快乐」)。未适用的字段不出现
       properties:
         recipient:
           type: string
@@ -2217,7 +2752,7 @@ components:
           description: 仅 LETTER:落款
         relation:
           type: string
-          description: 仅 DAYS_CARD:关系文本
+          description: 仅 DAYS_CARD 与 BIRTHDAY_CARD:关系文本
         startDate:
           type: string
           description: 仅 DAYS_CARD:起始日 yyyy-MM-dd
@@ -2227,6 +2762,15 @@ components:
         styleKey:
           type: string
           description: 样式渲染键(访客页复用卡片样式)
+        photoUrls:
+          type: array
+          maxItems: 3
+          items:
+            type: string
+          description: 仅 BIRTHDAY_CARD:封面照片 capability 路径(≤3,取自 payload momentIds 对应瞬间;素材瞬间已删则该项跳过);<image> 直挂 /api/photos/{photoId}
+        kicker:
+          type: string
+          description: 仅 BIRTHDAY_CARD:眉题,恒「生日快乐」
         type:
           $ref: '#/components/schemas/CapsuleType'
         coverHint:
@@ -2266,7 +2810,7 @@ components:
           $ref: '#/components/schemas/CtaCopy'
     HiddenContent:
       type: object
-      description: 隐藏内容(按 templateKind 异构)。LETTER=paragraphs(完整定稿段落)+signText;DAYS_CARD=hiddenLine(如:下一个 N 天,打算继续赖着你);CAPSULE=contentText+photoUrl(开箱日前为预置悬念文案,不含真实内容;开箱日后为信件本体+照片)。未适用的字段不出现
+      description: 隐藏内容(按 templateKind 异构)。LETTER=paragraphs(完整定稿段落)+signText;DAYS_CARD=hiddenLine(如:下一个 N 天,打算继续赖着你);CAPSULE=contentText+photoUrl(开箱日前为预置悬念文案,不含真实内容;开箱日后为信件本体+照片);BIRTHDAY_CARD=blessingText(祝福语,体面内容=关系+照片,点亮 3 心解锁)。未适用的字段不出现
       properties:
         paragraphs:
           type: array
@@ -2279,13 +2823,16 @@ components:
         hiddenLine:
           type: string
           description: 仅 DAYS_CARD:隐藏的一句话(服务端按 daysTogether 填充)
+        blessingText:
+          type: string
+          description: 仅 BIRTHDAY_CARD:祝福语本体(体面内容=关系+封面照片,点亮 3 心解锁;钩子文案复用 lockedTeaser)
         contentText:
           type: string
           description: 仅 CAPSULE:开箱日前为预置悬念文案;开箱日后为信件本体
         photoUrl:
           type: string
           nullable: true
-          description: 仅 CAPSULE:照片链接,开箱日前为 null
+          description: 仅 CAPSULE:照片链接,开箱日前为 null;photoId 存在时恒为 /api/photos/{photoId}
     CtaCopy:
       type: object
       required: [title, sub, buttonText]
@@ -2299,3 +2846,276 @@ components:
         buttonText:
           type: string
           description: CTA 按钮文案(如:打开念家时)
+    PhotoScene:
+      type: string
+      enum: [MOMENT, CAPSULE]
+      description: 照片用途声明:上传时声明,绑定时校验一致性(不符 40000);MOMENT=家人瞬间封面,CAPSULE=时光胶囊附图
+    PhotoMimeType:
+      type: string
+      enum: [image/jpeg, image/png, image/webp]
+      description: 照片 mime;上传可缺省(按字节头嗅探,无法识别 40000);回图端点 Content-Type 同源
+    PhotoUploadRequest:
+      type: object
+      required: [imageBase64, scene]
+      properties:
+        imageBase64:
+          type: string
+          description: base64 编码的图片字节;解码后 1..512000 字节(≤500KB),超限 40000;base64 JSON 请求体,注意网关层(callContainer)请求体上限约 1MB 或更小,联调确认
+        scene:
+          $ref: '#/components/schemas/PhotoScene'
+        mimeType:
+          allOf:
+            - $ref: '#/components/schemas/PhotoMimeType'
+          nullable: true
+          description: 可缺省;缺省按字节头嗅探,无法识别 40000
+    PhotoUploadResponse:
+      type: object
+      required: [photoId, photoUrl, sizeBytes]
+      properties:
+        photoId:
+          type: string
+          minLength: 16
+          maxLength: 20
+          description: 照片标识,16-20 位 base62 高熵随机串,全局唯一;即回图 capability URL 令牌,内容不可变(同 id 不复用)
+        photoUrl:
+          type: string
+          description: 恒 /api/photos/{photoId} 相对路径(客户端拼域名使用;留 OSS 迁移空间,迁移只换实现不改契约)
+        sizeBytes:
+          type: integer
+          description: 解码后字节数;回图响应 Content-Length 同源
+    FestivalReservationRequest:
+      type: object
+      required: [templateKey]
+      properties:
+        templateKey:
+          $ref: '#/components/schemas/TemplateKey'
+    FestivalReservation:
+      type: object
+      required: [templateKey, reserved, reservedAt]
+      properties:
+        templateKey:
+          $ref: '#/components/schemas/TemplateKey'
+        reserved:
+          type: boolean
+          description: 恒 true(幂等语义:重复预约返回既有记录不报错)
+        reservedAt:
+          type: string
+          description: 首次登记时间 ISO 8601(重复预约不变)
+    ReservationListItem:
+      type: object
+      required: [templateKey, name, live, reservedAt]
+      properties:
+        templateKey:
+          $ref: '#/components/schemas/TemplateKey'
+        name:
+          type: string
+          description: 模板名(与 /api/templates 同源)
+        live:
+          type: boolean
+          description: 模板上下架;false=上线提醒预约,true=节日提醒预约
+        festivalLabel:
+          type: string
+          nullable: true
+          description: 节点卡名称+emoji(如:母亲节 🌷);非节日模板为 null
+        festivalDate:
+          type: string
+          nullable: true
+          description: 节点日期 yyyy-MM-dd;非节日模板为 null
+        daysUntil:
+          type: integer
+          nullable: true
+          description: 按 festivalDate 计算的距今天数(0=今天);festivalDate 为 null 时为 null
+        reservedAt:
+          type: string
+          description: 首次登记时间 ISO 8601;清单按此降序
+    ReservationListResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          description: 本人全部预约,按 reservedAt 降序;空数组触发前端空状态
+          items:
+            $ref: '#/components/schemas/ReservationListItem'
+        total:
+          type: integer
+          description: 预约总数
+    CancelReservationResponse:
+      type: object
+      required: [deleted]
+      properties:
+        deleted:
+          type: boolean
+          description: 恒 true(幂等:未预约再取消也成功)
+    FestivalDueItem:
+      type: object
+      required: [templateKey, festivalLabel, festivalDate, daysUntil, live, reservedByMe, dueSoon]
+      properties:
+        templateKey:
+          $ref: '#/components/schemas/TemplateKey'
+        festivalLabel:
+          type: string
+          description: 节点卡名称+emoji(如:母亲节 🌷)
+        emoji:
+          type: string
+          nullable: true
+          description: 节日主表情;无则 null
+        festivalDate:
+          type: string
+          description: 节点日期 yyyy-MM-dd(落在今天起 0-7 天窗口内)
+        daysUntil:
+          type: integer
+          description: 距今天数 0-7;0=就是今天
+        live:
+          type: boolean
+          description: 模板上下架
+        reservedByMe:
+          type: boolean
+          description: 本人是否已预约该模板
+        dueSoon:
+          type: boolean
+          description: 预约到期标记=reservedByMe 且 daysUntil≤3(预约到期真实推送属后续调度,本端点仅数据)
+    FestivalDueResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          description: 窗口内节日模板清单,按 daysUntil 升序;首页节日横幅与节点倒计时数据源
+          items:
+            $ref: '#/components/schemas/FestivalDueItem'
+        total:
+          type: integer
+          description: 窗口内节日数
+    MomentCreateRequest:
+      type: object
+      required: [photoId, text]
+      properties:
+        photoId:
+          type: string
+          description: 须为本人上传且 scene=MOMENT 且未绑定(ORPHAN);他人照片/已绑定/scene 不符 40000;创建即绑定(照片 ORPHAN→ACTIVE)
+        text:
+          type: string
+          minLength: 1
+          maxLength: 60
+          description: 一句话 1-60 字;过违禁词表,命中 40000
+    FamilyMomentView:
+      type: object
+      required: [id, userId, photoId, photoUrl, text, createdAt, likeCount, likedByMe, collectedCount, collectedByMeDayIds]
+      properties:
+        id:
+          type: integer
+          description: 瞬间 id;时间线 cursor 分页游标
+        userId:
+          type: integer
+          description: 发布人(发布人昵称经 /api/family 成员列表解析)
+        photoId:
+          type: string
+          description: 封面照片 id(scene=MOMENT)
+        photoUrl:
+          type: string
+          description: 封面照片 capability 路径,恒 /api/photos/{photoId};<image> 直挂
+        text:
+          type: string
+          description: 一句话正文
+        createdAt:
+          type: string
+          description: 发布时间 ISO 8601;时间线倒序键
+        likeCount:
+          type: integer
+          description: 该瞬间累计真好数
+        likedByMe:
+          type: boolean
+          description: 当前用户是否已点真好
+        collectedCount:
+          type: integer
+          description: 被收藏次数(跨家人累计)
+        collectedByMeDayIds:
+          type: array
+          items:
+            type: integer
+          description: 当前用户已收藏该瞬间到的日子 id 列表(收藏按钮态;空数组=未收藏)
+    MomentListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          description: 本家族全部成员的 ACTIVE 瞬间,createdAt 倒序;无家族用户返回空数组(不报错,展示空状态)
+          items:
+            $ref: '#/components/schemas/FamilyMomentView'
+        nextCursor:
+          type: integer
+          nullable: true
+          description: 还有更早记录时=下页游标(下页 beforeId),否则缺省
+    MomentLikeResponse:
+      type: object
+      required: [likeCount, likedByMe]
+      properties:
+        likeCount:
+          type: integer
+          description: 该瞬间累计真好数(点亮或取消后的最新计数)
+        likedByMe:
+          type: boolean
+          description: 当前用户点赞态;POST 恒 true、DELETE 恒 false(幂等)
+    MomentCollectRequest:
+      type: object
+      required: [dayId]
+      properties:
+        dayId:
+          type: integer
+          description: 目标日子 id;须 kind=BIRTHDAY 且本人可见(本人创建或同家族 FAMILY),否则 40000/40400;momentId+dayId+userId 唯一(幂等)
+    MomentCollectResponse:
+      type: object
+      required: [collectedCount, collectedByMe, dayId]
+      properties:
+        collectedCount:
+          type: integer
+          description: 该瞬间累计收藏数(跨家人累计;操作后的最新计数)
+        collectedByMe:
+          type: boolean
+          description: 当前用户对该日子的收藏态;POST 恒 true、DELETE 恒 false(幂等)
+        dayId:
+          type: integer
+          description: 回显目标日子 id
+    DeleteMomentResponse:
+      type: object
+      required: [deleted]
+      properties:
+        deleted:
+          type: boolean
+          description: 恒 true(重复删除幂等);软删+联动照片置 DELETED(回图 40400)
+    DayCollectedMomentItem:
+      type: object
+      required: [momentId, photoUrl, text, authorName, collectedBy, collectedAt]
+      properties:
+        momentId:
+          type: integer
+          description: 瞬间 id
+        photoUrl:
+          type: string
+          description: 瞬间封面照片 capability 路径 /api/photos/{photoId}
+        text:
+          type: string
+          description: 瞬间一句话正文
+        authorName:
+          type: string
+          description: 瞬间发布人昵称
+        collectedBy:
+          type: string
+          description: 收藏人昵称(共享素材语义:素材池含全家人收藏,不限收藏人)
+        collectedAt:
+          type: string
+          description: 收藏时间 ISO 8601;素材池排序键(倒序)
+    DayCollectedMomentsResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          description: 该 BIRTHDAY 日子的收藏素材池(全家人收藏,按 collectedAt 倒序;瞬间被删则其素材项即时消失;空数组触发前端空状态)
+          items:
+            $ref: '#/components/schemas/DayCollectedMomentItem'
+        total:
+          type: integer
+          description: 素材条数

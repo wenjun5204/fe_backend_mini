@@ -1,0 +1,1228 @@
+{
+  "schema_version": "1.0",
+  "status": "approved",
+  "change_id": "念家时-v2.2-家人空间",
+  "scope": {
+    "complexity": "L",
+    "subsystems": [
+      "miniprogram-nianjiashi 前端(新增家人空间页/发瞬间页/福卡制作页 3 页+me/tpl/days/day-detail/capsule-edit/visitor/mycards 增量改造)",
+      "backend 服务(Spring Boot 原地演进,新增 photo_asset/family_moment/moment_like/moment_collect/festival_reservation 表+PhotoService/MomentService/FestivalService/AnniversaryTitleLib;CardKind/DayRecord 扩展)",
+      "OpenAPI 契约层(v1.7.0 → v1.8.0 增量,新增 festivals/photos/moments 三组 14 端点+cards/days/capsules/visitor 四处枚举与字段扩展)"
+    ],
+    "cross_team_dependencies": [],
+    "split_required": false,
+    "split_decision": "coupled",
+    "in_scope_frs": [
+      "FR-5(接口闭环:预约登记/取消/到期清单;真实推送下发排除)",
+      "FR-13 家人瞬间照片流(V1.2 家人空间,本 change 新增编号)",
+      "FR-14 生日福卡表达层(V1.2)",
+      "FR-15 周年称谓库(V1.2;兑现 Change 1 D1 遗留)",
+      "FR-16 胶囊照片上传(Change 2 D8 遗留清偿)"
+    ],
+    "exclusions": [
+      {
+        "item": "真实 subscribeMessage.send 推送下发(预约上线提醒/节日前 3 天提醒)",
+        "destination": "部署联调阶段(Stage 9);本 change 交付预约登记+到期计算数据作为下发链路输入"
+      },
+      {
+        "item": "解忧册模块删除",
+        "destination": "已拍板明确保留不删;JieyouService/端点/页面/契约条目本 change 一律不动"
+      },
+      {
+        "item": "OSS/对象存储接入",
+        "destination": "不做;photoUrl 恒为 /api/photos/{photoId} 相对路径形态,日后迁移只换实现不改契约"
+      },
+      {
+        "item": "家人关系图谱、「在一起」双向共建确认(PRD 开放问题 4)",
+        "destination": "V2"
+      },
+      {
+        "item": "共享日子的协作编辑扩展(家人可编辑他人 FAMILY 日子)",
+        "destination": "V2;既有 FAMILY 可见性已满足查看共享"
+      },
+      {
+        "item": "模板 UGC/投稿、老照片修复",
+        "destination": "V2"
+      }
+    ]
+  },
+  "clarification": {
+    "round": 0,
+    "max_rounds": 3,
+    "note": "输入为已定稿 PRD(docs/PRD-念家时.md v2.0,2026-10-10 定稿)§4.2 FR-5+§6 V1.2 行+已拍板决策(全量一起上/MySQL BLOB/接口闭环/解忧册保留)+前两轮遗留清偿项;round=0 表示未发生澄清轮次,questions 为空。",
+    "questions": [],
+    "answers": [],
+    "confirmed_facts": [
+      {
+        "fact": "家人空间交互事实(来源=本 change 输入简报;原型 nianjiashi-v2.1.html 未含家人页,Stage 2 需补视觉稿):family-banner 家人横幅+member-list 成员列表+moment-card 家人瞬间卡片;瞬间卡两个互动=❤️真好(每人对每条限 1 次)+⭐收藏进日子(momentId 关联 DayRecord 形成生日福卡素材);发一条瞬间=照片+一句话,家人可见;本人可删自己的",
+        "source": "user_document"
+      },
+      {
+        "fact": "生日福卡视觉裁定:v1 原型 .fcard 红金翻卡(docs/prototype/bagua-interactive.html,金边+「福」大字)是 v1 风格,PRD v2 视觉已全量推倒(暖白底#fbfaf7+墨字#1c1c28+霞橘渐变#ff7a59→#ff4d6d+青金#12b2a3);福卡表达层用 v2 视觉重新诠释,祝福语用衬线大字位,不沿用任何红金元素",
+        "source": "user_document"
+      },
+      {
+        "fact": "FR-5 接口闭环口径(拍板):festival 预约登记/取消以 userId+templateKey 维度;到期清单查询=服务端算「今天该推送/该展示什么」返回给前端自显横幅;真实 subscribeMessage.send 下发不做(部署联调阶段);模板配置由既有 TemplateCatalog 扩展,festivalDate 字段契约 v1.7.0 已存在",
+        "source": "user_decision"
+      },
+      {
+        "fact": "照片存储拍板:MySQL BLOB;前端压缩 ≤500KB 上传;后端存库+GET 回图端点;不接 OSS/对象存储;URL 形态留迁移空间",
+        "source": "user_decision"
+      },
+      {
+        "fact": "胶囊照片遗留项:契约 v1.7.0 的 TimeCapsule/VisitorPublicPayload 已有 photoUrl 字段(Change 2 D8 当时裁定为可空占位/照片标记交互),但无上传端点;本 change 清偿:POST 上传端点+GET 回图端点+封存时提交 photoId",
+        "source": "code"
+      },
+      {
+        "fact": "Change 1 D1 遗留:DayRecord 无 year 字段(TOGETHER 起始日=createdAt 年+month/day),周年称谓无法计算延至 V1.2;本 change 兑现:增 year 可选字段+周年称谓库。契约 v1.7.0 DayRecord required 列表确认无 year",
+        "source": "code"
+      },
+      {
+        "fact": "既有资产:契约 v1.7.0 共 47 路由;TemplateConfig 已有 BIRTHDAY_CARD key(live 但无 makerPage,前端按钮提示「生日当天首页提醒你」);后端 CardKind 枚举=LETTER|DAYS_CARD|CAPSULE(dto/CardDtos.java),TemplateKey 已含 BIRTHDAY_CARD;NotifyService 订阅登记(templateId+quota)语义可复用于节日/预约推送(开发期占位);DayTextLib.FORBIDDEN_WORDS 违禁词表+类加载期断言机制可承载瞬间/福卡文案校验;DayService 家族可见性(FAMILY/PRIVATE)与 40400 不泄露存在性口径既有;每人限 1 家族(用户唯一家族推导)既有",
+        "source": "code"
+      },
+      {
+        "fact": "解忧册拍板:明确保留不删;JieyouService/JieyouQuoteLib/端点/前端页面/契约条目全部不动",
+        "source": "user_decision"
+      }
+    ],
+    "decisions": [
+      {
+        "id": "D1",
+        "decision": "全量一起上(拍板):照片流+福卡+周年称谓+上传+预约接口同一 change 交付,不拆分"
+      },
+      {
+        "id": "D2",
+        "decision": "照片存储=MySQL BLOB(拍板):MEDIUMBLOB 列存字节;前端 wx.chooseMedia 单张+wx.compressImage 压至 ≤500KB;photoUrl 恒为 /api/photos/{photoId} 相对路径 capability 形态,迁 OSS 只换实现不改契约;ORPHAN(未绑定引用)>48h GC 清理"
+      },
+      {
+        "id": "D3",
+        "decision": "照片上传协议=base64 JSON(本 change 裁定),非 multipart。理由:①与既有双通道网络层 utils/request.js(wx.request/callContainer JSON 体)完全同构,不引入 multipart 解析与新上传代码路径;②校验简单(解码后验 size/mime,超限 40000);③500KB base64 后约 667KB 请求体,云托管网关上限验证列为 Stage 2 checkpoint(若不达标回退 multipart,契约不变只换 requestBody 编码)"
+      },
+      {
+        "id": "D4",
+        "decision": "BIRTHDAY_CARD=扩展 MadeCard.templateKind 枚举(复用存档体系),不新建实体/新 CardKind 体系。理由:①我的卡片墙/再次分享/软删/shareScene 签发/访客 3 心解锁/totalHearts「收到的心」统计全部免费复用,第四套实体状态机是纯成本;②后端 CardKind 枚举加一值即接入 CardService 既有按 kind 校验骨架;③TemplateConfig 既有 BIRTHDAY_CARD key(live 无 makerPage)与「生日当天首页提醒你」入口语义天然衔接;④福卡无独立生命周期状态机(不像 TimeCapsule 有时间门控,见 Change 2 D4 的反面裁定),payload 黑盒可承载"
+      },
+      {
+        "id": "D5",
+        "decision": "周年称谓触发条件:kind=ANNIVERSARY 且 year 非空 → 周年数 N=nextDate 公历年−year(公农历落点统一换算后取公历年);N 命中静态称谓库输出称谓,未命中只出「N 周年」无称谓。year 字段三类 kind 语义:ANNIVERSARY=称谓计算;TOGETHER=补录起始年(起始完整日期改按 year+month/day,togetherDays 随之;缺省仍 createdAt 年,兼容既有数据——清偿 Change 1 D1);BIRTHDAY=仅存档不输出年龄(隐私红线)。称谓库为服务端静态库 AnniversaryTitleLib(非数据库表):固定文化词条无运营变更需求,模式对齐 DayTextLib,24 词条(1-15 逐年+20/25/30/35/40/45/50/55/60/70)"
+      },
+      {
+        "id": "D6",
+        "decision": "生日福卡生成门控:目标 DayRecord 须 kind=BIRTHDAY+本人可见+daysUntil=0(生日当天,服务端按公农历落点统一判定);否则 40900。理由:福卡是「当天专属仪式感」表达层(PRD「家人生日当天,生成专属卡」),门控保住仪式感语义并防生日素材池被超期滥用;非当天前端不出现入口,门控是数据语义兜底"
+      },
+      {
+        "id": "D7",
+        "decision": "收藏进日子收窄为 kind=BIRTHDAY(40000 otherwise):收藏语义=生日福卡素材(任务口径「形成生日福卡素材」);ANNIVERSARY/TOGETHER 放开列 V2"
+      },
+      {
+        "id": "D8",
+        "decision": "瞬间删除=仅本人(隐私权红线):户主/家人均不可删他人瞬间(区别于 DayRecord 的「FAMILY 记录户主可删」既有权限模型);软删 status=DELETED,联动照片置 DELETED(回图 40400),likes/collects 引用保留但不外显;幂等"
+      },
+      {
+        "id": "D9",
+        "decision": "回图端点 GET /api/photos/{photoId} 免鉴权(capability URL):小程序 <image> 标签无法携带登录头;photoId 为 16-20 位 base62 高熵随机串,靠不可枚举性保护,威胁模型与 visitor scene 同级(Change 2 R2 已裁定可接受);photoId 内容不可变故 Cache-Control 长缓存"
+      },
+      {
+        "id": "D10",
+        "decision": "防滥用频控(复用 40300,不新增错误码):瞬间每日每人 ≤10 条、照片每日每人 ≤20 张(上传与绑定分开计数取上传计);与既有 AI 每日 ≤5 次同码不同义,由端点区分"
+      }
+    ],
+    "assumptions": [
+      {
+        "assumption": "云托管 MySQL 支持 MEDIUMBLOB 且备份策略可承受照片入库体量(≤500KB×频控上限×用户量);DB 体积监控列入部署清单",
+        "needs_verification": true
+      },
+      {
+        "assumption": "wx.request/callContainer 请求体上限 ≥1MB,500KB 照片 base64(约 667KB)可传;Stage 2 实测,不达标回退 multipart(决策 D3)",
+        "needs_verification": true
+      },
+      {
+        "assumption": "wx.chooseMedia 单张+wx.compressImage 可将常见照片压至 ≤500KB(quality 参数);极少数压不下的场景前端二次压缩或引导裁剪",
+        "needs_verification": true
+      },
+      {
+        "assumption": "TemplateConfig.festivalDate 种子数据为最近未来落点,跨年滚动由运营每年 SQL 更新(服务端不做节假日自动计算,不引入日历库)",
+        "needs_verification": false
+      },
+      {
+        "assumption": "家人空间页原型缺失(原型 v2.1 无家人页),交互以本 change 输入简报为准;Stage 2 出视觉稿后前端像素对齐,不影响契约",
+        "needs_verification": false
+      }
+    ],
+    "unresolved_questions": [],
+    "coverage": {
+      "goal_value": "covered",
+      "users_permissions": "covered",
+      "scope": "covered",
+      "main_flow": "covered",
+      "state": "covered",
+      "data": "covered",
+      "exceptions": "covered",
+      "interaction": "covered",
+      "dependencies": "covered",
+      "non_functional": "covered",
+      "acceptance": "covered"
+    }
+  },
+  "contract_readiness": {
+    "api_draft": [
+      {
+        "path": "/api/festivals/reservations",
+        "method": "POST",
+        "operationId": "reserveFestival",
+        "summary": "预约登记(userId+templateKey 唯一,幂等:重复预约返回既有记录不报错);live=false 未上线模板「上线提醒我」与 festivalDate 节日提醒共用此登记",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "templateKey",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举值须存在于 TemplateConfig(LETTER|DAYS_CARD|CAPSULE|BIRTHDAY_CARD|HARD_FOR_DAD|WEDDING_CARD);不存在的 key 40400"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "templateKey",
+            "type": "string",
+            "required": true,
+            "bounds": "回显"
+          },
+          {
+            "name": "reserved",
+            "type": "boolean",
+            "required": true,
+            "bounds": "恒 true(幂等语义)"
+          },
+          {
+            "name": "reservedAt",
+            "type": "string",
+            "required": true,
+            "bounds": "ISO 时间,首次登记时间(重复预约不变)"
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40100",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/festivals/reservations",
+        "method": "GET",
+        "operationId": "listMyFestivalReservations",
+        "summary": "我的预约清单(我的页/模板馆预约状态展示);按 reservedAt 降序",
+        "auth": "登录(40100)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "items",
+            "type": "array<object>",
+            "required": true,
+            "bounds": "每项 {templateKey, name, live, festivalLabel(可空), festivalDate(可空), daysUntil(可空,按 festivalDate 算), reservedAt}"
+          },
+          {
+            "name": "total",
+            "type": "integer",
+            "required": true,
+            "bounds": "预约总数"
+          }
+        ],
+        "error_codes": [
+          "40100"
+        ]
+      },
+      {
+        "path": "/api/festivals/reservations/{templateKey}",
+        "method": "DELETE",
+        "operationId": "cancelFestivalReservation",
+        "summary": "取消预约(幂等:未预约再取消也返回 deleted=true);真实推送下发排除,取消仅删登记行",
+        "auth": "登录(40100)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "deleted",
+            "type": "boolean",
+            "required": true,
+            "bounds": "恒 true(幂等)"
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40100"
+        ]
+      },
+      {
+        "path": "/api/festivals/due",
+        "method": "GET",
+        "operationId": "getFestivalDue",
+        "summary": "到期清单(服务端算「今天该展示什么」):festivalDate 落在 0-7 天窗口内的节日模板+本人预约标记;前端消费此清单自显首页节日横幅与节点倒计时;date 参数供 Stage 9 调度自测",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "date",
+            "type": "string(query)",
+            "required": false,
+            "bounds": "yyyy-MM-dd,缺省=当天"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "items",
+            "type": "array<object>",
+            "required": true,
+            "bounds": "每项 {templateKey, festivalLabel, emoji(可空), festivalDate, daysUntil(0-7;0=就是今天), live, reservedByMe, dueSoon};按 daysUntil 升序;dueSoon=reservedByMe 且 daysUntil≤3(预约到期,真实推送属 Stage 9,本端点仅数据)"
+          },
+          {
+            "name": "total",
+            "type": "integer",
+            "required": true,
+            "bounds": "窗口内节日数"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40000"
+        ]
+      },
+      {
+        "path": "/api/photos",
+        "method": "POST",
+        "operationId": "uploadPhoto",
+        "summary": "照片上传(base64 JSON,决策 D3):校验解码后 ≤500KB+mime;每日每人 ≤20 张(40300);返回 photoId 与 capability 形态 photoUrl;photoId 为 16-20 位 base62 高熵随机串",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "imageBase64",
+            "type": "string",
+            "required": true,
+            "bounds": "base64 编码图片字节;解码后 1..512000 字节,超限 40000"
+          },
+          {
+            "name": "scene",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 MOMENT|CAPSULE;上传时声明用途,绑定时校验一致性(40000)"
+          },
+          {
+            "name": "mimeType",
+            "type": "string",
+            "required": false,
+            "bounds": "枚举 image/jpeg|image/png|image/webp;缺省按字节头嗅探,无法识别 40000"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "photoId",
+            "type": "string",
+            "required": true,
+            "bounds": "16-20 位 base62 随机串,全局唯一,capability URL 令牌(决策 D9)"
+          },
+          {
+            "name": "photoUrl",
+            "type": "string",
+            "required": true,
+            "bounds": "恒 /api/photos/{photoId} 相对路径(决策 D2 留 OSS 迁移空间);客户端拼域名使用"
+          },
+          {
+            "name": "sizeBytes",
+            "type": "integer",
+            "required": true,
+            "bounds": "解码后字节数"
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40100",
+          "40300"
+        ]
+      },
+      {
+        "path": "/api/photos/{photoId}",
+        "method": "GET",
+        "operationId": "getPhoto",
+        "summary": "【免鉴权】照片回显:直出字节流,Content-Type=image/{mime},Cache-Control 长缓存(photoId 内容不可变);<image> 标签直挂;DELETED/ORPHAN 被清理后 40400",
+        "auth": "无(capability URL,photoId 高熵不可枚举,决策 D9)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "(binary)",
+            "type": "image bytes",
+            "required": true,
+            "bounds": "Content-Type: image/jpeg|image/png|image/webp;Cache-Control: max-age 长缓存;非 JSON 包装"
+          }
+        ],
+        "error_codes": [
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/moments",
+        "method": "POST",
+        "operationId": "createMoment",
+        "summary": "发一条家人瞬间(照片+一句话,家人可见):photoId 须为本人上传且 scene=MOMENT 且未绑定;须已加入家族(40900);每日每人 ≤10 条(40300);创建即绑定照片(ORPHAN→ACTIVE)",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "photoId",
+            "type": "string",
+            "required": true,
+            "bounds": "本人上传+scene=MOMENT+status=ORPHAN;他人照片/已绑定/scene 不符 40000"
+          },
+          {
+            "name": "text",
+            "type": "string",
+            "required": true,
+            "bounds": "1-60 字;过违禁词表(DayTextLib.FORBIDDEN_WORDS 口径),命中 40000"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "FamilyMomentView",
+            "type": "object",
+            "required": true,
+            "bounds": "见实体定义(likeCount=0,likedByMe=false,collectedCount=0)"
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40100",
+          "40300",
+          "40900"
+        ]
+      },
+      {
+        "path": "/api/moments",
+        "method": "GET",
+        "operationId": "listFamilyMoments",
+        "summary": "家族时间线:本家族全部成员的 ACTIVE 瞬间,createdAt 倒序 cursor 分页;无家族用户返回空列表(不报错,家人页展示空状态)",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "beforeId",
+            "type": "integer(query)",
+            "required": false,
+            "bounds": "游标=上一页最后一条 id,取更早的记录"
+          },
+          {
+            "name": "limit",
+            "type": "integer(query)",
+            "required": false,
+            "bounds": "1-20,缺省 10"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "items",
+            "type": "array<FamilyMomentView>",
+            "required": true,
+            "bounds": "倒序;含 likeCount/likedByMe/collectedCount/collectedByMeDayIds(当前用户视角)"
+          },
+          {
+            "name": "nextCursor",
+            "type": "integer",
+            "required": false,
+            "bounds": "还有更早记录时=下页游标,否则缺省"
+          }
+        ],
+        "error_codes": [
+          "40100"
+        ]
+      },
+      {
+        "path": "/api/moments/{id}",
+        "method": "DELETE",
+        "operationId": "deleteMoment",
+        "summary": "删除瞬间(仅本人,隐私权红线决策 D8:户主/家人均不可删他人;非本人 40400);软删+联动照片置 DELETED(回图 40400);幂等",
+        "auth": "登录(40100)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "deleted",
+            "type": "boolean",
+            "required": true,
+            "bounds": "恒 true(重复删除幂等)"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/moments/{id}/like",
+        "method": "POST",
+        "operationId": "likeMoment",
+        "summary": "❤️真好互动:每人对每条限 1 次(momentId+userId 唯一约束物理保证);重复调用幂等不增数;仅本家族瞬间可点(跨家族 40400)",
+        "auth": "登录(40100)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "likeCount",
+            "type": "integer",
+            "required": true,
+            "bounds": "该瞬间累计点赞数"
+          },
+          {
+            "name": "likedByMe",
+            "type": "boolean",
+            "required": true,
+            "bounds": "恒 true(幂等)"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/moments/{id}/like",
+        "method": "DELETE",
+        "operationId": "unlikeMoment",
+        "summary": "取消真好(删 MomentLike 行,幂等:未点过再取消也成功)",
+        "auth": "登录(40100)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "likeCount",
+            "type": "integer",
+            "required": true,
+            "bounds": "取消后计数"
+          },
+          {
+            "name": "likedByMe",
+            "type": "boolean",
+            "required": true,
+            "bounds": "恒 false(幂等)"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/moments/{id}/collect",
+        "method": "POST",
+        "operationId": "collectMoment",
+        "summary": "⭐收藏进日子:momentId 关联 DayRecord 形成生日福卡素材;dayId 须为本人可见的 kind=BIRTHDAY 日子(决策 D7,其他 kind 40000);momentId+dayId+userId 唯一;同一瞬间可被不同家人收藏到同一/不同日子",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "dayId",
+            "type": "integer",
+            "required": true,
+            "bounds": "kind=BIRTHDAY 且本人可见(本人创建或同家族 FAMILY);不可见 40400;非 BIRTHDAY 40000"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "collectedCount",
+            "type": "integer",
+            "required": true,
+            "bounds": "该瞬间累计收藏数"
+          },
+          {
+            "name": "collectedByMe",
+            "type": "boolean",
+            "required": true,
+            "bounds": "对该日子的收藏态(幂等恒 true)"
+          },
+          {
+            "name": "dayId",
+            "type": "integer",
+            "required": true,
+            "bounds": "回显"
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40100",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/moments/{id}/collect",
+        "method": "DELETE",
+        "operationId": "uncollectMoment",
+        "summary": "取消收藏(query 传 dayId,幂等);取消后素材池与该瞬间 collectedCount 即时反映",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "dayId",
+            "type": "integer(query)",
+            "required": true,
+            "bounds": "目标日子 id"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "collectedCount",
+            "type": "integer",
+            "required": true,
+            "bounds": "取消后计数"
+          },
+          {
+            "name": "collectedByMe",
+            "type": "boolean",
+            "required": true,
+            "bounds": "恒 false(幂等)"
+          },
+          {
+            "name": "dayId",
+            "type": "integer",
+            "required": true,
+            "bounds": "回显"
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40100",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/days/{id}/moments",
+        "method": "GET",
+        "operationId": "listDayCollectedMoments",
+        "summary": "该 BIRTHDAY 日子的收藏素材池(福卡制作选照片数据源):全家人收藏到该日子的瞬间(共享素材语义,不限收藏人);本人不可见该日子 40400;非 BIRTHDAY 40000",
+        "auth": "登录(40100)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "items",
+            "type": "array<object>",
+            "required": true,
+            "bounds": "每项 {momentId, photoUrl, text, authorName, collectedBy(收藏人名), collectedAt};按 collectedAt 倒序;瞬间被删则其素材项消失"
+          },
+          {
+            "name": "total",
+            "type": "integer",
+            "required": true,
+            "bounds": "素材条数"
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40100",
+          "40400"
+        ]
+      }
+    ],
+    "modified_endpoints": [
+      {
+        "path": "/api/cards(POST/GET)与 /api/cards/{id}(GET/DELETE)与 /api/cards/{id}/share(POST)与 visitor 组三端点",
+        "delta": "CardKind/TemplateKind 枚举 +BIRTHDAY_CARD(后端 dto/CardDtos.CardKind 加枚举值);POST /api/cards 校验第四 payload 形态 {dayId,relation,blessingText(1-40 字过违禁词表),momentIds(1-3 项,均须在该 dayId 收藏池中,40000),styleKey(WARM|MINT)};门控:dayId→DayRecord 须 kind=BIRTHDAY+本人可见+daysUntil=0,否则 40900(决策 D6);其余端点零改动接入(列表封面/软删/share 幂等/totalHearts 统计自动生效);visitor 端 publicPayload 增 BIRTHDAY_CARD 形态 {relation,photoUrls(≤3,capability 路径),kicker:'生日快乐'},hiddenContent 增 {blessingText}(体面内容=关系+照片,点亮 3 心解锁祝福语,钩子文案复用 lockedTeaser);40900 语义表增「非生日当天生成福卡」"
+      },
+      {
+        "path": "/api/days(POST)与 /api/days/{id}(PUT/GET)与 GET /api/days 与 GET /api/days/reminder-due",
+        "delta": "DayRecord 增 year 可选字段(整数 1900..当年,三类 kind 语义见决策 D5;越界 40000);DayRecordView 增计算字段 anniversaryNumber(整数|null)/anniversaryTitle(称谓|null)/anniversaryLabel(如「40 周年」|null)——仅 kind=ANNIVERSARY 且 year 非空时非空;kind=TOGETHER 提供 year 时 togetherDays 改按 year+month/day 起算(缺省仍 createdAt 年,兼容既有数据);kind=BIRTHDAY 的 year 仅存档,响应不输出任何年龄派生字段(隐私红线)"
+      },
+      {
+        "path": "/api/capsules(POST)与 /api/capsules/{id}(GET)与 /open 与 visitor content 端点",
+        "delta": "封存请求增可选 photoId(本人上传+scene=CAPSULE 校验,40000):photoId 优先,photoUrl 直传旧形态保留兜底兼容(Change 2 D8 存量);绑定后照片 ORPHAN→ACTIVE;读侧 photoUrl 计算字段在 photoId 存在时恒为 /api/photos/{photoId};SEALED 态内容门控不变(不下发 photoUrl/contentText);胶囊删除联动照片 DELETED"
+      },
+      {
+        "path": "/api/templates(GET)",
+        "delta": "无 schema 变化(festivalDate/festivalLabel 既有);预约态由新增 /api/festivals/* 承载;模板馆「上线提醒我」按钮从「前端本地收藏」升级为服务端登记",
+        "note": "列为 modified 是因为消费行为变化,非契约变化"
+      }
+    ],
+    "reused_endpoints": [
+      {
+        "path": "/api/auth/login",
+        "note": "登录链路不变;回图端点组免鉴权"
+      },
+      {
+        "path": "/api/days*(列表/详情/提醒)",
+        "note": "FAMILY 可见性=家人共享查看既有;素材池端点挂在其下;周年称谓/福卡门控复用 daysUntil 与落点换算"
+      },
+      {
+        "path": "/api/notify/subscribe 与 /api/notify/status",
+        "note": "预约到期/节日前 3 天真实推送的订阅登记语义复用(templateId 占位),下发属 Stage 9;拒绝登记静默降级"
+      },
+      {
+        "path": "/api/calendar/convert",
+        "note": "落点换算服务端内部复用,契约不改"
+      }
+    ],
+    "entities": [
+      {
+        "name": "PhotoAsset",
+        "table": "photo_asset",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "required": true,
+            "bounds": "主键=photoId,16-20 位 base62 高熵随机串(capability URL 令牌,决策 D9);内容不可变(同 id 不复用)"
+          },
+          {
+            "name": "userId",
+            "type": "integer",
+            "required": true,
+            "bounds": "上传人;绑定/删除时校验归属"
+          },
+          {
+            "name": "scene",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 MOMENT|CAPSULE;上传时声明,绑定时校验一致性"
+          },
+          {
+            "name": "mimeType",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 image/jpeg|image/png|image/webp"
+          },
+          {
+            "name": "sizeBytes",
+            "type": "integer",
+            "required": true,
+            "bounds": "1..512000(≤500KB,决策 D2);回图响应 Content-Length 同源"
+          },
+          {
+            "name": "data",
+            "type": "binary(MEDIUMBLOB)",
+            "required": true,
+            "bounds": "图片字节本体;不落文件系统不接 OSS(决策 D2);回图端点直出"
+          },
+          {
+            "name": "status",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 ORPHAN(上传后未绑定引用)|ACTIVE(已绑定瞬间或胶囊)|DELETED(宿主删除联动)"
+          },
+          {
+            "name": "momentId",
+            "type": "integer",
+            "required": false,
+            "bounds": "可空;scene=MOMENT 绑定后非空,1:1"
+          },
+          {
+            "name": "capsuleId",
+            "type": "integer",
+            "required": false,
+            "bounds": "可空;scene=CAPSULE 绑定后非空,1:1"
+          },
+          {
+            "name": "createdAt",
+            "type": "string",
+            "required": true,
+            "bounds": "ISO 时间"
+          }
+        ],
+        "computed_view_fields": [
+          {
+            "name": "photoUrl",
+            "type": "string",
+            "bounds": "恒 /api/photos/{photoId} 相对路径(客户端拼域名);OSS 迁移只换实现不改契约(决策 D2)"
+          }
+        ],
+        "states": [
+          "ORPHAN(上传成功未绑定)→ ACTIVE(POST /api/moments 或 POST /api/capsules 绑定);ORPHAN 超 48h 由 GC 清理(防孤儿膨胀,决策 D2)",
+          "ACTIVE → DELETED(瞬间删除/胶囊删除联动,回图 40400);不可逆不复用"
+        ]
+      },
+      {
+        "name": "FamilyMoment",
+        "table": "family_moment",
+        "fields": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "bounds": "主键;时间线 cursor 分页游标"
+          },
+          {
+            "name": "familyId",
+            "type": "integer",
+            "required": true,
+            "bounds": "发布人所属家族(每人限 1 家族既有模型);家族隔离核心——一切读写在本家族维度校验,跨家族 40400 不泄露存在性"
+          },
+          {
+            "name": "userId",
+            "type": "integer",
+            "required": true,
+            "bounds": "发布人=唯一可删人(隐私权红线,决策 D8;户主不可删他人瞬间)"
+          },
+          {
+            "name": "photoId",
+            "type": "string",
+            "required": true,
+            "bounds": "1:1 → PhotoAsset(scene=MOMENT);创建时绑定(照片 ORPHAN→ACTIVE)"
+          },
+          {
+            "name": "text",
+            "type": "string",
+            "required": true,
+            "bounds": "1-60 字;过违禁词表(DayTextLib.FORBIDDEN_WORDS 口径),命中 40000"
+          },
+          {
+            "name": "status",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 ACTIVE|DELETED(软删);DELETED 后时间线/素材池/likedByMe 均不可见,照片联动 DELETED"
+          },
+          {
+            "name": "createdAt",
+            "type": "string",
+            "required": true,
+            "bounds": "ISO 时间;时间线倒序键"
+          }
+        ],
+        "computed_view_fields": [
+          {
+            "name": "likeCount",
+            "type": "integer",
+            "bounds": "该瞬间 MomentLike 行数"
+          },
+          {
+            "name": "likedByMe",
+            "type": "boolean",
+            "bounds": "当前用户是否已点(时间线视角字段)"
+          },
+          {
+            "name": "collectedCount",
+            "type": "integer",
+            "bounds": "被收藏次数(跨家人累计)"
+          },
+          {
+            "name": "collectedByMeDayIds",
+            "type": "array<integer>",
+            "bounds": "当前用户已收藏该瞬间到的日子 id 列表(⭐按钮态)"
+          }
+        ],
+        "states": [
+          "ACTIVE → DELETED(仅本人 DELETE,幂等;联动照片 DELETED+素材池消失);无编辑能力(V1.2 不提供改文字)"
+        ]
+      },
+      {
+        "name": "MomentLike",
+        "table": "moment_like",
+        "fields": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "bounds": "主键"
+          },
+          {
+            "name": "momentId",
+            "type": "integer",
+            "required": true,
+            "bounds": "→ FamilyMoment;momentId+userId 唯一约束=每人对每条限 1 次的物理保证"
+          },
+          {
+            "name": "userId",
+            "type": "integer",
+            "required": true,
+            "bounds": "点赞人(本家族成员)"
+          },
+          {
+            "name": "createdAt",
+            "type": "string",
+            "required": true,
+            "bounds": "ISO 时间"
+          }
+        ],
+        "computed_view_fields": [],
+        "states": [
+          "存在=已点,删行=取消(幂等:POST 重复不增数,DELETE 未点也成功);宿主瞬间软删后行保留但不外显"
+        ]
+      },
+      {
+        "name": "MomentCollect",
+        "table": "moment_collect",
+        "fields": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "bounds": "主键"
+          },
+          {
+            "name": "momentId",
+            "type": "integer",
+            "required": true,
+            "bounds": "→ FamilyMoment(同家族);momentId+dayId+userId 唯一"
+          },
+          {
+            "name": "dayId",
+            "type": "integer",
+            "required": true,
+            "bounds": "→ DayRecord;须 kind=BIRTHDAY 且收藏人可见(决策 D7);生日福卡素材关联"
+          },
+          {
+            "name": "userId",
+            "type": "integer",
+            "required": true,
+            "bounds": "收藏人;素材池含全家人收藏(共享素材),collectedBy 字段展示收藏人"
+          },
+          {
+            "name": "createdAt",
+            "type": "string",
+            "required": true,
+            "bounds": "ISO 时间;素材池排序键"
+          }
+        ],
+        "computed_view_fields": [],
+        "states": [
+          "存在=已收藏,删行=取消(幂等);宿主瞬间软删后行保留但不外显(素材池即时消失)"
+        ]
+      },
+      {
+        "name": "FestivalReservation",
+        "table": "festival_reservation",
+        "fields": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "bounds": "主键"
+          },
+          {
+            "name": "userId",
+            "type": "integer",
+            "required": true,
+            "bounds": "预约人;userId+templateKey 唯一约束(幂等核心)"
+          },
+          {
+            "name": "templateKey",
+            "type": "string",
+            "required": true,
+            "bounds": "引用 TemplateConfig.key(LETTER|DAYS_CARD|CAPSULE|BIRTHDAY_CARD|HARD_FOR_DAD|WEDDING_CARD);不存在的 key 40400;live=false 模板=上线提醒,festivalDate 模板=节日提醒,共用此登记"
+          },
+          {
+            "name": "createdAt",
+            "type": "string",
+            "required": true,
+            "bounds": "ISO 时间=reservedAt;清单按此降序"
+          }
+        ],
+        "computed_view_fields": [],
+        "states": [
+          "存在=已预约,删行=取消(两端幂等);真实推送(上线提醒/节日前 3 天 subscribeMessage.send)属 Stage 9,本实体即其下发名单数据源"
+        ]
+      },
+      {
+        "name": "DayRecord(增量)",
+        "table": "day_record",
+        "fields": [
+          {
+            "name": "year",
+            "type": "integer",
+            "required": false,
+            "bounds": "可空,1900..当年,创建可填/编辑可补(兑现 Change 1 D1);kind=ANNIVERSARY=称谓计算基数;kind=TOGETHER=补录起始年(提供时起始完整日期=year+month/day,togetherDays 随之,缺省仍 createdAt 年兼容既有数据);kind=BIRTHDAY=仅存档不输出年龄(隐私红线);越界 40000"
+          }
+        ],
+        "computed_view_fields": [
+          {
+            "name": "anniversaryNumber",
+            "type": "integer|null",
+            "bounds": "仅 ANNIVERSARY 且 year 非空:N=nextDate 公历年−year(公农历落点换算后取公历年);其余 null"
+          },
+          {
+            "name": "anniversaryTitle",
+            "type": "string|null",
+            "bounds": "N 命中 AnniversaryTitleLib 输出称谓(40=红宝石婚);未收录年份 null(只显 label)"
+          },
+          {
+            "name": "anniversaryLabel",
+            "type": "string|null",
+            "bounds": "「N 周年」文本;详情页与倒计时标签(「距 N 周年还有 X 天」由前端组合 daysUntil)"
+          }
+        ],
+        "states": [
+          "year 可反复修改(PUT 全量覆盖);改 year 后周年字段即时重算;既有无 year 数据完全兼容(三字段 null)"
+        ]
+      },
+      {
+        "name": "MadeCard(增量)",
+        "table": "made_card",
+        "fields": [
+          {
+            "name": "templateKind",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举扩为 LETTER|DAYS_CARD|CAPSULE|BIRTHDAY_CARD(决策 D4:复用存档体系不新建实体)"
+          },
+          {
+            "name": "payload(BIRTHDAY_CARD 形态)",
+            "type": "object(JSON)",
+            "required": true,
+            "bounds": "{dayId(→DayRecord kind=BIRTHDAY),relation(取自该日子),blessingText(1-40 字,过违禁词表),momentIds(array<integer>,1-3 项,生成时须均在该 dayId 收藏池中),styleKey(WARM 霞橘|MINT 青金)}"
+          }
+        ],
+        "computed_view_fields": [],
+        "states": [
+          "BIRTHDAY_CARD 接入既有 ACTIVE→DELETED 软删/shareScene 幂等签发/totalHearts 统计,零新增状态机;生成门控=daysUntil=0(40900,决策 D6);素材瞬间后续被删不影响已存档 payload(momentIds 照存,访客端 photoUrls 解析时对 DELETED 素材跳过)"
+        ]
+      },
+      {
+        "name": "AnniversaryTitleLib(服务端静态称谓库,非数据库实体)",
+        "table": null,
+        "fields": [
+          {
+            "name": "TITLES",
+            "type": "map<integer,string>",
+            "required": true,
+            "bounds": "24 词条:1 纸婚/2 棉婚/3 皮婚/4 花果婚/5 木婚/6 铁婚/7 铜婚/8 陶婚/9 柳婚/10 锡婚/11 钢婚/12 丝婚/13 花边婚/14 象牙婚/15 水晶婚/20 瓷婚/25 银婚/30 珍珠婚/35 珊瑚婚/40 红宝石婚/45 蓝宝石婚/50 金婚/55 翡翠婚/60 钻石婚/70 白金婚;未收录年份无称谓只显「N 周年」"
+          },
+          {
+            "name": "合规断言",
+            "type": "static",
+            "required": true,
+            "bounds": "类加载期过 DayTextLib.FORBIDDEN_WORDS 断言(沿用既有机制;称谓为固定文化词条,预期零冲突)"
+          }
+        ],
+        "computed_view_fields": [],
+        "states": [
+          "非数据库表理由(决策 D5):固定文化词条无运营变更需求,静态库随代码发布,模式对齐 DayTextLib/CardTextLib;周年数由 DayRecordView 计算字段组合输出"
+        ]
+      }
+    ],
+    "error_codes": [
+      {
+        "code": "40000",
+        "meaning": "参数错误(imageBase64 超限/非法 mime、photoId 非本人或 scene 不符或已绑定、瞬间 text 超长或违禁、collect 目标非 BIRTHDAY、momentIds 不在素材池、blessingText 违禁、year 越界)"
+      },
+      {
+        "code": "40100",
+        "meaning": "未登录或身份失效;回图端点 /api/photos/{photoId} 免鉴权不适用"
+      },
+      {
+        "code": "40300",
+        "meaning": "硬频控新增语义:瞬间每日 >10 条/人、照片上传每日 >20 张/人(与既有 AI 生成 >5 次/人同码,按端点区分)"
+      },
+      {
+        "code": "40400",
+        "meaning": "资源不存在/越权(瞬间非本人或非本家族、收藏目标日子不可见、templateKey 无效、photoId 无效或已删;不泄露存在性)"
+      },
+      {
+        "code": "40900",
+        "meaning": "状态冲突新增语义:未加入家族发瞬间、非生日当天生成生日福卡(daysUntil≠0);既有胶囊未到期/访客未解锁语义保留"
+      },
+      {
+        "code": "42900",
+        "meaning": "既有访客点心软频控,本 change 无新增场景,保留枚举"
+      }
+    ]
+  },
+  "document": {
+    "approved": true,
+    "quality_gate": "passed",
+    "quality_gate_detail": {
+      "complexity": "L",
+      "coverage": {
+        "FR-5(接口闭环)": "covered",
+        "FR-13 家人瞬间照片流": "covered",
+        "FR-14 生日福卡表达层": "covered",
+        "FR-15 周年称谓库": "covered",
+        "FR-16 胶囊照片上传(遗留清偿)": "covered"
+      },
+      "risks": [
+        {
+          "id": "R1",
+          "risk": "照片 BLOB 入库使 MySQL 体积/备份/慢查询风险上升(决策 D2 拍板形态的固有代价)",
+          "severity": "medium",
+          "mitigation": "四重限制:≤500KB 上限+每日 ≤20 张(40300)+MEDIUMBLOB 不进查询条件(仅按 photoId 主键取)+ORPHAN 48h GC;photoUrl 相对路径形态为 OSS 迁移预留(契约零改动);部署清单加 DB 体积监控"
+        },
+        {
+          "id": "R2",
+          "risk": "免鉴权回图端点被枚举/外链滥用(<image> 无法带登录头,capability URL 是唯一可行形态)",
+          "severity": "medium",
+          "mitigation": "photoId 16-20 位 base62 高熵随机串不可枚举,威胁模型与 visitor scene 同级(Change 2 R2 已裁定可接受);照片仅在家人瞬间/胶囊/福卡场景流转,无金融医疗敏感内容;Stage 2 可加云托管层限流(不进契约)"
+        },
+        {
+          "id": "R3",
+          "risk": "家人空间家族隔离越权(跨家族读瞬间/点赞/收藏)",
+          "severity": "high",
+          "mitigation": "familyId 维度隔离+40400 不泄露存在性(对齐 DayRecord PRIVATE 口径);集成测试必含跨家族用例(家族 A 成员对家族 B 瞬间 like/collect/delete 全 40400);无家族用户发瞬间 40900、读时间线空列表不报错"
+        },
+        {
+          "id": "R4",
+          "risk": "base64 上传体积膨胀 33%(500KB→约 667KB)触云托管/网关请求体上限",
+          "severity": "medium",
+          "mitigation": "Stage 2 checkpoint 实测 callContainer/网关 body limit;不达标回退 multipart(wx.uploadFile),契约仅 requestBody 编码变化不改字段;上限留 1MB 假设并列入 assumptions 验证项"
+        },
+        {
+          "id": "R5",
+          "risk": "预约登记无真实推送,用户预约后无感知造成预期落差",
+          "severity": "medium",
+          "mitigation": "到期清单 GET /api/festivals/due 驱动前端自显横幅承接可见性(dueSoon 标记);真实下发与 Stage 9 部署联调对齐(拍板边界);模板馆预约按钮文案「上线提醒我」语义由 due 数据兜底展示"
+        },
+        {
+          "id": "R6",
+          "risk": "生日当天门控(daysUntil=0)过严或农历落点判定跨日出错,导致当天无法生成福卡",
+          "severity": "medium",
+          "mitigation": "落点换算复用既有 CalendarConvertCore(农历按月日数值匹配,既有集成测试覆盖);门控为数据语义兜底而非体验主控(前端入口本身只在当天出现);集成测试覆盖公历/农历生日当天、前一天、后一天三用例"
+        },
+        {
+          "id": "R7",
+          "risk": "家人空间页无原型(v2.1 原型未含该页),前端像素级实现无 SSOT",
+          "severity": "low",
+          "mitigation": "交互事实以本 change 输入简报为准(family-banner/member-list/moment-card+两互动),契约与交互不受影响;Stage 2 补视觉稿(与福卡 v2 重新诠释稿一并出)"
+        }
+      ]
+    },
+    "frs": [
+      {
+        "id": "FR-5",
+        "name": "节点日历(接口闭环)",
+        "user_story": "作为想借势节日的用户,我预约未上线的模板或临近的节日,到时间打开小程序就能看到该展示的节日横幅与提醒素材。",
+        "details": [
+          "预约登记 POST /api/festivals/reservations:userId+templateKey 唯一约束,幂等;live=false 模板「上线提醒我」与 festivalDate 节日提醒共用登记;取消 DELETE 幂等(删行)",
+          "到期清单 GET /api/festivals/due:服务端按 TemplateCatalog.festivalDate 算 daysUntil,返回 0-7 天窗口节日项+reservedByMe+dueSoon(预约且 ≤3 天);前端消费自显首页横幅与节点倒计时",
+          "真实 subscribeMessage.send 下发排除(拍板):属部署联调阶段;本 change 交付的预约名单+到期计算即 Stage 9 下发链路输入;订阅登记复用 /api/notify/subscribe 语义(templateId 占位)",
+          "festivalDate 种子为最近未来落点,跨年由运营 SQL 更新,服务端不自动滚动(assumption)"
+        ],
+        "acceptance_criteria": [
+          "预约→重复预约→取消→再取消全程幂等,数据库该组合恒 ≤1 行;取消后 due 清单 reservedByMe=false",
+          "due 清单仅含 daysUntil∈[0,7] 的节日项且按 daysUntil 升序;预约项 daysUntil≤3 时 dueSoon=true",
+          "templateKey 传不存在模板返回 40400;模板馆预约按钮落库为服务端登记(非本地收藏)",
+          "本 change 交付代码中无任何 subscribeMessage.send 调用",
+          "date 参数传过去/未来日期时返回对应窗口清单(调度自测可用)"
+        ]
+      },
+      {
+        "id": "FR-13",
+        "name": "家人瞬间照片流(V1.2)",
+        "user_story": "作为惦记家人的子女,我把一张家常照片配一句话发到家人空间,家人能点「真好」、还能把好照片收藏到某个家人生日里当福卡素材。",
+        "details": [
+          "发布链路:wx.chooseMedia 单张(不批量读相册——隐私最小化)→wx.compressImage ≤500KB→POST /api/photos(scene=MOMENT,每日 ≤20 张 40300)→POST /api/moments(photoId+text 1-60 字过违禁词表;须已加入家族 40900;每日 ≤10 条 40300)",
+          "时间线 GET /api/moments:家族内全部成员 ACTIVE 瞬间,createdAt 倒序 cursor 分页(≤20 条/页);每项含 likeCount/likedByMe/collectedCount/collectedByMeDayIds(当前用户视角);无家族用户空列表不报错",
+          "❤️真好:POST/DELETE /api/moments/{id}/like——momentId+userId 唯一约束=每人对每条限 1 次的物理保证;两端幂等;仅本家族可点",
+          "⭐收藏进日子:POST/DELETE /api/moments/{id}/collect(dayId)——dayId 须 kind=BIRTHDAY 且本人可见(决策 D7,其他 kind 40000);momentId+dayId+userId 唯一;素材池=全家人对该日子的收藏(共享素材)",
+          "删除:DELETE /api/moments/{id} 仅本人(隐私权红线,决策 D8;户主/家人不可删他人,40400);软删+联动照片 DELETED(回图 40400)+素材池消失;幂等;无编辑能力(V1.2 不提供改文字)",
+          "家族隔离:familyId 维度校验,跨家族读写 40400 不泄露存在性"
+        ],
+        "acceptance_criteria": [
+          "发布(照片+一句话)后:本人与同家族家人时间线均可见,其他家族账号不可见(40400)",
+          "同一账号对同一瞬间点赞两次 likeCount 不重复增加;取消后再点恢复 1;A 家人点赞不影响 B 的 likedByMe 视角",
+          "收藏到 BIRTHDAY 日子成功且素材池出现该瞬间(collectedBy=收藏人);收藏到 ANNIVERSARY/TOGETHER 返回 40000;收藏到他人 PRIVATE 日子返回 40400",
+          "本人删除后:时间线(本人+家人侧)消失、照片回图 40400、该瞬间从所有素材池消失;家人 B 与户主删他人瞬间均 40400(隐私红线)",
+          "text 含违禁词返回 40000;当日第 11 条瞬间返回 40300;photoId 非本人/scene 不符/已绑定返回 40000",
+          "未加入家族用户 POST /api/moments 返回 40900;GET 时间线返回空列表"
+        ]
+      },
+      {
+        "id": "FR-14",
+        "name": "生日福卡表达层(V1.2)",
+        "user_story": "作为记得家人生日的用户,生日当天我用家人们收藏的瞬间照片和一句祝福,生成一张福卡发到家庭群里。",
+        "details": [
+          "入口:生日当天(该 BIRTHDAY 日子 daysUntil=0,公农历落点服务端统一判定)首页/日子详情出现「生成生日福卡」;TemplateConfig BIRTHDAY_CARD 模板(live 无 makerPage)当天点击直达制作页,非当天提示「生日当天首页提醒你」(既有语义)",
+          "内容=祝福语点选(前端内置常量,1-40 字,服务端过违禁词表)+素材池选 1-3 张照片(GET /api/days/{id}/moments,全家人收藏共享素材)+样式(WARM 霞橘|MINT 青金)",
+          "存档:POST /api/cards templateKind=BIRTHDAY_CARD(决策 D4 扩枚举复用存档体系),payload={dayId,relation,blessingText,momentIds,styleKey};门控 kind=BIRTHDAY+本人可见+daysUntil=0 否则 40900(决策 D6);momentIds 须均在素材池(40000);当日同 kind 去重前端做(Change 2 D10 既定)",
+          "全链路复用:我的卡片墙封面/再次分享/软删/shareScene 幂等签发/访客 3 心解锁(publicPayload={relation,photoUrls,kicker:'生日快乐'},hiddenContent={blessingText})/totalHearts 进「收到的心」",
+          "视觉:v1 红金 .fcard 不沿用——v2 规范重新诠释(暖白底/墨字/霞橘渐变/青金辅色,祝福语衬线大字位);Stage 2 出视觉稿"
+        ],
+        "acceptance_criteria": [
+          "生日当天生成成功:payload 四要素存档完整、我的卡片墙出现福卡、再次分享出图一致;提前 1 天/次日凌晨生成返回 40900(跨日边界用例)",
+          "非本人可见的日子/BIRTHDAY 之外的 kind 生成返回 40000 或 40400;momentIds 含未收藏到该日子的瞬间返回 40000",
+          "blessingText 含违禁词返回 40000;1-40 字边界校验",
+          "福卡分享 scene→访客扫码:体面内容=relation+照片,点亮 3 心解锁 blessingText;行为与 LETTER/DAYS_CARD/CAPSULE 链路一致",
+          "农历生日当天判定正确(落点换算服务端统一,集成测试覆盖)",
+          "素材瞬间生成后被删:已存档福卡不受影响(访客端 photoUrls 跳过 DELETED 项)"
+        ]
+      },
+      {
+        "id": "FR-15",
+        "name": "周年称谓库(V1.2)",
+        "user_story": "作为记着结婚纪念日的用户,我补上一开始的年份,详情页自动告诉我「这是红宝石婚」,倒计时显示「距 40 周年还有 X 天」。",
+        "details": [
+          "DayRecord 增 year 可选字段(创建可填/编辑可补,1900..当年,越界 40000)——兑现 Change 1 D1 遗留",
+          "ANNIVERSARY:周年数 N=nextDate 公历年−year;N 命中 AnniversaryTitleLib(24 词条静态库,决策 D5)输出 anniversaryTitle(40=红宝石婚),未收录年份只出 anniversaryLabel「N 周年」无称谓;前端组合 daysUntil 显示「距 N 周年还有 X 天」",
+          "TOGETHER:year=补录起始年,提供时起始完整日期=year+month/day,togetherDays 改按此起算(清偿 D1 无法补录历史起始日);缺省仍 createdAt 年,既有数据 togetherDays 不变",
+          "BIRTHDAY:year 仅存档,响应不输出任何年龄派生字段(隐私红线)",
+          "称谓库为服务端静态库(非数据库表):固定文化词条无运营变更需求,类加载期过违禁词断言,模式对齐 DayTextLib"
+        ],
+        "acceptance_criteria": [
+          "编辑 ANNIVERSARY 补 year=1986 且下次落点 2026 → anniversaryNumber=40/anniversaryTitle=红宝石婚/label=40 周年",
+          "year 缺省的 ANNIVERSARY 三周年字段均 null 不报错;year=19 的年份无称谓只显「19 周年」",
+          "TOGETHER 补 year=2019(月日 10-22)→ togetherDays=今天−2019-10-22;未补的既有数据 togetherDays 与改造前一致(回归)",
+          "BIRTHDAY 日子带 year:响应无年龄字段(隐私);year=2050(>当年)/1899 返回 40000",
+          "称谓库 24 词条与违禁词表零冲突(类加载期断言通过)"
+        ]
+      },
+      {
+        "id": "FR-16",
+        "name": "胶囊照片上传(Change 2 D8 遗留清偿)",
+        "user_story": "作为封存时光胶囊的用户,我在里面放一张真实的照片,开箱那天看到的不只是文字。",
+        "details": [
+          "上传 POST /api/photos(base64 JSON,决策 D3):scene=CAPSULE;解码 ≤500KB、mime jpeg/png/webp;每日 ≤20 张(40300);photoId 16-20 位 base62 高熵随机串",
+          "封存 POST /api/capsules 增可选 photoId(本人+scene=CAPSULE 校验,绑定 ORPHAN→ACTIVE);photoUrl 直传旧形态保留兜底兼容(存量);读侧 photoUrl=/api/photos/{photoId} capability 形态;SEALED 态门控不变(不下发 photoUrl/contentText)",
+          "回显 GET /api/photos/{photoId} 免鉴权(决策 D9,<image> 无法带登录头;高熵不可枚举,威胁模型同 visitor scene):直出字节流+Content-Type image/*+长缓存(photoId 内容不可变)",
+          "GC:ORPHAN>48h 清理;瞬间/胶囊删除联动照片 DELETED(回图 40400)",
+          "Change 2 D8 的「照片标记占位交互」替换为真实照片链路;开箱页照片揭示用 <image src=photoUrl> 直挂"
+        ],
+        "acceptance_criteria": [
+          "500KB 内 jpeg 上传成功返回 photoId+photoUrl;512001 字节/非法 mime/坏 base64 返回 40000;当日第 21 张返回 40300",
+          "封存带 photoId 的胶囊:SEALED 态列表/详情/访客端均无 photoUrl 字段(门控回归);OPEN 后 photoUrl 为 /api/photos/{photoId} 且 <image> 可回显",
+          "photoId 直传他人照片或 scene=MOMENT 的照片封存返回 40000",
+          "回图端点无登录态访问 200+正确 Content-Type;伪造/已删 photoId 返回 40400;同一 photoId 两次回图字节一致(不可变)",
+          "胶囊软删后其照片回图 40400;ORPHAN 照片(只传不绑)>48h 后回图 40400(GC 用例)"
+        ]
+      }
+    ],
+    "pages": [
+      {
+        "path": "pages/family/family",
+        "tab": "我的(二级页)",
+        "scope": "新增:家人空间首页=family-banner 家人横幅+member-list 成员列表+moment-card 瞬间照片流(倒序分页)+❤️真好/⭐收藏进日子两互动+发布入口;原型缺失,视觉稿 Stage 2 补"
+      },
+      {
+        "path": "pages/moment-post/moment-post",
+        "tab": "家人空间",
+        "scope": "新增:发瞬间=单张选图→压缩预览→一句话(1-60 字)→上传→发布"
+      },
+      {
+        "path": "pages/birthday-card/birthday-card",
+        "tab": "日子/模板馆",
+        "scope": "新增:生日福卡制作=祝福语点选+素材池选 1-3 张照片+样式(WARM/MINT)+预览生成(生日当天可达)"
+      },
+      {
+        "path": "pages/me/me",
+        "tab": "我的",
+        "scope": "增量:家人空间入口激活(占位→真页);可加我的预约入口"
+      },
+      {
+        "path": "pages/days/days",
+        "tab": "日子(首页)",
+        "scope": "增量:节日横幅接 GET /api/festivals/due(自显换装);生日当天 hero/列表出现福卡入口"
+      },
+      {
+        "path": "pages/day-detail/day-detail",
+        "tab": "日子",
+        "scope": "增量:周年称谓标签(anniversaryTitle/Label,「距 N 周年还有 X 天」);生日当天「生成生日福卡」按钮;编辑页补 year 字段"
+      },
+      {
+        "path": "pages/tpl/tpl",
+        "tab": "模板馆",
+        "scope": "增量:「上线提醒我」按钮接服务端预约登记/取消;BIRTHDAY_CARD 模板当天直达福卡制作"
+      },
+      {
+        "path": "pages/capsule-edit/capsule-edit",
+        "tab": "模板馆",
+        "scope": "增量:真实照片选择上传(替换照片标记占位),封存提交 photoId"
+      },
+      {
+        "path": "pages/capsule-open/capsule-open",
+        "tab": "日子",
+        "scope": "增量:照片揭示用 photoUrl(<image> 直挂 capability 端点)"
+      },
+      {
+        "path": "pages/visitor/visitor 与 pages/mycards/mycards",
+        "tab": "跨页",
+        "scope": "增量:BIRTHDAY_CARD 形态渲染(访客体面内容+解锁祝福;卡片墙福卡封面)"
+      }
+    ],
+    "non_functional": [
+      "合规红线(一票否决):福卡祝福语与瞬间一句话过违禁词表(DayTextLib.FORBIDDEN_WORDS 口径,40000 拒绝);瞬间仅本人可删自己的内容=隐私权红线(户主/家人不可删他人);隐私最小化——单张选图不批量读相册、BIRTHDAY 的 year 不输出年龄、照片仅家人可见场景流转、deviceId/照片不关联真实身份上报;分享奖励制非强制;提醒相关频控口径不变",
+      "性能:照片前端压缩 ≤500KB 再上传;回图端点直出字节流无 JSON 包装+长缓存;时间线分页 ≤20 条/页;家人空间首屏 ≤1.5s(对齐既有预算)",
+      "存储:MySQL MEDIUMBLOB+ORPHAN 48h GC+主键-only 取图;photoUrl 相对路径形态为 OSS 迁移预留(契约字段不变)",
+      "防滥用:瞬间每日 ≤10 条/人、照片每日 ≤20 张/人(40300);photoId/scene 高熵不可枚举",
+      "视觉规范 v2:福卡与家人空间全部页面沿用 v2 色板(暖白底/墨字/霞橘渐变/青金辅色),不沿用 v1 红金 .fcard;动画 ≤2.5s 且可跳过;prefers-reduced-motion 全量降级;家人页视觉稿 Stage 2 出"
+    ]
+  }
+}
