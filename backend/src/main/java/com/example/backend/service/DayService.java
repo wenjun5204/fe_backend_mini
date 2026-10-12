@@ -210,8 +210,10 @@ public class DayService {
                 throw ApiException.param("请您把日子的月和日选好");
             }
             validateRange(request.getMonth(), request.getDay());
-            // TOGETHER 起始年取 createdAt:显式传月日时须在该年真实存在(如 2 月 29)
-            int startYear = editing == null ? LocalDate.now().getYear() : editing.getCreatedAt().getYear();
+            // 起始年:传 year 用补录年,否则取 createdAt 年(编辑缺省保留原值);
+            // 显式传月日时须在起始年真实存在(如 2 月 29 配平年 → 40000),防读取期构造 LocalDate 炸历史行
+            int startYear = request.getYear() != null ? request.getYear()
+                    : (editing == null ? LocalDate.now().getYear() : editing.getCreatedAt().getYear());
             try {
                 LocalDate.of(startYear, request.getMonth(), request.getDay());
             } catch (java.time.DateTimeException e) {
@@ -241,6 +243,11 @@ public class DayService {
                 || request.getRelation().trim().length() > 12) {
             throw ApiException.param("请您把称呼填写完整");
         }
+        // year 可空;非空校验 1900..当年(全 kind 统一;BIRTHDAY 仅存档不算年龄)
+        if (request.getYear() != null
+                && (request.getYear() < 1900 || request.getYear() > LocalDate.now().getYear())) {
+            throw ApiException.param("年份要在 1900 年到现在之间");
+        }
     }
 
     private void validateRange(Integer month, Integer day) {
@@ -258,6 +265,8 @@ public class DayService {
                 ? CalendarType.SOLAR : request.getCalendarType());
         record.setMonth(monthDay[0]);
         record.setDay(monthDay[1]);
+        // year 全量覆盖:不传即清空(改后周年/相伴字段即时重算)
+        record.setYear(request.getYear());
         // 无家族用户传 FAMILY:服务端降级 PRIVATE(有响应可见性可解释,非报错)
         DayVisibility visibility = request.getVisibility();
         if (visibility == DayVisibility.FAMILY && me == null) {
@@ -319,8 +328,9 @@ public class DayService {
     }
 
     private LocalDate togetherStart(DayRecordEntity record) {
-        // 决策 D1:TOGETHER 完整起始日 = createdAt 的年 + month/day(冗余列仅展示用)
-        return LocalDate.of(record.getCreatedAt().getYear(), record.getMonth(), record.getDay());
+        // 补录起始年优先(year+month/day);缺省仍 createdAt 年 + month/day(既有数据兼容)
+        int startYear = record.getYear() != null ? record.getYear() : record.getCreatedAt().getYear();
+        return LocalDate.of(startYear, record.getMonth(), record.getDay());
     }
 
     private DayRecord toDto(DayRecordEntity record, Long userId) {
@@ -336,6 +346,7 @@ public class DayService {
         dto.setVisibility(record.getVisibility());
         dto.setCreatedAt(record.getCreatedAt().toString());
         dto.setReminders(readReminders(record.getId(), userId));
+        dto.setYear(record.getYear());
         if (record.getKind() == DayKind.TOGETHER) {
             long togetherDays = Math.max(1, ChronoUnit.DAYS.between(togetherStart(record), LocalDate.now()));
             dto.setTogetherDays((int) togetherDays);
@@ -345,6 +356,16 @@ public class DayService {
             dto.setNextDate(next.toString());
             dto.setNextDateLunarText(CalendarConvertCore.lunarText(next));
             dto.setDaysUntil((int) ChronoUnit.DAYS.between(LocalDate.now(), next));
+            // 周年称谓:仅 ANNIVERSARY 且 year 非空输出(N=nextDate 公历年−year);
+            // BIRTHDAY 仅存档回显 year,不输出任何年龄派生字段(隐私红线)
+            if (record.getKind() == DayKind.ANNIVERSARY && record.getYear() != null) {
+                int n = next.getYear() - record.getYear();
+                dto.setAnniversaryNumber(n);
+                String title = AnniversaryTitleLib.title(n);
+                dto.setAnniversaryTitle(title);
+                String label = "结婚 " + n + " 周年";
+                dto.setAnniversaryLabel(title == null ? label : label + " · " + title);
+            }
         }
         return dto;
     }

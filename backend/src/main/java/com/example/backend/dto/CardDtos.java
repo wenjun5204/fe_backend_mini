@@ -37,8 +37,8 @@ public final class CardDtos {
     /** 段落角色:OPENING 开头/STORY 故事段/CLOSING 收尾段 */
     public enum LetterSegmentRole { OPENING, STORY, CLOSING }
 
-    /** 卡片类型(可制作的三类) */
-    public enum CardKind { LETTER, DAYS_CARD, CAPSULE }
+    /** 卡片类型(可制作的四类):BIRTHDAY_CARD 生日福卡(v1.8 新增,随时可生成,收藏瞬间照片做封面) */
+    public enum CardKind { LETTER, DAYS_CARD, CAPSULE, BIRTHDAY_CARD }
 
     /** 卡片状态:ACTIVE 正常/DELETED 软删 */
     public enum CardStatus { ACTIVE, DELETED }
@@ -190,6 +190,12 @@ public final class CardDtos {
         private String coverHint;
         private String openDate;
         private String type;
+        /** 仅 BIRTHDAY_CARD:关联 DayRecord id(须 kind=BIRTHDAY 且本人可见) */
+        private Long dayId;
+        /** 仅 BIRTHDAY_CARD:祝福语 1-40 字(过违禁词表) */
+        private String blessingText;
+        /** 仅 BIRTHDAY_CARD:选中的瞬间 id 1-3 项(须在该 dayId 收藏素材池中) */
+        private List<Long> momentIds;
 
         public String getRecipient() { return recipient; }
         public void setRecipient(String recipient) { this.recipient = recipient; }
@@ -213,6 +219,12 @@ public final class CardDtos {
         public void setOpenDate(String openDate) { this.openDate = openDate; }
         public String getType() { return type; }
         public void setType(String type) { this.type = type; }
+        public Long getDayId() { return dayId; }
+        public void setDayId(Long dayId) { this.dayId = dayId; }
+        public String getBlessingText() { return blessingText; }
+        public void setBlessingText(String blessingText) { this.blessingText = blessingText; }
+        public List<Long> getMomentIds() { return momentIds; }
+        public void setMomentIds(List<Long> momentIds) { this.momentIds = momentIds; }
     }
 
     public static class CreateCardRequest {

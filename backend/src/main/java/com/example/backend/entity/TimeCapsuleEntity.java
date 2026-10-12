@@ -47,6 +47,10 @@ public class TimeCapsuleEntity {
     @Column(length = 255)
     private String photoUrl;
 
+    /** 关联照片 id(v1.8 新增,封存时绑定,优先于 photoUrl 直传旧形态;门控同 contentText) */
+    @Column(name = "photo_id", length = 20)
+    private String photoId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 8)
     private CapsuleStatus status;
@@ -74,6 +78,8 @@ public class TimeCapsuleEntity {
     public void setContentText(String contentText) { this.contentText = contentText; }
     public String getPhotoUrl() { return photoUrl; }
     public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
+    public String getPhotoId() { return photoId; }
+    public void setPhotoId(String photoId) { this.photoId = photoId; }
     public CapsuleStatus getStatus() { return status; }
     public void setStatus(CapsuleStatus status) { this.status = status; }
     public LocalDateTime getSealedAt() { return sealedAt; }

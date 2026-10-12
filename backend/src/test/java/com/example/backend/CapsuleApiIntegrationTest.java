@@ -236,7 +236,91 @@ class CapsuleApiIntegrationTest {
         assertErrorCode(get("/api/capsules", null), "40100");
     }
 
+    // ---- photoId 组(v1.8.0,对齐 v2.2-family-design.md §3 用例 28-29) ----
+
+    @Test
+    void 封存带photoId_SEALED不下发_开箱后回显capability路径且回图成功() {
+        String token = login();
+        String photoId = uploadPhoto(token, "CAPSULE");
+        Map<String, Object> payload = capsulePayload("GAOKAO_SCORE_DAY", LocalDate.now().plusDays(3).toString());
+        payload.put("photoId", photoId);
+        long id = post("/api/capsules", token, payload).get("id").asLong();
+
+        // SEALED 态:详情/列表均不下发 photoUrl/photoId(内容门控,字段缺失非置空)
+        JsonNode detail = get("/api/capsules/" + id, token);
+        assertFalse(detail.has("photoUrl"), "SEALED 详情不下发 photoUrl");
+        assertFalse(detail.has("photoId"), "SEALED 详情不下发 photoId");
+        JsonNode list = get("/api/capsules", token);
+        assertFalse(list.get("items").get(0).has("photoUrl"), "SEALED 列表不下发 photoUrl");
+        assertFalse(list.get("items").get(0).has("photoId"));
+
+        // 构造到期后开箱:photoUrl 恒 /api/photos/{photoId} 且回图成功
+        TimeCapsuleEntity capsule = capsuleRepository.findById(id).orElseThrow();
+        capsule.setOpenDate(LocalDate.now().minusDays(1));
+        capsuleRepository.saveAndFlush(capsule);
+        JsonNode opened = post("/api/capsules/" + id + "/open", token, null);
+        assertEquals(photoId, opened.get("photoId").asText());
+        assertEquals("/api/photos/" + photoId, opened.get("photoUrl").asText());
+        assertEquals(200, getPhotoBytes(photoId));
+    }
+
+    @Test
+    void photoId越权与scene不符与已绑定均40000_photoUrl直传旧形态兼容回显() {
+        String token = login();
+        String other = login();
+        // 他人上传 → 40000
+        String otherPhoto = uploadPhoto(other, "CAPSULE");
+        Map<String, Object> foreign = capsulePayload("ONE_YEAR_LATER", null);
+        foreign.put("photoId", otherPhoto);
+        assertErrorCode(post("/api/capsules", token, foreign), "40000");
+        // scene=MOMENT → 40000
+        String momentPhoto = uploadPhoto(token, "MOMENT");
+        Map<String, Object> wrongScene = capsulePayload("ONE_YEAR_LATER", null);
+        wrongScene.put("photoId", momentPhoto);
+        assertErrorCode(post("/api/capsules", token, wrongScene), "40000");
+        // 已绑定(先封存过) → 40000
+        String boundPhoto = uploadPhoto(token, "CAPSULE");
+        Map<String, Object> first = capsulePayload("ONE_YEAR_LATER", null);
+        first.put("photoId", boundPhoto);
+        assertFalse(post("/api/capsules", token, first).has("code"));
+        Map<String, Object> again = capsulePayload("ONE_YEAR_LATER", null);
+        again.put("photoId", boundPhoto);
+        assertErrorCode(post("/api/capsules", token, again), "40000");
+
+        // photoUrl 直传旧形态(无 photoId):开箱后兼容回显旧值
+        Map<String, Object> legacy = capsulePayload("GAOKAO_SCORE_DAY", LocalDate.now().plusDays(1).toString());
+        legacy.put("photoUrl", "https://cdn.example.test/old.png");
+        long legacyId = post("/api/capsules", token, legacy).get("id").asLong();
+        TimeCapsuleEntity legacyCapsule = capsuleRepository.findById(legacyId).orElseThrow();
+        legacyCapsule.setOpenDate(LocalDate.now().minusDays(1));
+        capsuleRepository.saveAndFlush(legacyCapsule);
+        JsonNode legacyOpened = post("/api/capsules/" + legacyId + "/open", token, null);
+        assertTrue(legacyOpened.get("photoId").isNull(), "未传 photoId 为 null");
+        assertEquals("https://cdn.example.test/old.png", legacyOpened.get("photoUrl").asText(),
+                "photoId 不存在时回显封存时直传旧值");
+    }
+
     // ---- 私有工具 ----
+
+    /** 8 字节 JPEG 头载荷(嗅探通过) */
+    private byte[] jpegBytes() {
+        byte[] data = new byte[8];
+        data[0] = (byte) 0xFF;
+        data[1] = (byte) 0xD8;
+        data[2] = (byte) 0xFF;
+        return data;
+    }
+
+    private String uploadPhoto(String token, String scene) {
+        return post("/api/photos", token, Map.of(
+                "imageBase64", java.util.Base64.getEncoder().encodeToString(jpegBytes()),
+                "scene", scene)).get("photoId").asText();
+    }
+
+    private int getPhotoBytes(String photoId) {
+        return rest.get().uri("/api/photos/" + photoId).retrieve().toEntity(byte[].class)
+                .getStatusCode().value();
+    }
 
     /** 直写一枚 SEALED 胶囊(openDate=今天,供到期/排序用例构造) */
     private TimeCapsuleEntity newCapsule(String token) {

@@ -27,6 +27,8 @@ public final class CapsuleDtos {
         private String coverHint;
         private String contentText;
         private String photoUrl;
+        /** v1.8 新增:须为本人上传且 scene=CAPSULE 的未绑定照片(ORPHAN),传入则优先于 photoUrl 直传旧形态 */
+        private String photoId;
 
         public String getType() { return type; }
         public void setType(String type) { this.type = type; }
@@ -40,9 +42,11 @@ public final class CapsuleDtos {
         public void setContentText(String contentText) { this.contentText = contentText; }
         public String getPhotoUrl() { return photoUrl; }
         public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
+        public String getPhotoId() { return photoId; }
+        public void setPhotoId(String photoId) { this.photoId = photoId; }
     }
 
-    /** SEALED 态省略 contentText/photoUrl/openedAt 键(契约:内容门控,不下发而非置空) */
+    /** SEALED 态省略 contentText/photoUrl/photoId/openedAt 键(契约:内容门控,不下发而非置空) */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class TimeCapsule {
         private Long id;
@@ -52,6 +56,7 @@ public final class CapsuleDtos {
         private String coverHint;
         private String contentText;
         private String photoUrl;
+        private String photoId;
         private CapsuleStatus status;
         private String sealedAt;
         private String openedAt;
@@ -72,6 +77,8 @@ public final class CapsuleDtos {
         public void setContentText(String contentText) { this.contentText = contentText; }
         public String getPhotoUrl() { return photoUrl; }
         public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
+        public String getPhotoId() { return photoId; }
+        public void setPhotoId(String photoId) { this.photoId = photoId; }
         public CapsuleStatus getStatus() { return status; }
         public void setStatus(CapsuleStatus status) { this.status = status; }
         public String getSealedAt() { return sealedAt; }
@@ -103,6 +110,7 @@ public final class CapsuleDtos {
         private String coverHint;
         private String contentText;
         private String photoUrl;
+        private String photoId;
         private String status;
         private String sealedAt;
         private String openedAt;
@@ -122,6 +130,8 @@ public final class CapsuleDtos {
         public void setContentText(String contentText) { this.contentText = contentText; }
         public String getPhotoUrl() { return photoUrl; }
         public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
+        public String getPhotoId() { return photoId; }
+        public void setPhotoId(String photoId) { this.photoId = photoId; }
         public String getStatus() { return status; }
         public void setStatus(String status) { this.status = status; }
         public String getSealedAt() { return sealedAt; }

@@ -460,6 +460,185 @@ class CardsApiIntegrationTest {
         assertErrorCode(post("/api/cards/" + id + "/share", token, null), "40400");
     }
 
+    // ---- BIRTHDAY_CARD 组(v1.8.0,对齐 v2.2-family-design.md §3 用例 24-26) ----
+
+    @Test
+    void 生日福卡主路径_relation以日子服务端覆盖_存档回显_卡片墙可见() {
+        String owner = family()[0];
+        long dayId = createBirthdayDay(owner, "妈妈");
+        long momentId = publishMoment(owner, "妈妈在院子里晒被子");
+        collectMoment(owner, momentId, dayId);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("dayId", dayId);
+        payload.put("relation", "我想传一个会被覆盖的称呼");
+        payload.put("blessingText", "祝妈妈生日快乐，天天都有好心情。");
+        payload.put("momentIds", List.of(momentId));
+        payload.put("styleKey", "WARM");
+        JsonNode card = post("/api/cards", owner, cardRequest("BIRTHDAY_CARD", payload));
+        assertEquals("BIRTHDAY_CARD", card.get("templateKind").asText());
+        JsonNode archived = card.get("payload");
+        assertEquals(dayId, archived.get("dayId").asLong());
+        assertEquals("妈妈", archived.get("relation").asText(), "relation 服务端以 DayRecord 覆盖(单一权威)");
+        assertEquals("祝妈妈生日快乐，天天都有好心情。", archived.get("blessingText").asText());
+        assertEquals(momentId, archived.get("momentIds").get(0).asLong());
+        assertEquals("WARM", archived.get("styleKey").asText());
+
+        // 卡片墙可见
+        JsonNode wall = get("/api/cards", owner);
+        assertEquals(1, wall.get("total").asInt());
+        assertEquals("BIRTHDAY_CARD", wall.get("items").get(0).get("templateKind").asText());
+        // 详情回显同 payload
+        JsonNode detail = get("/api/cards/" + card.get("id").asLong(), owner);
+        assertEquals(dayId, detail.get("payload").get("dayId").asLong());
+    }
+
+    /** 裁定修订回归:生日福卡随时可生成,无「当天 daysUntil=0」门控(提前/过后均 200) */
+    @Test
+    void 非生日当天生成福卡200_提前与过后均无40900门控() {
+        String owner = family()[0];
+        // 落点提前 1 天的生日日子
+        long aheadDay = createBirthdayDayAt(owner, "爸爸", LocalDate.now().plusDays(1));
+        long momentId = publishMoment(owner, "提前做的福卡");
+        collectMoment(owner, momentId, aheadDay);
+        JsonNode ahead = post("/api/cards", owner, birthdayCardRequest(aheadDay, "提前一天也 200",
+                List.of(momentId), "MINT"));
+        assertEquals("BIRTHDAY_CARD", ahead.get("templateKind").asText(), "非当天生成无 409 门控");
+
+        // 落点已过(昨天)的生日日子同样可生成
+        long pastDay = createBirthdayDayAt(owner, "老伴", LocalDate.now().minusDays(1));
+        long pastMoment = publishMoment(owner, "过后补做也 200");
+        collectMoment(owner, pastMoment, pastDay);
+        JsonNode past = post("/api/cards", owner, birthdayCardRequest(pastDay, "生日过后补做",
+                List.of(pastMoment), "WARM"));
+        assertEquals("BIRTHDAY_CARD", past.get("templateKind").asText());
+    }
+
+    @Test
+    void 生日福卡校验矩阵_素材池外瞬间与越界日子与foreign字段均40000() {
+        String owner = family()[0];
+        long dayId = createBirthdayDay(owner, "妈妈");
+        long inPoolMoment = publishMoment(owner, "已在素材池");
+        collectMoment(owner, inPoolMoment, dayId);
+        long outPoolMoment = publishMoment(owner, "不在素材池的瞬间");
+        long anniversaryDay = createDay(owner, "ANNIVERSARY", "FAMILY");
+
+        // momentIds 含非该日子素材池瞬间 → 40000
+        assertErrorCode(post("/api/cards", owner,
+                birthdayCardRequest(dayId, "素材校验", List.of(outPoolMoment), "WARM")), "40000");
+        assertErrorCode(post("/api/cards", owner,
+                birthdayCardRequest(dayId, "素材校验", List.of(inPoolMoment, outPoolMoment), "MINT")), "40000");
+        // blessingText 41 字 / 违禁词 → 40000
+        assertErrorCode(post("/api/cards", owner,
+                birthdayCardRequest(dayId, "福".repeat(41), List.of(inPoolMoment), "WARM")), "40000");
+        assertErrorCode(post("/api/cards", owner,
+                birthdayCardRequest(dayId, "祝你运势亨通", List.of(inPoolMoment), "WARM")), "40000");
+        // dayId 指向 ANNIVERSARY 日子 → 40000;dayId 他人 PRIVATE 不可见 → 40000(统一 400 口径)
+        assertErrorCode(post("/api/cards", owner,
+                birthdayCardRequest(anniversaryDay, "日子类型不对", List.of(), "WARM")), "40000");
+        long strangerDay = createDay(login(), "BIRTHDAY", "PRIVATE");
+        assertErrorCode(post("/api/cards", owner,
+                birthdayCardRequest(strangerDay, "别人的日子", List.of(), "WARM")), "40000");
+        // dayId 缺失 → 40000;styleKey=SUNSET → 40000;momentIds 空 → 40000
+        assertErrorCode(post("/api/cards", owner,
+                birthdayCardRequest(null, "没选日子", List.of(inPoolMoment), "WARM")), "40000");
+        assertErrorCode(post("/api/cards", owner,
+                birthdayCardRequest(dayId, "样式不合法", List.of(inPoolMoment), "SUNSET")), "40000");
+        assertErrorCode(post("/api/cards", owner,
+                birthdayCardRequest(dayId, "一张照片都不选", List.of(), "WARM")), "40000");
+        // LETTER 带 dayId → 40000(foreign field)
+        Map<String, Object> letter = letterPayload("妈，见字如面。", "这些年您总给我留饭。");
+        letter.put("dayId", dayId);
+        assertErrorCode(post("/api/cards", owner, cardRequest("LETTER", letter)), "40000");
+        // BIRTHDAY_CARD 带不适用字段 → 40000
+        Map<String, Object> foreign = birthdayCardRequest(dayId, "带不适用字段", List.of(inPoolMoment), "MINT");
+        foreign.put("signText", "—— 你的孩子");
+        assertErrorCode(post("/api/cards", owner, cardRequest("BIRTHDAY_CARD", foreign)), "40000");
+        // 素材瞬间被删后 payload 不追溯(已存档卡仍回显,生成时才校验)
+        long deletedPoolDay = createBirthdayDay(owner, "外婆");
+        long doomedMoment = publishMoment(owner, "将被删除的素材");
+        collectMoment(owner, doomedMoment, deletedPoolDay);
+        JsonNode card = post("/api/cards", owner,
+                birthdayCardRequest(deletedPoolDay, "存档不追溯", List.of(doomedMoment), "WARM"));
+        delete("/api/moments/" + doomedMoment, owner);
+        JsonNode detail = get("/api/cards/" + card.get("id").asLong(), owner);
+        assertEquals(doomedMoment, detail.get("payload").get("momentIds").get(0).asLong(),
+                "已存档 payload 不随素材删除追溯");
+    }
+
+    // ---- 私有工具(BIRTHDAY_CARD 组) ----
+
+    /** 独立用户建一个家:返回 [户主token, 成员token] */
+    private String[] family() {
+        String owner = login();
+        String inviteCode = post("/api/family", owner, Map.of("name", "念家时")).get("inviteCode").asText();
+        String member = login();
+        post("/api/family/join", member, Map.of("inviteCode", inviteCode));
+        return new String[] {owner, member};
+    }
+
+    private byte[] jpegBytes() {
+        byte[] data = new byte[8];
+        data[0] = (byte) 0xFF;
+        data[1] = (byte) 0xD8;
+        data[2] = (byte) 0xFF;
+        return data;
+    }
+
+    private String uploadPhoto(String token) {
+        return post("/api/photos", token, Map.of(
+                "imageBase64", java.util.Base64.getEncoder().encodeToString(jpegBytes()),
+                "scene", "MOMENT")).get("photoId").asText();
+    }
+
+    private long publishMoment(String token, String text) {
+        return post("/api/moments", token,
+                Map.of("photoId", uploadPhoto(token), "text", text)).get("id").asLong();
+    }
+
+    private void collectMoment(String token, long momentId, long dayId) {
+        post("/api/moments/" + momentId + "/collect", token, Map.of("dayId", dayId));
+    }
+
+    private long createBirthdayDay(String token, String relation) {
+        return createBirthdayDayAt(token, relation, LocalDate.now().plusDays(30));
+    }
+
+    private long createBirthdayDayAt(String token, String relation, LocalDate monthDay) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("relation", relation);
+        payload.put("kind", "BIRTHDAY");
+        payload.put("calendarType", "SOLAR");
+        payload.put("month", monthDay.getMonthValue());
+        payload.put("day", monthDay.getDayOfMonth());
+        payload.put("visibility", "PRIVATE");
+        return post("/api/days", token, payload).get("id").asLong();
+    }
+
+    private Map<String, Object> birthdayCardRequest(Long dayId, String blessingText,
+                                                    List<Long> momentIds, String styleKey) {
+        Map<String, Object> payload = new HashMap<>();
+        if (dayId != null) {
+            payload.put("dayId", dayId);
+        }
+        payload.put("relation", "妈妈");
+        payload.put("blessingText", blessingText);
+        payload.put("momentIds", momentIds);
+        payload.put("styleKey", styleKey);
+        return cardRequest("BIRTHDAY_CARD", payload);
+    }
+
+    private long createDay(String token, String kind, String visibility) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("relation", "老战友");
+        payload.put("kind", kind);
+        payload.put("calendarType", "SOLAR");
+        payload.put("month", 7);
+        payload.put("day", 1);
+        payload.put("visibility", visibility);
+        return post("/api/days", token, payload).get("id").asLong();
+    }
+
     // ---- 私有工具 ----
 
     private long createTogetherDay(String token, String relation) {

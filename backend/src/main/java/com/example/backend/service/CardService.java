@@ -16,11 +16,18 @@ import com.example.backend.dto.CardDtos.TemplateCategory;
 import com.example.backend.dto.CardDtos.TemplateInfo;
 import com.example.backend.dto.CardDtos.TemplateListResponse;
 import com.example.backend.dto.DayDtos.DayKind;
+import com.example.backend.dto.DayDtos.DayVisibility;
 import com.example.backend.entity.DayRecordEntity;
+import com.example.backend.entity.FamilyMemberEntity;
+import com.example.backend.entity.FamilyMomentEntity;
+import com.example.backend.entity.FamilyMomentEntity.MomentStatus;
 import com.example.backend.entity.MadeCardEntity;
 import com.example.backend.entity.TimeCapsuleEntity;
 import com.example.backend.repository.DayRecordRepository;
+import com.example.backend.repository.FamilyMemberRepository;
+import com.example.backend.repository.FamilyMomentRepository;
 import com.example.backend.repository.MadeCardRepository;
+import com.example.backend.repository.MomentCollectRepository;
 import com.example.backend.repository.TimeCapsuleRepository;
 import com.example.backend.repository.VisitorUnlockRepository;
 import com.example.backend.dto.CapsuleDtos.CapsuleStatus;
@@ -61,6 +68,9 @@ public class CardService {
     private final TimeCapsuleRepository capsuleRepository;
     private final DayRecordRepository dayRecordRepository;
     private final VisitorUnlockRepository visitorUnlockRepository;
+    private final FamilyMemberRepository familyMemberRepository;
+    private final FamilyMomentRepository momentRepository;
+    private final MomentCollectRepository momentCollectRepository;
     private final AiLetterService aiLetterService;
     private final ObjectMapper mapper;
 
@@ -68,12 +78,18 @@ public class CardService {
                        TimeCapsuleRepository capsuleRepository,
                        DayRecordRepository dayRecordRepository,
                        VisitorUnlockRepository visitorUnlockRepository,
+                       FamilyMemberRepository familyMemberRepository,
+                       FamilyMomentRepository momentRepository,
+                       MomentCollectRepository momentCollectRepository,
                        AiLetterService aiLetterService,
                        ObjectMapper mapper) {
         this.cardRepository = cardRepository;
         this.capsuleRepository = capsuleRepository;
         this.dayRecordRepository = dayRecordRepository;
         this.visitorUnlockRepository = visitorUnlockRepository;
+        this.familyMemberRepository = familyMemberRepository;
+        this.momentRepository = momentRepository;
+        this.momentCollectRepository = momentCollectRepository;
         this.aiLetterService = aiLetterService;
         this.mapper = mapper;
     }
@@ -158,6 +174,7 @@ public class CardService {
             case LETTER -> applyLetter(card, payload, request);
             case DAYS_CARD -> applyDaysCard(card, payload, request, userId);
             case CAPSULE -> applyCapsule(card, payload, request, userId);
+            case BIRTHDAY_CARD -> applyBirthdayCard(card, payload, request, userId);
         }
         cardRepository.save(card);
         return toDto(card, 0);
@@ -196,7 +213,8 @@ public class CardService {
         }
         // 不适用字段出现即 40000;styleKey 忽略请求值强制 NIGHT
         rejectForeignFields(payload, request, "LETTER",
-                List.of("relation", "startDate", "coverHint", "openDate", "type"));
+                List.of("relation", "startDate", "coverHint", "openDate", "type",
+                        "dayId", "blessingText", "momentIds"));
         payload.setRecipient(payload.getRecipient().trim());
         for (int i = 0; i < payload.getParagraphs().size(); i++) {
             payload.getParagraphs().set(i, payload.getParagraphs().get(i).trim());
@@ -215,7 +233,8 @@ public class CardService {
             throw ApiException.param("请您选一个卡片样式");
         }
         rejectForeignFields(payload, request, "DAYS_CARD",
-                List.of("recipient", "tone", "paragraphs", "signText", "coverHint", "openDate", "type"));
+                List.of("recipient", "tone", "paragraphs", "signText", "coverHint", "openDate", "type",
+                        "dayId", "blessingText", "momentIds"));
         LocalDate startDate = parseDate(payload.getStartDate());
         if (startDate.isAfter(LocalDate.now())) {
             throw ApiException.param("起始日不能是未来");
@@ -247,7 +266,8 @@ public class CardService {
             throw ApiException.param("请您先封存一个时光胶囊");
         }
         rejectForeignFields(payload, request, "CAPSULE",
-                List.of("recipient", "tone", "paragraphs", "signText", "relation", "startDate"));
+                List.of("recipient", "tone", "paragraphs", "signText", "relation", "startDate",
+                        "dayId", "blessingText", "momentIds"));
         TimeCapsuleEntity capsule = capsuleRepository.findById(capsuleId).orElse(null);
         if (capsule == null || !capsule.getUserId().equals(userId)
                 || capsule.getStatus() != CapsuleStatus.SEALED) {
@@ -261,6 +281,67 @@ public class CardService {
         payload.setStyleKey("MINT");
         card.setCapsuleId(capsule.getId());
         card.setPayload(serialize(payload));
+    }
+
+    /**
+     * BIRTHDAY_CARD(生日福卡,裁定修订:随时可生成,无「当天 daysUntil=0」门控):
+     * dayId 须本人可见的 BIRTHDAY 日子(与 days 组 40400 口径不同,此处统一 40000,以契约 400 description 为准);
+     * relation 服务端以 DayRecord 覆盖(单一权威,同 CAPSULE 的实体覆盖模式)。
+     */
+    private void applyBirthdayCard(MadeCardEntity card, CardPayload payload, CreateCardRequest request,
+                                   Long userId) {
+        if (payload.getDayId() == null) {
+            throw ApiException.param("请先选择一个生日日子");
+        }
+        if (payload.getStyleKey() == null
+                || !List.of("WARM", "MINT").contains(payload.getStyleKey())) {
+            throw ApiException.param("请您选一个卡片样式");
+        }
+        rejectForeignFields(payload, request, "BIRTHDAY_CARD",
+                List.of("recipient", "tone", "paragraphs", "signText", "startDate",
+                        "coverHint", "openDate", "type"));
+        DayRecordEntity record = dayRecordRepository.findById(payload.getDayId()).orElse(null);
+        if (record == null || !canViewDay(record, userId)) {
+            throw ApiException.param("请先选择一个生日日子");
+        }
+        if (record.getKind() != DayKind.BIRTHDAY) {
+            throw ApiException.param("生日福卡要选生日日子");
+        }
+        String blessing = payload.getBlessingText() == null ? "" : payload.getBlessingText().trim();
+        if (blessing.length() < 1 || blessing.length() > 40) {
+            throw ApiException.param("祝福语要在 1 到 40 字之间");
+        }
+        if (DayTextLib.FORBIDDEN_WORDS.stream().anyMatch(blessing::contains)) {
+            throw ApiException.param("这句祝福里有不合适的词，麻烦改一改");
+        }
+        List<Long> momentIds = payload.getMomentIds();
+        if (momentIds == null || momentIds.isEmpty() || momentIds.size() > 3
+                || momentIds.stream().distinct().count() != momentIds.size()) {
+            throw ApiException.param("照片要在日子的收藏里选 1 到 3 张");
+        }
+        for (Long momentId : momentIds) {
+            FamilyMomentEntity moment = momentRepository.findById(momentId).orElse(null);
+            // 须在该 dayId 收藏素材池中且瞬间仍 ACTIVE 属同一家族(契约 40000)
+            if (moment == null || moment.getStatus() != MomentStatus.ACTIVE
+                    || !momentCollectRepository.existsByMomentIdAndDayId(momentId, record.getId())
+                    || !moment.getFamilyId().equals(record.getFamilyId())) {
+                throw ApiException.param("所选照片要在日子的收藏里");
+            }
+        }
+        payload.setRelation(record.getRelation());
+        payload.setBlessingText(blessing);
+        card.setPayload(serialize(payload));
+    }
+
+    /** 本人可见口径与 days 同源:本人创建 OR 同家族 FAMILY(BIRTHDAY_CARD 统一 40000,不泄露存在性仍不回显任何数据) */
+    private boolean canViewDay(DayRecordEntity record, Long userId) {
+        if (record.getUserId().equals(userId)) {
+            return true;
+        }
+        Long familyId = familyMemberRepository.findByUserId(userId)
+                .map(FamilyMemberEntity::getFamilyId).orElse(null);
+        return familyId != null && familyId.equals(record.getFamilyId())
+                && record.getVisibility() == DayVisibility.FAMILY;
     }
 
     /** 不适用字段出现(如 LETTER 带 capsuleId)→ 40000;top-level 关联字段按 kind 校验 */
@@ -293,6 +374,9 @@ public class CardService {
             case "tone" -> payload.getTone();
             case "paragraphs" -> payload.getParagraphs();
             case "signText" -> payload.getSignText();
+            case "dayId" -> payload.getDayId();
+            case "blessingText" -> payload.getBlessingText();
+            case "momentIds" -> payload.getMomentIds();
             default -> null;
         };
     }

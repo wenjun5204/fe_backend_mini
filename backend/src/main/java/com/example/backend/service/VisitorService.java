@@ -11,9 +11,12 @@ import com.example.backend.dto.VisitorDtos.UnlockedContentResponse;
 import com.example.backend.dto.VisitorDtos.VisitorCardView;
 import com.example.backend.dto.VisitorDtos.VisitorPublicPayload;
 import com.example.backend.dto.VisitorDtos.VisitorUnlockState;
+import com.example.backend.entity.FamilyMomentEntity;
+import com.example.backend.entity.FamilyMomentEntity.MomentStatus;
 import com.example.backend.entity.MadeCardEntity;
 import com.example.backend.entity.TimeCapsuleEntity;
 import com.example.backend.entity.VisitorUnlockEntity;
+import com.example.backend.repository.FamilyMomentRepository;
 import com.example.backend.repository.MadeCardRepository;
 import com.example.backend.repository.TimeCapsuleRepository;
 import com.example.backend.repository.VisitorUnlockRepository;
@@ -50,6 +53,7 @@ public class VisitorService {
     private final MadeCardRepository cardRepository;
     private final TimeCapsuleRepository capsuleRepository;
     private final VisitorUnlockRepository visitorUnlockRepository;
+    private final FamilyMomentRepository momentRepository;
     private final ObjectMapper mapper;
 
     /** 软频控滑动窗口:key=deviceId:cardId → 时间戳队列(仅内存,重启即清) */
@@ -58,10 +62,12 @@ public class VisitorService {
     public VisitorService(MadeCardRepository cardRepository,
                           TimeCapsuleRepository capsuleRepository,
                           VisitorUnlockRepository visitorUnlockRepository,
+                          FamilyMomentRepository momentRepository,
                           ObjectMapper mapper) {
         this.cardRepository = cardRepository;
         this.capsuleRepository = capsuleRepository;
         this.visitorUnlockRepository = visitorUnlockRepository;
+        this.momentRepository = momentRepository;
         this.mapper = mapper;
     }
 
@@ -108,6 +114,22 @@ public class VisitorService {
                 view.setOpenDate(capsule.getOpenDate().toString());
                 long days = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), capsule.getOpenDate());
                 view.setDaysUntilOpen((int) Math.max(0, days));
+                view.setStyleKey(payload.getStyleKey());
+            }
+            case BIRTHDAY_CARD -> {
+                view.setRelation(payload.getRelation());
+                // 契约:逐 momentId 取 ACTIVE 瞬间的 capability 路径,已删素材跳过(≤3)
+                List<String> photoUrls = new java.util.ArrayList<>();
+                if (payload.getMomentIds() != null) {
+                    for (Long momentId : payload.getMomentIds()) {
+                        FamilyMomentEntity moment = momentRepository.findById(momentId).orElse(null);
+                        if (moment != null && moment.getStatus() == MomentStatus.ACTIVE) {
+                            photoUrls.add("/api/photos/" + moment.getPhotoId());
+                        }
+                    }
+                }
+                view.setPhotoUrls(photoUrls);
+                view.setKicker(CardTextLib.BIRTHDAY_KICKER);
                 view.setStyleKey(payload.getStyleKey());
             }
         }
@@ -195,6 +217,7 @@ public class VisitorService {
             }
             case DAYS_CARD -> hidden.setHiddenLine(
                     CardTextLib.hiddenLine(CardService.daysTogether(payload.getStartDate())));
+            case BIRTHDAY_CARD -> hidden.setBlessingText(payload.getBlessingText());
             case CAPSULE -> {
                 TimeCapsuleEntity capsule = capsuleRepository.findById(card.getCapsuleId())
                         .orElseThrow(() -> ApiException.notFound("没有找到这张卡片"));
@@ -204,7 +227,8 @@ public class VisitorService {
                     hidden.setPhotoUrl(null);
                 } else {
                     hidden.setContentText(capsule.getContentText());
-                    hidden.setPhotoUrl(capsule.getPhotoUrl());
+                    // photoId 优先公式与本人端同源(存在时恒 /api/photos/{photoId})
+                    hidden.setPhotoUrl(CapsuleService.photoUrl(capsule));
                 }
             }
         }
