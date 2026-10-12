@@ -1,0 +1,188 @@
+/* 生日福卡生成页,视觉对齐原型 .gen-head/.counter-preview(暖橘 WARM 令牌,v1.8.0) */
+.bg-warm {
+  background: linear-gradient(135deg, #ff9a56, #ff5e3a);
+}
+
+.page-bce {
+  padding-bottom: 220rpx;
+}
+
+/* ===== 头部(暖橘渐变) ===== */
+.gen-head {
+  margin: 8rpx 32rpx 0;
+  border-radius: var(--radius);
+  padding: 40rpx;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.g-kicker {
+  font-size: 24rpx;
+  font-weight: 800;
+  letter-spacing: 2rpx;
+  opacity: 0.85;
+}
+.g-title {
+  font-size: 46rpx;
+  font-weight: 900;
+  margin-top: 10rpx;
+}
+.g-sub {
+  font-size: 26rpx;
+  margin-top: 12rpx;
+  opacity: 0.88;
+  line-height: 1.5;
+}
+
+.form-block {
+  padding: 12rpx 32rpx 0;
+}
+
+.bce-loading {
+  padding: 80rpx 0;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 30rpx;
+}
+
+/* ===== 祝福语输入 ===== */
+.bless-input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 150rpx;
+  margin-top: 24rpx;
+  padding: 28rpx 32rpx;
+  border: 3rpx solid var(--line);
+  border-radius: 26rpx;
+  background: var(--card);
+  font-size: 32rpx;
+  color: var(--ink);
+  line-height: 1.6;
+}
+.bless-count {
+  margin-top: 10rpx;
+  text-align: right;
+  font-size: 24rpx;
+  color: var(--ink-3);
+}
+
+/* ===== 素材池九宫格 ===== */
+.photo-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+.pg-cell {
+  position: relative;
+  width: 212rpx;
+  height: 212rpx;
+  border-radius: 24rpx;
+  overflow: hidden;
+  border: 4rpx solid transparent;
+  box-sizing: border-box;
+}
+.pg-cell.on {
+  border-color: var(--rose);
+}
+.pg-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.pg-check {
+  position: absolute;
+  right: 12rpx;
+  bottom: 12rpx;
+  width: 48rpx;
+  height: 48rpx;
+  line-height: 48rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: rgba(28, 28, 40, 0.5);
+  color: #fff;
+  font-size: 28rpx;
+  font-weight: 900;
+}
+.pg-cell.on .pg-check {
+  background: var(--rose);
+}
+
+/* ===== 空态(素材池为空) ===== */
+.bce-empty {
+  margin: 40rpx 48rpx 16rpx;
+  text-align: center;
+  padding: 68rpx 32rpx 60rpx;
+  background: var(--card);
+  border: 3rpx dashed #e3ddce;
+  border-radius: 52rpx;
+}
+.es-art {
+  font-size: 110rpx;
+}
+.es-title {
+  margin-top: 28rpx;
+  font-size: 38rpx;
+  font-weight: 900;
+  color: var(--ink);
+}
+.es-sub {
+  margin-top: 14rpx;
+  font-size: 28rpx;
+  color: var(--ink-3);
+  line-height: 1.7;
+}
+.es-go {
+  margin-top: 44rpx;
+}
+
+/* ===== 暖橘实时预览卡 ===== */
+.bce-preview {
+  margin: 32rpx 32rpx 0;
+  padding: 44rpx 36rpx 48rpx;
+  border-radius: 36rpx;
+  background: linear-gradient(135deg, #ff9a56, #ff5e3a);
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 20rpx 48rpx rgba(255, 122, 89, 0.35);
+}
+.bp-kicker {
+  font-size: 24rpx;
+  letter-spacing: 4rpx;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 800;
+}
+.bp-title {
+  font-size: 88rpx;
+  font-weight: 900;
+  margin-top: 16rpx;
+  letter-spacing: 6rpx;
+}
+.bp-sub {
+  font-size: 32rpx;
+  margin-top: 12rpx;
+  color: rgba(255, 255, 255, 0.92);
+}
+.bp-photo {
+  width: 420rpx;
+  height: 420rpx;
+  margin-top: 36rpx;
+  border-radius: 28rpx;
+  border: 6rpx solid rgba(255, 255, 255, 0.92);
+}
+.bp-text {
+  margin-top: 36rpx;
+  font-size: 32rpx;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.95);
+  word-break: break-all;
+}
+
+/* ===== 底部主按钮(吸底,safe-area 兜底) ===== */
+.next-row {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
+  background: rgba(251, 250, 247, 0.92);
+}

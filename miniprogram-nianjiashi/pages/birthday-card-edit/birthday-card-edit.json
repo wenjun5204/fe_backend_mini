@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "生日福卡",
+  "backgroundColor": "#fbfaf7",
+  "usingComponents": {
+    "poster": "/components/poster/poster"
+  }
+}

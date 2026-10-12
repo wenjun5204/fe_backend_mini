@@ -13,6 +13,7 @@ const SHARE_TITLES = {
   LETTER: '这封信写给你，点开看完好吗',
   DAYS_CARD: '我们在的第 N 天，想给你看看',
   CAPSULE: '给你埋了一个时光胶囊，到日子开箱',
+  BIRTHDAY_CARD: '家人过生日，做了张福卡送祝福',
 }
 
 function posterPageShare() {

@@ -12,7 +12,9 @@
     "pages/capsule-edit/capsule-edit",
     "pages/capsule-open/capsule-open",
     "pages/mycards/mycards",
-    "pages/visitor/visitor"
+    "pages/visitor/visitor",
+    "pages/family/family",
+    "pages/birthday-card-edit/birthday-card-edit"
   ],
   "window": {
     "navigationBarTitleText": "念家时",
@@ -29,6 +31,10 @@
       {
         "pagePath": "pages/days/days",
         "text": "日子"
+      },
+      {
+        "pagePath": "pages/family/family",
+        "text": "家人"
       },
       {
         "pagePath": "pages/tpl/tpl",

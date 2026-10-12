@@ -1,0 +1,118 @@
+<view class="page-family">
+  <!-- 加载失败重试(请求失败 ≠ 没有家) -->
+  <view wx:if="{{loadFailed}}" class="retry-card">
+    <view class="es-art">☁️</view>
+    <view class="es-title">没刷新出来</view>
+    <view class="es-sub">网络开小差了，再试一次就好</view>
+    <button class="es-chip primary" bindtap="retry">再试一次</button>
+  </view>
+
+  <!-- 未加入家族:建家 / 进家引导卡 -->
+  <view wx:elif="{{notJoined}}" class="empty-state">
+    <view class="es-art">🏡</view>
+    <view class="es-title">建一个家，和家人分享瞬间</view>
+    <view class="es-sub">拍一张照片、说一句话</view>
+    <view class="es-sub">家人们都能看见，还能收进生日的日子</view>
+    <view class="es-chips">
+      <button class="es-chip primary" bindtap="goCreateFamily">🏠 创建一个家</button>
+      <button class="es-chip" bindtap="goJoinFamily">🔑 有邀请码，进家</button>
+    </view>
+    <view class="es-note">💚 一个家最多 8 位家人</view>
+  </view>
+
+  <block wx:else>
+    <!-- 家人横幅卡:家族名 + 成员数 + 记的日子数 -->
+    <view class="family-banner">
+      <view class="fb-ava">🏡</view>
+      <view class="fb-info">
+        <view class="fb-title">{{familyName}}</view>
+        <view class="fb-sub">{{memberCount}} 位家人 · 记了 {{dayCount}} 个日子</view>
+      </view>
+    </view>
+
+    <!-- 成员列表 -->
+    <view class="section-head">
+      <text class="section-title">家人们</text>
+    </view>
+    <scroll-view class="member-list" scroll-x enable-flex>
+      <view wx:for="{{members}}" wx:key="userId" class="member-chip">
+        <view class="mb-ava {{item.gradClass}}">
+          <image wx:if="{{item.avatarUrl}}" class="mb-img" src="{{item.avatarUrl}}" mode="aspectFill" />
+          <text wx:else>{{item.avatarText}}</text>
+        </view>
+        <view class="mb-name">{{item.nickname}}</view>
+        <view class="mb-role">{{item.roleText}}</view>
+      </view>
+    </scroll-view>
+
+    <!-- 家人瞬间时间线 -->
+    <view class="section-head">
+      <text class="section-title">家人瞬间</text>
+    </view>
+    <view wx:if="{{!moments.length && !loading}}" class="moment-empty">
+      <view class="es-art">📷</view>
+      <view class="es-title">还没有家人瞬间</view>
+      <view class="es-sub">拍下此刻的家，发给家人们看看</view>
+    </view>
+    <view class="moment-feed">
+      <view wx:for="{{moments}}" wx:key="id" class="moment-card">
+        <view class="mc-head">
+          <view class="mc-ava {{item.gradClass || 'grad-hot'}}">{{item.avatarText}}</view>
+          <view class="mc-meta">
+            <view class="mc-name">{{item.author}}</view>
+            <view class="mc-time">{{item.time}}</view>
+          </view>
+          <view wx:if="{{item.mine}}" class="mc-del" catchtap="onDelete" data-id="{{item.id}}">删除</view>
+        </view>
+        <image
+          class="mc-photo"
+          src="{{item.photo}}"
+          mode="widthFix"
+          bindtap="onPreview"
+          data-src="{{item.photo}}"
+        />
+        <view class="mc-text">{{item.text}}</view>
+        <view class="mc-actions">
+          <view class="mc-act {{item.likedByMe ? 'on' : ''}}" catchtap="onLike" data-id="{{item.id}}">
+            <text class="mc-ico">❤️</text>真好 {{item.likeCount}}
+          </view>
+          <view class="mc-act {{item.collected ? 'on' : ''}}" catchtap="onCollect" data-id="{{item.id}}">
+            <text class="mc-ico">⭐</text>收藏进日子 {{item.collectedCount}}
+          </view>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{loadingMore}}" class="feed-more">正在加载…</view>
+    <view wx:if="{{noMore && moments.length}}" class="feed-end">· 到底啦，都在这儿了 ·</view>
+
+    <!-- 发一条瞬间 -->
+    <view class="add-fab-row">
+      <button class="btn-main add-fab" bindtap="openComposer">＋ 发一条瞬间</button>
+    </view>
+  </block>
+
+  <!-- 发瞬间弹层 -->
+  <view class="sheet-mask {{composer.show ? 'show' : ''}}" bindtap="closeComposer"></view>
+  <view class="sheet {{composer.show ? 'show' : ''}}">
+    <view class="sheet-title">发一条瞬间</view>
+    <view class="cp-photo" bindtap="pickPhoto">
+      <image wx:if="{{composer.photo}}" class="cp-img" src="{{composer.photo}}" mode="aspectFill" />
+      <view wx:else class="cp-add">📷 选一张照片</view>
+      <view wx:if="{{composer.photo}}" class="cp-change">换一张</view>
+    </view>
+    <view class="f-label">说一句此刻的家<text class="f-small">（1-60 字）</text></view>
+    <textarea
+      class="cp-text"
+      placeholder="比如：今天包了饺子，都吃光了"
+      maxlength="60"
+      value="{{composer.text}}"
+      bindinput="onTextInput"
+      disabled="{{composer.publishing}}"
+    ></textarea>
+    <view class="cp-count">{{composer.text.length}}/60</view>
+    <button class="btn-main cp-publish" bindtap="publish">
+      {{composer.publishing ? '发布中…' : '发布给家人'}}
+    </button>
+    <button class="sheet-cancel" bindtap="closeComposer">先不发了</button>
+  </view>
+</view>

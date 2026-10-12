@@ -1,6 +1,6 @@
 /* 我的卡片页,视觉对齐原型 .mc-grid/.mc-card/.mc-empty(双列卡片墙) */
 
-/* 迷你成品卡三套渐变(霞橘/深夜星河/青金) */
+/* 迷你成品卡四套渐变(霞橘/深夜星河/青金/福卡暖橘,v1.8.0) */
 .bg-night {
   background: var(--grad-night);
 }
@@ -9,6 +9,9 @@
 }
 .bg-mint {
   background: var(--grad-teal);
+}
+.bg-warm {
+  background: linear-gradient(135deg, #ff9a56, #ff5e3a);
 }
 
 .page-mycards {

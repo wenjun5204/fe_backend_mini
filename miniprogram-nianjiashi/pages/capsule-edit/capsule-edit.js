@@ -2,11 +2,13 @@
  * 时光胶囊封存:类型二选(SELF/PARTNER)+ 开箱规则 chips(ONE_YEAR_LATER 服务端算日期,
  * 其余 GAOKAO_SCORE_DAY/WEDDING_ANNIVERSARY/BABY_18 需选未来日期——契约 CapsuleOpenRule)
  * + 封面提示语 chips + 内容文本域(20-200 字,契约后端上限 500,前端收紧)
- * + 可选照片(wx.chooseMedia 1 张,仅本地预览标记——后端无上传端点,photoUrl 不提交)
+ * + 可选照片(utils/photo.chooseAndUploadPhoto('CAPSULE')真实上传 → photoId,
+ * v1.8.0 契约 CapsuleCreateRequest +photoId;上传失败/用户取消 → 纯文字封存继续,不强阻断)
  *
- * 「✨ 封存并生成邀请函」:POST /api/capsules → 成功后提示订阅(wx.requestSubscribeMessage
- * 静默失败不阻断)→ POST /api/cards(kind=CAPSULE,payload 仅 capsuleId,coverHint/openDate/
- * type 服务端以胶囊实体为权威回填)→ POST share → poster 海报舞台
+ * 「✨ 封存并生成邀请函」:POST /api/capsules(带 photoId)→ 成功后提示订阅(
+ * wx.requestSubscribeMessage 静默失败不阻断)→ POST /api/cards(kind=CAPSULE,
+ * payload 仅 capsuleId,coverHint/openDate/type 服务端以胶囊实体为权威回填)
+ * → POST share → poster 海报舞台
  */
 const api = require('../../utils/api-cards')
 const {
@@ -18,6 +20,7 @@ const {
   pad2,
   markMadeToday,
 } = require('../../utils/cards-data')
+const { chooseAndUploadPhoto } = require('../../utils/photo')
 const { posterPageShare } = require('../../utils/share')
 
 /** 内容长度:前端收紧 20-200 字(契约后端 1-500,产品口径 20-200) */
@@ -44,6 +47,7 @@ Page(
         contentText: '',
         contentLen: 0,
         photoPath: '',
+        photoId: '',
         previewKicker: '',
         previewPending: false,
         previewDays: 0,
@@ -95,23 +99,21 @@ Page(
         this.setData({ contentText: text, contentLen: text.length })
       },
 
-      /** 可选照片:仅本机预览标记(后端无上传端点,photoUrl 不提交,开箱日以文字为主) */
+      /**
+       * 可选照片:真实上传链路(chooseAndUploadPhoto('CAPSULE') → photoId 随胶囊封存)
+       * 用户取消/上传失败(40300 每日 20 张/超限)→ 保持原状,纯文字封存继续,不强阻断
+       */
       choosePhoto() {
-        wx.chooseMedia({
-          count: 1,
-          mediaType: ['image'],
-          success: (res) => {
-            const file = res.tempFiles && res.tempFiles[0]
-            if (file && file.tempFilePath) {
-              this.setData({ photoPath: file.tempFilePath })
-            }
-          },
-          fail: () => {},
+        chooseAndUploadPhoto(500, 'CAPSULE').then((res) => {
+          if (!res) {
+            return
+          }
+          this.setData({ photoPath: res.url, photoId: res.photoId })
         })
       },
 
       removePhoto() {
-        this.setData({ photoPath: '' })
+        this.setData({ photoPath: '', photoId: '' })
       },
 
       /** 深色预览:开箱倒计时(一年后=今天+365;其余按所选日期) */
@@ -158,6 +160,9 @@ Page(
           openRule: this.data.openRule,
           coverHint: this.data.coverHint,
           contentText: content,
+        }
+        if (this.data.photoId) {
+          body.photoId = this.data.photoId
         }
         if (rule && rule.needDate) {
           body.openDate = this.data.openDate

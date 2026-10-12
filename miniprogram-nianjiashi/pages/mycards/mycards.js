@@ -38,6 +38,11 @@ function cardView(c) {
     emoji = '⏳'
     big = String(daysUntilOf(p.openDate))
     unit = ' 天后'
+  } else if (kind === 'BIRTHDAY_CARD') {
+    // 福卡:暖橘渐变 +「生日快乐」kicker + 关系副题(v1.8.0;海报形态见 components/poster)
+    bg = p.styleKey === 'MINT' ? 'bg-mint' : 'bg-warm'
+    kicker = 'HAPPY BIRTHDAY 🎂'
+    emoji = '🎂'
   } else {
     bg = 'bg-night'
     kicker = 'A LETTER TO MOM'

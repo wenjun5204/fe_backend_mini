@@ -71,7 +71,9 @@ function viewOf(r) {
   return {
     id: r.id,
     userId: r.userId,
+    kind: r.kind,
     isTogether,
+    isBirthday: r.kind === 'BIRTHDAY',
     isToday,
     daysUntil: r.daysUntil,
     togetherDays: r.togetherDays,
