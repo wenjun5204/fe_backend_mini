@@ -1,6 +1,7 @@
 package com.example.backend.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * 照片管道契约模型(v1.8.0 tag=photos):base64 JSON 上传与免鉴权回图。
@@ -52,7 +53,9 @@ public final class PhotoDtos {
 
     public static class PhotoUploadRequest {
         private String imageBase64;
+        @Schema(implementation = PhotoScene.class, description = "上传场景;非法值由服务端校验回 40000")
         private String scene;
+        @Schema(implementation = PhotoMimeType.class, description = "图片 mime;非法值由服务端校验回 40000")
         private String mimeType;
 
         public String getImageBase64() { return imageBase64; }
