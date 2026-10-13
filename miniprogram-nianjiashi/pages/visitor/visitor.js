@@ -60,6 +60,20 @@ function posterViewOf(view) {
       sub2: '开箱日 ' + fmtDot(p.openDate),
     }
   }
+  if (view.templateKind === 'BIRTHDAY_CARD') {
+    // 体面内容=关系+收藏的瞬间照片;祝福语点亮 3 心解锁(契约 v1.8.0)
+    return {
+      bg: p.styleKey === 'NIGHT' ? 'bg-night' : p.styleKey === 'MINT' ? 'bg-mint' : 'bg-sunset',
+      kicker: p.kicker || '生日快乐',
+      emoji: '🎂',
+      big: '',
+      unit: '',
+      title: (p.relation || '家人') + '的生日福卡',
+      sub: 'TA 把家人收藏的美好瞬间放进了这张卡',
+      sub2: '',
+      photos: p.photoUrls || [],
+    }
+  }
   // LETTER(深夜星河):标题+第一段即公开钩子,全文留作解锁
   return {
     bg: 'bg-night',
@@ -99,6 +113,7 @@ Page({
     hiddenLine: '',
     hiddenText: '',
     hiddenPhoto: '',
+    hiddenBlessing: '',
     cta: null,
   },
 
@@ -212,6 +227,7 @@ Page({
           hiddenLine: h.hiddenLine || '',
           hiddenText: h.contentText || '',
           hiddenPhoto: h.photoUrl || '',
+          hiddenBlessing: h.blessingText || '',
           cta: (res && res.ctaCopy) || null,
         })
       })

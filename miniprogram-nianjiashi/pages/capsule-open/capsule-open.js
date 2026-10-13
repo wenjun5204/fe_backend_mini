@@ -4,6 +4,8 @@
  * - SEALED:摇晃胶囊(弹性动画)+「到日子了/还没到」状态(openDate 与今天比较,
  *   以服务端 dueNow/daysUntilOpen 为准),未到时按钮禁用+倒计时文案
  * - OPENED:内容已对本人常开,直接展示揭示态(不播动画)
+ *   照片位优先 photoId/photoUrl(v1.8.0 封存时可上传照片,utils/photo.photoUrl 转绝对地址);
+ *   没放照片保持「那年封存时没有放照片」占位。
  *
  * 「开启胶囊」→ 摇晃动画(0.9s)→ POST /api/capsules/{id}/open → 爆开消散(0.5s)
  * → 信件+照片位揭示(pop 0.5s)→ 双 CTA;总预算 ≤2.5s
@@ -17,6 +19,7 @@ const api = require('../../utils/api-cards')
 const { fmtDot } = require('../../utils/cards-data')
 const { posterPageShare } = require('../../utils/share')
 const { getUser } = require('../../utils/request')
+const { photoUrl } = require('../../utils/photo')
 
 /** 摇晃时长(2 次 coshake 0.45s),到点后再发起开箱请求 */
 const SHAKE_MS = 900
@@ -79,7 +82,7 @@ Page(
         if (c.status === 'OPENED') {
           this.reveal({
             contentText: c.contentText || '',
-            photoUrl: c.photoUrl || '',
+            photoUrl: this.absPhoto(c.photoUrl || c.photoId),
             sealedDot,
           })
           return
@@ -102,6 +105,11 @@ Page(
         return Math.max(0, Math.round((t - s) / 86400000))
       },
 
+      /** photoUrl(相对 /api/photos/{id} 或 photoId)→ <image> 可用绝对地址;无照片返回 ''(保持占位) */
+      absPhoto(idOrPath) {
+        return idOrPath ? photoUrl(idOrPath) : ''
+      },
+
       /** 「开启胶囊」:摇晃 → POST open → 爆开 → 揭示 */
       openBox() {
         if (this.data.opening || this.data.opened) return
@@ -115,7 +123,7 @@ Page(
               setTimeout(() => {
                 this.reveal({
                   contentText: (res && res.contentText) || '',
-                  photoUrl: (res && res.photoUrl) || '',
+                  photoUrl: this.absPhoto((res && (res.photoUrl || res.photoId)) || ''),
                   sealedDot: this.data.sealedDot,
                 })
               }, BURST_MS)

@@ -60,7 +60,12 @@ const CAPSULE_OPEN_RULES = [
 /** 封面提示语预置(开箱人第一眼;契约 coverHint 1-40 字,可自定义) */
 const COVER_HINTS = ['"一年不见，你还挺想我吧"', '"立个 flag 在这儿了"', '"到日子了，回来开箱"']
 
-const KIND_LABEL = { LETTER: '给妈妈的感恩信', DAYS_CARD: '相伴天数卡', CAPSULE: '时光胶囊邀请函' }
+const KIND_LABEL = {
+  LETTER: '给妈妈的感恩信',
+  DAYS_CARD: '相伴天数卡',
+  CAPSULE: '时光胶囊邀请函',
+  BIRTHDAY_CARD: '生日福卡',
+}
 
 /** 模板分类 Tab(契约 TemplateCategory) */
 const CATEGORY_TABS = [
@@ -81,11 +86,12 @@ const BG_CLASS = {
   WEDDING: 'bg-wedding',
 }
 
-/** canvas 海报三套渐变起止色(与 app.wxss 令牌同表;750×1200 画布) */
+/** canvas 海报渐变起止色(与 app.wxss 令牌同表;750×1200 画布;WARM=福卡暖橘,v1.8.0) */
 const POSTER_GRADS = {
   SUNSET: ['#ff7a59', '#ff4d6d'],
   NIGHT: ['#23233a', '#12121f'],
   MINT: ['#2bc4b4', '#0f9d8e'],
+  WARM: ['#ff9a56', '#ff5e3a'],
 }
 
 // ===== 小工具 =====

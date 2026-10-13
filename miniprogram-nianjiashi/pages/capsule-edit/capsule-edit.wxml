@@ -62,7 +62,7 @@
       bindinput="onContent"
     ></textarea>
 
-    <view class="f-label">放一张照片 <text class="f-small">可选，仅本机留作纪念</text></view>
+    <view class="f-label">放一张照片 <text class="f-small">可选，随胶囊一起封存，开箱那天看到</text></view>
     <view class="photo-row">
       <view wx:if="{{photoPath}}" class="photo-box">
         <image class="photo-img" src="{{photoPath}}" mode="aspectFill" />

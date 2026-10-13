@@ -195,6 +195,9 @@
 }
 .cd-dot.b { background: var(--violet); }
 .cd-dot.a { background: var(--teal); }
+/* 家人创建的日子(本人可见):同色空心 */
+.cd-dot.b-hollow { background: transparent; border: 3rpx solid var(--violet); }
+.cd-dot.a-hollow { background: transparent; border: 3rpx solid var(--teal); }
 .cal-summary {
   margin: 0 32rpx 24rpx;
   padding: 24rpx 28rpx;

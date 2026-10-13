@@ -1,14 +1,18 @@
 /**
  * 海报舞台组件:canvas 2d 绘制 750×1200 成品图 + 底部分享面板
- * 三套样式对齐原型 POSTERS:LETTER 深夜星河 / DAYS_CARD 霞橘(按 styleKey) / CAPSULE 青金
+ * 四套样式对齐原型 POSTERS:LETTER 深夜星河 / DAYS_CARD 霞橘(按 styleKey) /
+ * CAPSULE 青金 / BIRTHDAY_CARD 暖橘(v1.8.0,照片 1-3 张取第一张居中绘制)
  *
  * 页面用法:
  *   <poster id="poster" bindsharecfg="onShareCfg" />
  *   const poster = this.selectComponent('#poster')
  *   poster.draw(card, sceneInfo)
- *     card      = { templateKind: 'LETTER'|'DAYS_CARD'|'CAPSULE', payload: {...} } (POST /api/cards 的回显)
+ *     card      = { templateKind: 'LETTER'|'DAYS_CARD'|'CAPSULE'|'BIRTHDAY_CARD', payload: {...} } (POST /api/cards 的回显)
  *     sceneInfo = { scene, pagePath } (POST /api/cards/{id}/share 的回显;缺失时 QR 用兜底内容)
  *   poster.saveToAlbum()  // 保存图片(按钮与外部均可调)
+ * BIRTHDAY_CARD 的照片:payload 只存 momentIds,组件经 GET /api/days/{id}/moments
+ * 解析首个瞬间 → photoUrl() 绝对地址 → canvas.createImage 拉图绘制(素材已删/拉取失败
+ * 降级为蛋糕 emoji 占位,不阻断海报)。
  * 绘制完成后触发 sharecfg 事件({pagePath,title,imageUrl})——页面混入 utils/share.js
  * 的 posterPageShare() 后,微信好友转发卡片即带 scene 直达访客落地页。
  */
@@ -21,6 +25,8 @@ const {
   QR_HOST,
 } = require('../../utils/cards-data')
 const { SHARE_TITLES } = require('../../utils/share')
+const fam = require('../../utils/api-family')
+const { photoUrl } = require('../../utils/photo')
 const qrcode = require('../../utils/qrcode')
 
 /** 设计稿宽高(canvas 逻辑坐标系,wxss 侧 600rpx×960rpx 等比展示) */
@@ -55,6 +61,27 @@ function viewOf(card) {
       body: p.coverHint ? [p.coverHint] : [],
       sign: '',
       foot: '亲手开启',
+    }
+  }
+  if (kind === 'BIRTHDAY_CARD') {
+    const mids = p.momentIds || []
+    return {
+      grad: POSTER_GRADS[p.styleKey === 'MINT' ? 'MINT' : 'WARM'],
+      kicker: '🎂 HAPPY BIRTHDAY',
+      title: '生日快乐',
+      titleFont: 'bold 88px sans-serif',
+      titleY: 250,
+      sub: p.relation ? '祝' + p.relation : '',
+      subY: 312,
+      emoji: '🎂',
+      emojiY: 600,
+      bigNum: '',
+      bigUnit: '',
+      body: p.blessingText ? [p.blessingText] : [],
+      bodyY: 915,
+      sign: '',
+      foot: '亲手做的生日福卡',
+      photoQuery: p.dayId && mids.length ? { dayId: p.dayId, momentIds: mids } : null,
     }
   }
   // LETTER(深夜星河):信文居中,取前 3 段加引号,落款右下
@@ -142,14 +169,52 @@ Component({
         // 清画布(同一组件多次绘制)
         ctx.clearRect(0, 0, DW, DH)
         this._canvas = canvas
-        this.paint(ctx, view)
-        this.setData({ drawing: false })
-        this.emitShareCfg()
+        // BIRTHDAY_CARD 照片异步解析(素材池→绝对地址→canvas 拉图);其余 kind 直绘
+        this.preparePhoto(canvas, view).then((v) => {
+          this.paint(ctx, v)
+          this.setData({ drawing: false })
+          this.emitShareCfg()
+        })
       })
     },
 
+    /**
+     * BIRTHDAY_CARD 照片预备:payload.momentIds 经素材池解析首个瞬间地址,
+     * canvas.createImage 拉图(3s 超时);任一环节失败 resolve 原 view(emoji 占位降级)。
+     */
+    preparePhoto(canvas, view) {
+      const q = view.photoQuery
+      if (!q) {
+        return Promise.resolve(view)
+      }
+      return fam
+        .listDayMoments(q.dayId)
+        .then((res) => {
+          const items = (res && res.items) || []
+          const hit = items.filter((m) => q.momentIds.indexOf(m.id) >= 0)[0]
+          if (!hit) {
+            return view
+          }
+          const url = photoUrl(hit.photoUrl || hit.photoId)
+          return new Promise((resolve) => {
+            const img = canvas.createImage()
+            const timer = setTimeout(() => resolve(view), 3000)
+            img.onload = () => {
+              clearTimeout(timer)
+              resolve(Object.assign({}, view, { photoImg: img }))
+            }
+            img.onerror = () => {
+              clearTimeout(timer)
+              resolve(view)
+            }
+            img.src = url
+          })
+        })
+        .catch(() => view)
+    },
+
     paint(ctx, view) {
-      // ===== 背景渐变(三套样式) =====
+      // ===== 背景渐变(四套样式) =====
       const grad = ctx.createLinearGradient(0, 0, DW, DH)
       grad.addColorStop(0, view.grad[0])
       grad.addColorStop(1, view.grad[1])
@@ -165,13 +230,31 @@ Component({
       ctx.fillText(view.kicker, DW / 2, 128)
 
       ctx.fillStyle = '#ffffff'
-      ctx.font = 'bold 54px sans-serif'
-      ctx.fillText(view.title, DW / 2, 198)
+      ctx.font = view.titleFont || 'bold 54px sans-serif'
+      ctx.fillText(view.title, DW / 2, view.titleY || 198)
 
-      // ===== 中部内容(emoji / 天数大字) =====
-      if (view.emoji) {
+      // ===== 副题(BIRTHDAY_CARD 关系行,如「祝妈妈」) =====
+      if (view.sub) {
+        ctx.font = '32px sans-serif'
+        ctx.fillText(view.sub, DW / 2, view.subY || 252)
+      }
+
+      // ===== 中部内容(emoji / 照片 / 天数大字) =====
+      if (view.photoImg) {
+        const size = 520
+        const x = (DW - size) / 2
+        const y = 340
+        ctx.fillStyle = 'rgba(255,255,255,0.92)'
+        this.roundRect(ctx, x - 8, y - 8, size + 16, size + 16, 30)
+        ctx.fill()
+        ctx.save()
+        this.roundRect(ctx, x, y, size, size, 24)
+        ctx.clip()
+        ctx.drawImage(view.photoImg, x, y, size, size)
+        ctx.restore()
+      } else if (view.emoji) {
         ctx.font = '100px sans-serif'
-        ctx.fillText(view.emoji, DW / 2, 328)
+        ctx.fillText(view.emoji, DW / 2, view.emojiY || 328)
       }
       if (view.bigNum) {
         ctx.fillStyle = '#ffffff'
@@ -188,7 +271,7 @@ Component({
       ;(view.body || []).forEach((t) => {
         wrapText(t, 22).forEach((l) => bodyLines.push(l))
       })
-      let y = view.bigNum ? 640 : view.emoji ? 440 : 300
+      let y = view.bodyY || (view.bigNum ? 640 : view.emoji ? 440 : 300)
       bodyLines.forEach((line) => {
         ctx.fillText(line, DW / 2, y)
         y += 56

@@ -109,15 +109,16 @@
   color: #fff;
 }
 
-/* ===== 两列网格 ===== */
+/* ===== 两列网格(固定 rpx 双列,不依赖 calc+gap——部分基础库 calc 混合 %/rpx 不解析会退化单列) ===== */
 .tpl-grid {
   padding: 0 32rpx 24rpx;
   display: flex;
   flex-wrap: wrap;
-  gap: 24rpx;
+  justify-content: space-between;
 }
 .tpl-card {
-  width: calc(50% - 12rpx);
+  width: 330rpx;
+  margin-bottom: 24rpx;
   border-radius: 36rpx;
   overflow: hidden;
   background: var(--card);

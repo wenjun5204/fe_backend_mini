@@ -1,0 +1,340 @@
+.page-family {
+  padding-bottom: 48rpx;
+}
+
+/* 家人横幅卡(霞橘渐变令牌体系,同日子页 hero 卡量级) */
+.family-banner {
+  margin: 24rpx 32rpx 0;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 40rpx;
+  box-shadow: 0 8rpx 40rpx rgba(28, 28, 40, 0.07);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 32rpx;
+}
+.fb-ava {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 38rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60rpx;
+  flex-shrink: 0;
+  background: var(--grad-sunset);
+}
+.fb-info {
+  flex: 1;
+  min-width: 0;
+}
+.fb-title {
+  font-size: 40rpx;
+  font-weight: 800;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fb-sub {
+  font-size: 26rpx;
+  color: var(--ink-2);
+  margin-top: 10rpx;
+}
+
+/* 成员列表(横排滑动) */
+.member-list {
+  padding: 0 32rpx 8rpx;
+  white-space: nowrap;
+  width: auto;
+}
+.member-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 36rpx;
+  vertical-align: top;
+}
+.mb-ava {
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+  color: #fff;
+  font-weight: 800;
+  overflow: hidden;
+}
+.mb-img {
+  width: 100%;
+  height: 100%;
+}
+.grad-hot { background: var(--grad-sunset); }
+.grad-teal { background: var(--grad-teal); }
+.grad-violet { background: var(--grad-violet); }
+.mb-name {
+  margin-top: 12rpx;
+  font-size: 27rpx;
+  font-weight: 700;
+  color: var(--ink);
+  max-width: 120rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mb-role {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+/* 瞬间时间线 */
+.moment-feed {
+  padding: 0 32rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+.moment-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 32rpx;
+  padding: 28rpx 30rpx 24rpx;
+  box-shadow: 0 8rpx 40rpx rgba(28, 28, 40, 0.07);
+}
+.mc-head {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+.mc-ava {
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 26rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34rpx;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+}
+.mc-meta {
+  flex: 1;
+  min-width: 0;
+}
+.mc-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+.mc-time {
+  font-size: 22rpx;
+  color: var(--ink-3);
+  margin-top: 2rpx;
+}
+.mc-del {
+  flex-shrink: 0;
+  font-size: 24rpx;
+  color: var(--ink-3);
+  font-weight: 600;
+  padding: 10rpx 18rpx;
+  border-radius: 18rpx;
+  background: var(--bg);
+}
+.mc-photo {
+  width: 100%;
+  border-radius: 24rpx;
+  margin-top: 22rpx;
+  background: #f1efe9;
+  min-height: 200rpx;
+}
+.mc-text {
+  margin-top: 20rpx;
+  font-size: 32rpx;
+  color: var(--ink);
+  line-height: 1.6;
+  word-break: break-all;
+}
+.mc-actions {
+  margin-top: 22rpx;
+  display: flex;
+  gap: 16rpx;
+}
+.mc-act {
+  flex: 1;
+  min-height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  border: 3rpx solid var(--line);
+  border-radius: 26rpx;
+  background: var(--bg);
+  color: var(--ink-2);
+  font-size: 28rpx;
+  font-weight: 800;
+}
+.mc-act.on {
+  border-color: var(--rose);
+  color: var(--rose);
+  background: #fff3f5;
+}
+.mc-ico {
+  font-size: 32rpx;
+}
+
+/* 时间线空状态/加载态 */
+.moment-empty {
+  margin: 20rpx 48rpx 16rpx;
+  text-align: center;
+  padding: 56rpx 32rpx 48rpx;
+  background: var(--card);
+  border: 3rpx dashed #e3ddce;
+  border-radius: 52rpx;
+}
+.es-art {
+  font-size: 110rpx;
+  animation: bob 2.2s ease-in-out infinite;
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8rpx); }
+}
+.es-title {
+  margin-top: 28rpx;
+  font-size: 38rpx;
+  font-weight: 900;
+  color: var(--ink);
+}
+.es-sub {
+  margin-top: 14rpx;
+  font-size: 28rpx;
+  color: var(--ink-3);
+  line-height: 1.7;
+}
+.feed-more,
+.feed-end {
+  text-align: center;
+  padding: 24rpx 0 32rpx;
+  font-size: 24rpx;
+  color: var(--ink-3);
+}
+
+/* 引导卡(未加入家族)与重试卡复用日子页空状态形态 */
+.empty-state {
+  margin: 40rpx 48rpx 16rpx;
+  text-align: center;
+  padding: 68rpx 32rpx 60rpx;
+  background: var(--card);
+  border: 3rpx dashed #e3ddce;
+  border-radius: 52rpx;
+}
+.retry-card {
+  margin: 40rpx 48rpx 16rpx;
+  text-align: center;
+  padding: 56rpx 32rpx 52rpx;
+  background: var(--card);
+  border: 3rpx dashed #e3ddce;
+  border-radius: 52rpx;
+}
+.es-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+  margin-top: 40rpx;
+}
+.retry-card .es-chips {
+  margin: 32rpx 40rpx 0;
+}
+.es-chip {
+  min-height: 104rpx;
+  line-height: 104rpx;
+  border: 3rpx solid var(--line);
+  border-radius: 30rpx;
+  background: var(--bg);
+  font-size: 32rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+.es-chip.primary {
+  border: none;
+  background: var(--grad-sunset);
+  color: #fff;
+  box-shadow: 0 20rpx 44rpx rgba(255, 77, 109, 0.3);
+}
+.es-note {
+  margin-top: 28rpx;
+  font-size: 24rpx;
+  color: var(--ink-3);
+  line-height: 1.7;
+}
+
+/* 发瞬间按钮(主按钮 ≥88rpx) */
+.add-fab-row {
+  padding: 12rpx 32rpx 48rpx;
+}
+.add-fab {
+  width: 100%;
+}
+
+/* 发瞬间弹层 */
+.cp-photo {
+  position: relative;
+  width: 100%;
+  height: 340rpx;
+  border-radius: 26rpx;
+  background: #f1efe9;
+  border: 3rpx dashed #d9d4c5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-top: 8rpx;
+}
+.cp-img {
+  width: 100%;
+  height: 100%;
+}
+.cp-add {
+  font-size: 30rpx;
+  color: var(--ink-2);
+  font-weight: 700;
+}
+.cp-change {
+  position: absolute;
+  right: 16rpx;
+  bottom: 16rpx;
+  padding: 8rpx 22rpx;
+  border-radius: 18rpx;
+  background: rgba(28, 28, 40, 0.55);
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+.cp-text {
+  width: auto;
+  min-height: 150rpx;
+  padding: 24rpx 28rpx;
+  background: var(--bg);
+  border: 3rpx solid var(--line);
+  border-radius: 24rpx;
+  font-size: 31rpx;
+  color: var(--ink);
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+.cp-count {
+  margin-top: 10rpx;
+  text-align: right;
+  font-size: 24rpx;
+  color: var(--ink-3);
+}
+.cp-publish {
+  width: 100%;
+  margin-top: 28rpx;
+}

@@ -19,6 +19,16 @@
       <view class="vp-title" wx:if="{{pv.title}}">{{pv.title}}</view>
       <view class="vp-sub" wx:if="{{pv.sub}}">{{pv.sub}}</view>
       <view class="vp-sub" wx:if="{{pv.sub2}}">{{pv.sub2}}</view>
+      <!-- BIRTHDAY_CARD:体面内容含收藏的瞬间照片(≤3) -->
+      <view class="vp-photos" wx:if="{{pv.photos.length}}">
+        <image
+          wx:for="{{pv.photos}}"
+          wx:key="index"
+          class="vp-photo"
+          src="{{item}}"
+          mode="aspectFill"
+        />
+      </view>
     </view>
 
     <!-- 3 颗心解锁 -->
@@ -45,6 +55,7 @@
         </block>
         <block wx:else>
           <view wx:for="{{hiddenParas}}" wx:key="index" class="v-para">{{item}}</view>
+          <view class="v-line" wx:if="{{hiddenBlessing}}">“{{hiddenBlessing}}”</view>
           <view class="v-line" wx:if="{{hiddenLine}}">“{{hiddenLine}}”</view>
           <view class="v-para" wx:if="{{hiddenText}}">{{hiddenText}}</view>
           <image wx:if="{{hiddenPhoto}}" class="v-photo" src="{{hiddenPhoto}}" mode="widthFix" />

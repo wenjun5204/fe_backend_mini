@@ -16,7 +16,11 @@ public final class CardTextLib {
     private static final Map<CardKind, String> LOCKED_TEASERS = Map.of(
             CardKind.LETTER, "还有一段 TA 没发出来的话",
             CardKind.DAYS_CARD, "数字背后还藏着一句 TA 没说出口的话",
-            CardKind.CAPSULE, "胶囊里还有一句话和一张照片在等你");
+            CardKind.CAPSULE, "胶囊里还有一句话和一张照片在等你",
+            CardKind.BIRTHDAY_CARD, "还有一句没说出口的生日祝福");
+
+    /** BIRTHDAY_CARD 访客端眉题(契约:恒「生日快乐」) */
+    public static final String BIRTHDAY_KICKER = "生日快乐";
 
     /** DAYS_CARD 隐藏一句话模板(%d=相伴天数,服务端填充) */
     public static final String HIDDEN_LINE_TEMPLATE = "下一个 %d 天，打算继续赖着你";
@@ -61,6 +65,7 @@ public final class CardTextLib {
         }
         assertClean("隐藏一句话模板", hiddenLine(2480));
         assertClean("胶囊悬念文案", CAPSULE_SUSPENSE);
+        assertClean("生日福卡眉题", BIRTHDAY_KICKER);
         assertClean("CTA 标题", CTA_TITLE);
         assertClean("CTA 副标题", CTA_SUB);
         assertClean("CTA 按钮", CTA_BUTTON);

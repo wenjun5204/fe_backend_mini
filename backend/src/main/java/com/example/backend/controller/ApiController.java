@@ -37,6 +37,19 @@ import com.example.backend.dto.DayDtos.DayUpsertRequest;
 import com.example.backend.dto.DayDtos.DeleteDayResponse;
 import com.example.backend.dto.ErrorDtos;
 import com.example.backend.dto.FamilyDtos.CreateFamilyRequest;
+import com.example.backend.dto.MomentDtos.DayCollectedMomentsResponse;
+import com.example.backend.dto.MomentDtos.DeleteMomentResponse;
+import com.example.backend.dto.MomentDtos.FamilyMomentView;
+import com.example.backend.dto.MomentDtos.MomentCollectRequest;
+import com.example.backend.dto.MomentDtos.MomentCollectResponse;
+import com.example.backend.dto.MomentDtos.MomentCreateRequest;
+import com.example.backend.dto.MomentDtos.MomentLikeResponse;
+import com.example.backend.dto.MomentDtos.MomentListResponse;
+import com.example.backend.dto.FestivalDtos.CancelReservationResponse;
+import com.example.backend.dto.FestivalDtos.FestivalDueResponse;
+import com.example.backend.dto.FestivalDtos.FestivalReservation;
+import com.example.backend.dto.FestivalDtos.FestivalReservationRequest;
+import com.example.backend.dto.FestivalDtos.ReservationListResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -54,6 +67,8 @@ import com.example.backend.dto.JieyouDtos.JieyouQuoteResponse;
 import com.example.backend.dto.NotifyDtos.NotifyStatusResponse;
 import com.example.backend.dto.NotifyDtos.NotifySubscribeRequest;
 import com.example.backend.dto.NotifyDtos.NotifySubscribeResponse;
+import com.example.backend.dto.PhotoDtos.PhotoUploadRequest;
+import com.example.backend.dto.PhotoDtos.PhotoUploadResponse;
 import com.example.backend.dto.RankDtos.FamilyRankResponse;
 import com.example.backend.dto.RankDtos.FriendRankResponse;
 import com.example.backend.dto.VisitorDtos.HeartsRequest;
@@ -67,15 +82,19 @@ import com.example.backend.service.CardService;
 import com.example.backend.service.CapsuleService;
 import com.example.backend.service.DayService;
 import com.example.backend.service.FamilyService;
+import com.example.backend.service.FestivalService;
 import com.example.backend.service.FortuneService;
 import com.example.backend.service.InteractService;
 import com.example.backend.service.JieyouService;
+import com.example.backend.service.MomentService;
 import com.example.backend.service.NotifyService;
 import com.example.backend.service.PendantService;
+import com.example.backend.service.PhotoService;
 import com.example.backend.service.RankService;
 import com.example.backend.service.VisitorService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -86,7 +105,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 契约路由(与 api/openapi.yaml 一一对应,46 个 operationId;/api/ping 为部署探活,不入契约) */
+/** 契约路由(与 api/openapi.yaml 一一对应,60 个 operationId;/api/ping 为部署探活,不入契约) */
 @RestController
 @RequestMapping("/api")
 public class ApiController {
@@ -98,11 +117,14 @@ public class ApiController {
     private final CapsuleService capsuleService;
     private final DayService dayService;
     private final FamilyService familyService;
+    private final FestivalService festivalService;
     private final FortuneService fortuneService;
     private final InteractService interactService;
     private final JieyouService jieyouService;
+    private final MomentService momentService;
     private final NotifyService notifyService;
     private final PendantService pendantService;
+    private final PhotoService photoService;
     private final RankService rankService;
     private final VisitorService visitorService;
 
@@ -113,11 +135,14 @@ public class ApiController {
                          CapsuleService capsuleService,
                          DayService dayService,
                          FamilyService familyService,
+                         FestivalService festivalService,
                          FortuneService fortuneService,
                          InteractService interactService,
                          JieyouService jieyouService,
+                         MomentService momentService,
                          NotifyService notifyService,
                          PendantService pendantService,
+                         PhotoService photoService,
                          RankService rankService,
                          VisitorService visitorService) {
         this.authService = authService;
@@ -127,11 +152,14 @@ public class ApiController {
         this.capsuleService = capsuleService;
         this.dayService = dayService;
         this.familyService = familyService;
+        this.festivalService = festivalService;
         this.fortuneService = fortuneService;
         this.interactService = interactService;
         this.jieyouService = jieyouService;
+        this.momentService = momentService;
         this.notifyService = notifyService;
         this.pendantService = pendantService;
+        this.photoService = photoService;
         this.rankService = rankService;
         this.visitorService = visitorService;
     }
@@ -391,6 +419,101 @@ public class ApiController {
     @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = CapsuleOpenResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
     public CapsuleOpenResponse openCapsule(@PathVariable Long id) {
         return capsuleService.open(id);
+    }
+
+    // ---- 念家时·照片管道(契约 v1.8.0,tag=photos;GET 回图免鉴权) ----
+
+    @PostMapping("/photos")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = PhotoUploadResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "403", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public PhotoUploadResponse uploadPhoto(@RequestBody PhotoUploadRequest request) {
+        return photoService.upload(request);
+    }
+
+    /** 二进制直出端点:声明主形态 image/jpeg binary 声明(photoId 内容不可变),错误仍走统一 200+{code,message} 通道 */
+    @GetMapping("/photos/{photoId}")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(mediaType = "image/jpeg", schema = @Schema(type = "string", format = "binary"))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public ResponseEntity<byte[]> getPhoto(@PathVariable String photoId) {
+        return photoService.getPhoto(photoId);
+    }
+
+    // ---- 念家时·家人瞬间(契约 v1.8.0,tag=moments;删除仅本人,隐私权红线) ----
+
+    @PostMapping("/moments")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = FamilyMomentView.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "403", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public FamilyMomentView createMoment(@RequestBody MomentCreateRequest request) {
+        return momentService.create(request);
+    }
+
+    @GetMapping("/moments")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = MomentListResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public MomentListResponse listFamilyMoments(@RequestParam(value = "beforeId", required = false) Long beforeId,
+                                                 @RequestParam(value = "limit", required = false) Integer limit) {
+        return momentService.list(beforeId, limit);
+    }
+
+    @DeleteMapping("/moments/{id}")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DeleteMomentResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public DeleteMomentResponse deleteMoment(@PathVariable Long id) {
+        return momentService.delete(id);
+    }
+
+    @PostMapping("/moments/{id}/like")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = MomentLikeResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public MomentLikeResponse likeMoment(@PathVariable Long id) {
+        return momentService.like(id);
+    }
+
+    @DeleteMapping("/moments/{id}/like")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = MomentLikeResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public MomentLikeResponse unlikeMoment(@PathVariable Long id) {
+        return momentService.unlike(id);
+    }
+
+    @PostMapping("/moments/{id}/collect")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = MomentCollectResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public MomentCollectResponse collectMoment(@PathVariable Long id,
+                                               @RequestBody MomentCollectRequest request) {
+        return momentService.collect(id, request);
+    }
+
+    @DeleteMapping("/moments/{id}/collect")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = MomentCollectResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public MomentCollectResponse uncollectMoment(@PathVariable Long id,
+                                                 @RequestParam(value = "dayId", required = false) Long dayId) {
+        return momentService.uncollect(id, dayId);
+    }
+
+    /** 素材池:该 BIRTHDAY 日子被全家人收藏的瞬间(共享素材;非 BIRTHDAY 40000/不可见 40400) */
+    @GetMapping("/days/{id}/moments")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DayCollectedMomentsResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public DayCollectedMomentsResponse listDayCollectedMoments(@PathVariable Long id) {
+        return momentService.listDayCollected(id);
+    }
+
+    // ---- 念家时·节日与上线预约(契约 v1.8.0,tag=festival) ----
+
+    @PostMapping("/festivals/reservations")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = FestivalReservation.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public FestivalReservation reserveFestival(@RequestBody FestivalReservationRequest request) {
+        return festivalService.reserve(request);
+    }
+
+    @GetMapping("/festivals/reservations")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = ReservationListResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public ReservationListResponse listMyFestivalReservations() {
+        return festivalService.listMine();
+    }
+
+    @DeleteMapping("/festivals/reservations/{templateKey}")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = CancelReservationResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public CancelReservationResponse cancelFestivalReservation(@PathVariable String templateKey) {
+        return festivalService.cancel(templateKey);
+    }
+
+    @GetMapping("/festivals/due")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = FestivalDueResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public FestivalDueResponse getFestivalDue(@RequestParam(value = "date", required = false) String date) {
+        return festivalService.due(date);
     }
 
     // ---- 免鉴权访客组(/api/visitor/**,AuthInterceptor 排除,永不 40100) ----

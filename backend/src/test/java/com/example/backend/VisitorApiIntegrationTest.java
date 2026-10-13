@@ -346,6 +346,87 @@ class VisitorApiIntegrationTest {
         assertEquals(1, state.get("hearts").asInt());
     }
 
+    // ---- 用例 27(v1.8.0):BIRTHDAY_CARD 访客端形态,对齐 v2.2-family-design.md §3 ----
+
+    @Test
+    void 福卡访客体面内容relation加photoUrls加kicker_素材删除跳过_3心解锁blessingText() {
+        String token = login();
+        String inviteCode = apost("/api/family", token, Map.of("name", "念家时"))
+                .get("inviteCode").asText();
+        apost("/api/family/join", login(), Map.of("inviteCode", inviteCode));
+        // 生日日子 + 2 条素材池瞬间
+        Map<String, Object> day = new HashMap<>();
+        day.put("relation", "妈妈");
+        day.put("kind", "BIRTHDAY");
+        day.put("calendarType", "SOLAR");
+        day.put("month", LocalDate.now().plusDays(30).getMonthValue());
+        day.put("day", LocalDate.now().plusDays(30).getDayOfMonth());
+        day.put("visibility", "PRIVATE");
+        long dayId = apost("/api/days", token, day).get("id").asLong();
+        long momentOne = publishMoment(token, "素材一");
+        long momentTwo = publishMoment(token, "素材二");
+        apost("/api/moments/" + momentOne + "/collect", token, Map.of("dayId", dayId));
+        apost("/api/moments/" + momentTwo + "/collect", token, Map.of("dayId", dayId));
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("dayId", dayId);
+        payload.put("relation", "妈妈");
+        payload.put("blessingText", "藏起来的生日祝福语");
+        payload.put("momentIds", List.of(momentOne, momentTwo));
+        payload.put("styleKey", "MINT");
+        Map<String, Object> request = new HashMap<>();
+        request.put("templateKind", "BIRTHDAY_CARD");
+        request.put("payload", payload);
+        long cardId = apost("/api/cards", token, request).get("id").asLong();
+        String scene = apost("/api/cards/" + cardId + "/share", token, null).get("scene").asText();
+
+        // 体面内容:relation+photoUrls(≤3)+kicker「生日快乐」;无 blessingText 泄露
+        JsonNode view = vget("/api/visitor/cards/" + scene + "?deviceId=" + deviceId(), null);
+        assertEquals("BIRTHDAY_CARD", view.get("templateKind").asText());
+        JsonNode publicPayload = view.get("publicPayload");
+        assertEquals("妈妈", publicPayload.get("relation").asText());
+        assertEquals("生日快乐", publicPayload.get("kicker").asText());
+        assertEquals(2, publicPayload.get("photoUrls").size(), "两条素材的 capability 路径");
+        assertTrue(publicPayload.get("photoUrls").get(0).asText().startsWith("/api/photos/"));
+        assertEquals("MINT", publicPayload.get("styleKey").asText());
+        assertTrue(view.get("lockedTeaser").asText().length() > 0, "打码钩子有值");
+        assertFalse(serialize(view).contains("藏起来的生日祝福语"), "祝福语不进体面内容");
+
+        // 未解锁取内容 → 40900
+        String device = deviceId();
+        assertErrorCode(vget("/api/visitor/cards/" + scene + "/content?deviceId=" + device, null), "40900");
+
+        // 素材瞬间被删后 photoUrls 跳过该项(已存档 payload 不追溯)
+        adelete("/api/moments/" + momentOne, token);
+        JsonNode afterDelete = vget("/api/visitor/cards/" + scene + "?deviceId=" + deviceId(), null);
+        assertEquals(1, afterDelete.get("publicPayload").get("photoUrls").size(),
+                "已删素材的 photoUrl 跳过");
+
+        // 3 心解锁 → blessingText
+        for (int i = 0; i < 3; i++) {
+            vpost("/api/visitor/cards/" + scene + "/hearts", Map.of("deviceId", device), null);
+        }
+        JsonNode content = vget("/api/visitor/cards/" + scene + "/content?deviceId=" + device, null);
+        assertEquals("BIRTHDAY_CARD", content.get("templateKind").asText());
+        assertEquals("藏起来的生日祝福语", content.get("hiddenContent").get("blessingText").asText());
+        assertTrue(content.get("ctaCopy").get("buttonText").asText().length() > 0);
+    }
+
+    // ---- 私有工具 ----
+
+    private long publishMoment(String token, String text) {
+        byte[] data = new byte[8];
+        data[0] = (byte) 0xFF;
+        data[1] = (byte) 0xD8;
+        data[2] = (byte) 0xFF;
+        Map<String, Object> upload = new HashMap<>();
+        upload.put("imageBase64", java.util.Base64.getEncoder().encodeToString(data));
+        upload.put("scene", "MOMENT");
+        String photoId = apost("/api/photos", token, upload).get("photoId").asText();
+        return apost("/api/moments", token, Map.of("photoId", photoId, "text", text))
+                .get("id").asLong();
+    }
+
     private String serialize(JsonNode node) {
         return node == null ? "" : node.toString();
     }

@@ -9,7 +9,11 @@ import com.example.backend.dto.CapsuleDtos.CapsuleOpenRule;
 import com.example.backend.dto.CapsuleDtos.CapsuleStatus;
 import com.example.backend.dto.CapsuleDtos.CapsuleType;
 import com.example.backend.dto.CapsuleDtos.TimeCapsule;
+import com.example.backend.dto.PhotoDtos.PhotoScene;
+import com.example.backend.entity.PhotoAssetEntity;
+import com.example.backend.entity.PhotoAssetEntity.PhotoStatus;
 import com.example.backend.entity.TimeCapsuleEntity;
+import com.example.backend.repository.PhotoAssetRepository;
 import com.example.backend.repository.TimeCapsuleRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -29,9 +33,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class CapsuleService {
 
     private final TimeCapsuleRepository capsuleRepository;
+    private final PhotoAssetRepository photoAssetRepository;
 
-    public CapsuleService(TimeCapsuleRepository capsuleRepository) {
+    public CapsuleService(TimeCapsuleRepository capsuleRepository,
+                          PhotoAssetRepository photoAssetRepository) {
         this.capsuleRepository = capsuleRepository;
+        this.photoAssetRepository = photoAssetRepository;
     }
 
     @Transactional
@@ -62,10 +69,33 @@ public class CapsuleService {
         capsule.setCoverHint(coverHint);
         capsule.setContentText(contentText);
         capsule.setPhotoUrl(normalizePhotoUrl(request.getPhotoUrl()));
+        // v1.8:photoId 可选,须本人上传 + scene=CAPSULE + 未绑定(ORPHAN),否则 40000;
+        // 传入则优先于 photoUrl 直传旧形态(读侧 photoUrl 恒 /api/photos/{photoId})
+        PhotoAssetEntity photo = bindablePhoto(request.getPhotoId(), userId);
+        capsule.setPhotoId(photo == null ? null : photo.getPhotoId());
         capsule.setStatus(CapsuleStatus.SEALED);
         capsule.setSealedAt(LocalDateTime.now());
         capsuleRepository.save(capsule);
+        if (photo != null) {
+            photo.setStatus(PhotoStatus.ACTIVE);
+            photo.setCapsuleId(capsule.getId());
+            photoAssetRepository.save(photo);
+        }
         return toDto(capsule, false);
+    }
+
+    /** 胶囊封存照片校验:本人 + scene=CAPSULE + ORPHAN,违者 40000;缺省(null/空白)返回 null 走旧形态 */
+    private PhotoAssetEntity bindablePhoto(String photoId, Long userId) {
+        if (photoId == null || photoId.isBlank()) {
+            return null;
+        }
+        PhotoAssetEntity photo = photoAssetRepository.findByPhotoId(photoId.trim()).orElse(null);
+        if (photo == null || !photo.getUserId().equals(userId)
+                || photo.getScene() != PhotoScene.CAPSULE
+                || photo.getStatus() != PhotoStatus.ORPHAN) {
+            throw ApiException.param("这张照片不能用，请重新选择");
+        }
+        return photo;
     }
 
     /** SEALED 按 openDate 升序在前、OPENED 按 openedAt 降序排后;dueCount=待开数 */
@@ -120,7 +150,8 @@ public class CapsuleService {
         response.setOpenDate(capsule.getOpenDate().toString());
         response.setCoverHint(capsule.getCoverHint());
         response.setContentText(capsule.getContentText());
-        response.setPhotoUrl(capsule.getPhotoUrl());
+        response.setPhotoId(capsule.getPhotoId());
+        response.setPhotoUrl(photoUrl(capsule));
         response.setStatus(CapsuleStatus.OPENED.name());
         response.setSealedAt(capsule.getSealedAt().toString());
         response.setOpenedAt(capsule.getOpenedAt() == null ? null : capsule.getOpenedAt().toString());
@@ -149,7 +180,8 @@ public class CapsuleService {
         dto.setCoverHint(capsule.getCoverHint());
         if (capsule.getStatus() == CapsuleStatus.OPENED) {
             dto.setContentText(capsule.getContentText());
-            dto.setPhotoUrl(capsule.getPhotoUrl());
+            dto.setPhotoId(capsule.getPhotoId());
+            dto.setPhotoUrl(photoUrl(capsule));
         }
         dto.setStatus(capsule.getStatus());
         dto.setSealedAt(capsule.getSealedAt().toString());
@@ -161,6 +193,11 @@ public class CapsuleService {
 
     static boolean isDue(TimeCapsuleEntity capsule) {
         return capsule.getStatus() == CapsuleStatus.SEALED && !LocalDate.now().isBefore(capsule.getOpenDate());
+    }
+
+    /** 读侧照片链接计算:photoId 存在时恒 /api/photos/{photoId}(优先),否则封存时 photoUrl 直传旧值 */
+    static String photoUrl(TimeCapsuleEntity capsule) {
+        return capsule.getPhotoId() != null ? "/api/photos/" + capsule.getPhotoId() : capsule.getPhotoUrl();
     }
 
     static int daysUntilOpen(TimeCapsuleEntity capsule) {

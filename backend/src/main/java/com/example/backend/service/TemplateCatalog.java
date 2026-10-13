@@ -21,8 +21,9 @@ public final class TemplateCatalog {
     private static final String FREE_LABEL = "✅ 免费";
 
     private static final List<TemplateInfo> TEMPLATES = List.of(
+            // 母亲节=5 月第二个周日(2027-05-09,万年历复核);festivalDate 静态随版本滚动更新
             template(TemplateKey.LETTER, "给妈妈的感恩信", TemplateCategory.FESTIVAL, true, 10,
-                    null, null, "pages/letter-edit/letter-edit",
+                    "2027-05-09", "母亲节 🌷", "pages/letter-edit/letter-edit",
                     preview("A LETTER TO MOM", "💌", "妈，这些年您总给我留饭，我离家以后，您学会了视频…",
                             "NIGHT", "AI 根据你选的故事代笔，写完直接生成信纸海报",
                             List.of("选你们的故事", "AI 代笔", "逐句可改", "一键出海报"),
@@ -45,15 +46,16 @@ public final class TemplateCatalog {
                             "VIOLET", "家人生日当天，自动提醒你生成专属福卡",
                             List.of("生日当天提醒", "家人可见", "收到的人可回 ❤️"),
                             "2.9 万人已送", "约 1 分钟", "已在你记的日子到期时自动出现")),
-            // 预约态(live=false,主按钮「上线提醒我」);父亲节 2026-06-21(6 月第三个周日,万年历复核)
+            // 预约态(live=false,主按钮「上线提醒我」);父亲节=6 月第三个周日(2027-06-20,万年历复核)
             template(TemplateKey.HARD_FOR_DAD, "给爸爸的一句硬话", TemplateCategory.FAMILY, false, 50,
-                    "2026-06-21", "父亲节 👔", null,
+                    "2027-06-20", "父亲节 👔", null,
                     preview("FOR DAD", "👔", "爸，这些话我替你说了。",
                             "DAD", "父爱无言，AI 帮你把他没说出口的翻译出来",
                             List.of("父亲节限定", "AI 代笔", "一键出海报"),
                             "2.3 万人想用", "6 月上线", "Father's Day · 6 月第三个周日")),
+            // 七夕=农历七月初七(公历 2027-08-08;农历节日仅按公历日期标注,不实现农历换算)
             template(TemplateKey.WEDDING_CARD, "结婚纪念日卡", TemplateCategory.COUPLE, false, 60,
-                    null, null, null,
+                    "2027-08-08", "七夕 🌌", null,
                     preview("ANNIVERSARY", "💍", "红宝石婚 · 一起走过 40 年。",
                             "WEDDING", "N 周年自动匹配称谓（银婚/金婚/红宝石婚…）",
                             List.of("周年称谓自动配", "双人生日同步", "可印制"),
