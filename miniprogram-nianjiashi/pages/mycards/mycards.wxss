@@ -30,10 +30,11 @@
   padding: 28rpx 32rpx;
   display: flex;
   flex-wrap: wrap;
-  gap: 24rpx;
+  justify-content: space-between;
 }
 .mc-card {
-  width: calc(50% - 12rpx);
+  width: 330rpx;
+  margin-bottom: 24rpx;
   box-sizing: border-box;
   border-radius: 36rpx;
   overflow: hidden;

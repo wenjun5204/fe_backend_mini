@@ -76,7 +76,7 @@ Page({
     this.setData({ groups })
   },
 
-  /* ===== 日历视图(月网格,只标自己创建的日子) ===== */
+  /* ===== 日历视图(月网格,本人可见的日子都上日历;自己=实心点,家人创建=空心点) ===== */
   buildCalendar() {
     const y = this.calY
     const m = this.calM
@@ -85,10 +85,10 @@ Page({
     const byDate = {}
     this.records.forEach((r) => {
       if (r.kind === 'TOGETHER' || !r.nextDate) return
-      // 仅标记 userId 是自己的日子(设计 §2.4:家人可见的他人日子不进日历)
-      if (this.myUserId == null || r.userId !== this.myUserId) return
+      // 口径与时间线一致:列表里本人可见的日子都上日历(自己创建=实心点,家人的=空心点)
+      const own = this.myUserId != null && r.userId === this.myUserId
       if (r.nextDate.substring(0, 7) === monthStr) {
-        ;(byDate[r.nextDate] = byDate[r.nextDate] || []).push(r)
+        ;(byDate[r.nextDate] = byDate[r.nextDate] || []).push({ record: r, own })
       }
     })
     const startWeek = new Date(y, m, 1).getDay()
@@ -104,7 +104,9 @@ Page({
       const dateStr = monthStr + '-' + pad2(d)
       const evs = byDate[dateStr]
       const isToday = today.getFullYear() === y && today.getMonth() === m && today.getDate() === d
-      const dots = evs ? evs.map((e) => (e.kind === 'ANNIVERSARY' ? 'a' : 'b')) : []
+      const dots = evs
+        ? evs.map((e) => (e.record.kind === 'ANNIVERSARY' ? (e.own ? 'a' : 'a-hollow') : e.own ? 'b' : 'b-hollow'))
+        : []
       let cls = ''
       if (isToday) cls = 'today'
       if (evs) {
@@ -116,7 +118,7 @@ Page({
     }
     const summary = eventDays
       ? '本月有 ' + eventDays + ' 天值得记住' + (todayHas ? ' · 今天有日子 🎉' : '')
-      : '这个月暂无您的日子 · 可以前后翻翻，或去记一个'
+      : '这个月暂无日子 · 可以前后翻翻，或去记一个'
     this.setData({
       calTitle: m + 1 + '月 ' + y,
       cells,
@@ -148,8 +150,8 @@ Page({
     if (!cell || !cell.has) return
     const rows = []
     this.records.forEach((r) => {
-      // 与日历标记口径一致:只列自己创建的日子
-      if (r.kind !== 'TOGETHER' && r.nextDate === cell.dateStr && (this.myUserId == null || r.userId === this.myUserId)) {
+      // 与日历标记口径一致:本人可见的日子都列出
+      if (r.kind !== 'TOGETHER' && r.nextDate === cell.dateStr) {
         rows.push(viewOf(r))
       }
     })
