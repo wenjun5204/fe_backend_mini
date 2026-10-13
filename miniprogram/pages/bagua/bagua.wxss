@@ -1,0 +1,187 @@
+/* 八卦集福阵页(视觉规范沿用原型:红 #b01f24 / 描金 #ffd76e / 米黄 #fff8ec) */
+.page-bagua {
+  min-height: 100vh;
+  background: #fff8ec;
+  padding: 30rpx 32rpx 60rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 加载失败 */
+.failed-box { margin-top: 120rpx; padding: 60rpx 40rpx; text-align: center; width: 100%; background: #ffffff; border: 1rpx solid #f0e3c4; border-radius: 32rpx; }
+.failed-emoji { font-size: 110rpx; color: #c9982f; }
+.failed-text { margin-top: 24rpx; color: #5a2018; font-size: 38rpx; font-weight: 800; }
+.failed-sub { margin-top: 12rpx; color: #b8a585; font-size: 28rpx; }
+.retry-btn { height: 88rpx; line-height: 88rpx; margin-top: 36rpx; border-radius: 44rpx; color: #fff3d6; background: linear-gradient(180deg, #d4463a, #b01f24); font-size: 32rpx; font-weight: 800; }
+.retry-btn::after { border: 0; }
+
+/* 标题区 */
+.board-title { text-align: center; }
+.bt-main { font-size: 48rpx; color: #b01f24; letter-spacing: 10rpx; font-weight: 800; }
+.bt-sub { font-size: 26rpx; color: #a5987a; margin-top: 14rpx; letter-spacing: 2rpx; }
+
+.board-progress {
+  margin: 26rpx auto 4rpx; font-size: 32rpx; color: #3a2e20;
+  background: #ffffff; border: 1rpx solid #eee2c8; border-radius: 999rpx; padding: 14rpx 40rpx;
+}
+.board-progress .bp-strong { color: #b01f24; font-size: 38rpx; font-weight: 800; }
+
+/* ============ 阵图 ============ */
+.board-zone { position: relative; width: 640rpx; height: 640rpx; margin-top: 24rpx; }
+.board-ring {
+  position: absolute; left: 40rpx; top: 40rpx; right: 40rpx; bottom: 40rpx;
+  border-radius: 50%; border: 4rpx dashed rgba(201, 162, 75, .55);
+}
+.bnode {
+  position: absolute; left: 50%; top: 50%;
+  width: 150rpx; height: 150rpx; margin: -75rpx 0 0 -75rpx;
+  border-radius: 50%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.bnode:active { opacity: .85; }
+.b-char { font-size: 56rpx; line-height: 1; }
+.b-name { font-size: 28rpx; margin-top: 6rpx; letter-spacing: 2rpx; }
+.bnode.lit {
+  background: radial-gradient(circle at 50% 35%, #ffe9ab, #e8c66a 70%);
+  border: 6rpx solid #c9982f;
+  box-shadow: 0 0 32rpx rgba(201, 162, 75, .65);
+}
+.bnode.lit .b-char { color: #8c1418; }
+.bnode.lit .b-name { color: #3a2e20; font-weight: 800; }
+.bnode.dim {
+  background: #f3ead8; border: 6rpx dashed #cbbb97;
+}
+.bnode.dim .b-char { color: #b3a685; }
+.bnode.dim .b-name { color: #a5987a; }
+.b-star { position: absolute; top: -8rpx; right: -4rpx; font-size: 30rpx; color: #c9982f; }
+
+/* 中央全家福位 */
+.center-photo {
+  position: absolute; left: 50%; top: 50%; margin: -118rpx 0 0 -118rpx;
+  width: 236rpx; height: 236rpx; border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%, #fdf3d7, #e9d3a0);
+  border: 8rpx solid #b01f24;
+  box-shadow: 0 0 0 10rpx #f5e7c1, 0 16rpx 40rpx rgba(140, 20, 24, .25);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.cp-emoji { font-size: 80rpx; }
+.cp-txt { font-size: 28rpx; color: #b01f24; margin-top: 8rpx; letter-spacing: 4rpx; font-weight: 800; }
+
+.board-legend {
+  margin-top: 34rpx; font-size: 26rpx; color: #a5987a; text-align: center; line-height: 1.9;
+}
+.board-legend-sub { margin-top: 0; }
+
+/* ============ 卦位详情弹层 ============ */
+.detail-mask {
+  position: fixed; left: 0; top: 0; right: 0; bottom: 0;
+  background: rgba(30, 15, 8, .45); z-index: 40;
+  display: flex; align-items: center; justify-content: center;
+}
+.detail-pop {
+  width: 620rpx; background: #fffdf6; border-radius: 36rpx;
+  border: 6rpx solid #c9982f;
+  padding: 44rpx 40rpx 36rpx;
+  box-shadow: 0 40rpx 120rpx rgba(30, 15, 8, .4);
+  animation: popIn .25s ease;
+}
+@keyframes popIn {
+  from { transform: scale(.9); opacity: .5; }
+  to { transform: scale(1); opacity: 1; }
+}
+.dp-head { display: flex; align-items: center; gap: 24rpx; }
+.dp-gua {
+  width: 124rpx; height: 124rpx; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 60rpx;
+}
+.dp-gua.lit {
+  background: radial-gradient(circle, #ffe9ab, #e8c66a);
+  border: 6rpx solid #c9982f; color: #8c1418;
+}
+.dp-gua.dim { background: #f3ead8; border: 6rpx dashed #cbbb97; color: #b3a685; }
+.dp-title-wrap { flex: 1; min-width: 0; }
+.dp-title { font-size: 40rpx; font-weight: 800; color: #3a2e20; }
+.dp-lit-tag { font-size: 28rpx; color: #c9982f; }
+.dp-sub { font-size: 26rpx; color: #a5987a; margin-top: 6rpx; }
+.dp-hint {
+  margin-top: 26rpx; font-size: 30rpx; color: #3a2e20; line-height: 1.7;
+  background: #fff8ec; border-radius: 20rpx; padding: 20rpx 24rpx;
+  border: 1rpx solid #eee2c8;
+}
+.dp-bar-wrap { margin-top: 26rpx; }
+.dp-bar-label {
+  font-size: 28rpx; color: #a5987a;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.dp-bar-num { color: #b01f24; font-weight: 700; }
+.dp-bar { margin-top: 12rpx; height: 28rpx; background: #efe4c8; border-radius: 999rpx; overflow: hidden; }
+.dp-bar-fill {
+  height: 100%; background: linear-gradient(90deg, #e8c66a, #b01f24);
+  border-radius: 999rpx; transition: width .6s;
+}
+.dp-done-note {
+  margin-top: 26rpx; font-size: 28rpx; color: #2e7d4f;
+  background: #eaf5ee; border-radius: 20rpx; padding: 20rpx 24rpx;
+}
+.dp-close { margin-top: 32rpx; width: 100%; }
+
+/* ============ 圆满庆祝(原型移植:旋转光环 + 粒子) ============ */
+.grand-overlay {
+  position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 60;
+  background: radial-gradient(circle at 50% 35%, #6a4a12 0%, #3a2508 60%, #1d1204 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.grand-scene { position: relative; width: 640rpx; height: 640rpx; }
+.grand-ring {
+  position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+  border-radius: 50%; border: 6rpx solid rgba(232, 198, 106, .6);
+  animation: slowSpin 40s linear infinite;
+}
+.grand-ring.r2 {
+  left: 28rpx; top: 28rpx; right: 28rpx; bottom: 28rpx;
+  border-style: dashed; animation-duration: 28s; animation-direction: reverse;
+}
+@keyframes slowSpin {
+  to { transform: rotate(360deg); }
+}
+.gnode {
+  position: absolute; left: 50%; top: 50%;
+  width: 116rpx; height: 116rpx; margin: -58rpx 0 0 -58rpx;
+  background: radial-gradient(circle at 50% 35%, #ffe9ab, #e8c66a);
+  border: 4rpx solid #8c6b1f; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 48rpx; color: #8c1418;
+  box-shadow: 0 0 28rpx rgba(255, 215, 106, .7);
+}
+.grand-center {
+  position: absolute; left: 50%; top: 50%; margin: -168rpx 0 0 -168rpx;
+  width: 336rpx; height: 336rpx; border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%, #fdf3d7, #eccf8e);
+  border: 8rpx solid #c9982f;
+  box-shadow: 0 0 100rpx rgba(255, 215, 106, .5), 0 0 0 12rpx rgba(140, 107, 31, .35);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.gc-emoji { font-size: 108rpx; }
+.gc-txt { font-size: 34rpx; color: #b01f24; font-weight: 800; margin-top: 10rpx; letter-spacing: 4rpx; }
+.gc-date { font-size: 24rpx; color: #7a6a52; margin-top: 8rpx; }
+.spark {
+  position: absolute; width: 12rpx; height: 12rpx; border-radius: 50%;
+  background: #e8c66a; pointer-events: none;
+  animation: sparkUp 2.6s ease-out infinite;
+}
+@keyframes sparkUp {
+  0%   { transform: translateY(0) scale(1); opacity: 0; }
+  12%  { opacity: 1; }
+  100% { transform: translateY(-260rpx) scale(.2); opacity: 0; }
+}
+.go-title {
+  font-size: 56rpx; color: #ffd76e; letter-spacing: 16rpx; margin-top: 36rpx;
+  text-shadow: 0 4rpx 24rpx rgba(0, 0, 0, .6);
+}
+.go-sub { font-size: 30rpx; color: #e8d5a3; margin-top: 16rpx; letter-spacing: 6rpx; }
+.go-actions {
+  margin-top: 44rpx; display: flex; flex-direction: column; gap: 20rpx; width: 480rpx;
+}
+.go-btn { width: 100%; }

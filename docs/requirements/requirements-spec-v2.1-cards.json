@@ -1,0 +1,1263 @@
+{
+  "schema_version": "1.0",
+  "status": "approved",
+  "change_id": "念家时-v2.1-模板馆引擎",
+  "scope": {
+    "complexity": "L",
+    "subsystems": [
+      "miniprogram-nianjiashi 前端(模板馆Tab改版+生成流程页+胶囊开箱+访客页+我的Tab/我的卡片,新增页面约8个)",
+      "backend 服务(Spring Boot 原地演进,新增 template_config/made_card/time_capsule/visitor_unlock 表+LetterService 等服务)",
+      "OpenAPI 契约层(v1.6.0 → v1.7.0 增量,新增 /api/templates*/api/cards*/api/capsules*/api/public/cards* 四组)"
+    ],
+    "cross_team_dependencies": [],
+    "split_required": false,
+    "split_decision": "coupled",
+    "in_scope_frs": [
+      "FR-4",
+      "FR-5(仅前端展示层,服务端调度推送排除)",
+      "FR-6",
+      "FR-7",
+      "FR-8(V1.1 提前)",
+      "FR-9",
+      "FR-10",
+      "FR-11"
+    ],
+    "exclusions": [
+      {
+        "item": "节点日历服务端预约推送调度(上线提醒/节日前3天推送)",
+        "destination": "V1.1;本 change 预约仅前端本地收藏,无服务端预约登记"
+      },
+      {
+        "item": "生日福卡/给爸爸的一句硬话/结婚纪念日卡的制作流程",
+        "destination": "模板馆仅展示(可预约态),不提供生成端点;生日福卡为 V1.2 表达层,硬话/结婚卡为 V2"
+      },
+      {
+        "item": "解忧册模块删除",
+        "destination": "独立收尾 change(先改契约再删代码)"
+      },
+      {
+        "item": "家人空间(共享日子/照片流)",
+        "destination": "V1.2"
+      },
+      {
+        "item": "小程序改名提审/类目调整/隐私指引更新",
+        "destination": "运营动作"
+      },
+      {
+        "item": "模板 UGC/投稿、老照片修复",
+        "destination": "V2"
+      },
+      {
+        "item": "胶囊内容加密存储",
+        "destination": "后续安全增强(见决策 D5),本 change 明文存+读接口门控"
+      }
+    ]
+  },
+  "clarification": {
+    "round": 0,
+    "max_rounds": 3,
+    "note": "输入为已定稿 PRD(docs/PRD-念家时.md v2.0, 2026-10-10 定稿)+已拍板决策(AI 降级/前端 canvas 海报/device 维度防刷/含时光胶囊),无未决澄清问题;round=0 表示未发生澄清轮次,questions 为空。",
+    "questions": [],
+    "answers": [],
+    "confirmed_facts": [
+      {
+        "fact": "模板馆交互事实:分类 Tab(全部/节日/家人/情侣/整活)前端过滤;每模板点击先进预览弹层(迷你成品真实样式+特性标签+社会证明人数/时长/免费+场景化提示);live=true 主按钮「开始制作」,live=false 主按钮「上线提醒我」+「先收藏」;模板数据结构见原型 TPL_DATA(6个模板:letter/days/capsule/birthday/father/wedding)",
+        "source": "user_document"
+      },
+      {
+        "fact": "感恩信两步流程:选素材(写给谁:妈妈/岳母/婆婆/奶奶/自定义;故事 5 素材多选:她总给我留饭/送我上学那些年/她爱唠叨但都是好意/她一个人把我带大/我离家后她学会视频;语气 tear戳泪点/fun幽默/calm平淡)→AI 生成中动画(≤2.5s 可跳过)→信纸预览逐句点换(点哪句换哪句,同段 variants 循环)→导航栏🔄整体重写→定稿进海报;5 段式=开头+每故事一段+语气收尾+落款(落款「—— 你的孩子」不可换)",
+        "source": "user_document"
+      },
+      {
+        "fact": "相伴天数卡:关系(恋人/结婚/闺蜜/好友)→起始日(年+月日)→样式(霞橘渐变/深夜星河/薄荷清晨)→实时天数预览(今天-起始日,每天+1)→海报;天数卡可由 DayRecord kind=TOGETHER 的 togetherDays 字段派生(契约 v1.6.0 既有计算字段)",
+        "source": "user_document"
+      },
+      {
+        "fact": "时光胶囊:类型(给未来的自己/给未来的 TA)→开箱日预设(一年后/高考出分日/结婚纪念日/宝宝 18 岁)→封面提示语点选(「一年不见，你还挺想我吧」「立个 flag 在这儿了」)→内容+可选照片→封存→邀请函海报(扫码可看=coverHint+开箱倒计时,信件本体隐藏)→开箱日首页召回横幅→开箱页(摇晃动画→信件+照片揭示→双CTA:我也埋一个/分享开箱)",
+        "source": "user_document"
+      },
+      {
+        "fact": "海报:固定品牌位(念家时+「把重要的日子，记在心上」)+二维码(指向访客视图);分享面板四通道(微信好友/朋友圈/面对面/保存图片);每类模板样式类:letter=深夜星河/days=霞橘/capsule=薄荷,days 可切三样式;海报正文引用定稿内容(letter 取前3段)",
+        "source": "user_document"
+      },
+      {
+        "fact": "访客视图:扫码落地;体面内容全量展示(分享者有面子)+打码钩子「还有一段 TA 没发出来的话」渐隐遮罩;点亮 3 颗心免注册解锁(逐颗点亮带进度提示「还差 2 颗」);解锁后深色转化 CTA(用念家时打开你们的照片/免费记日子做卡片埋胶囊);微信合规红线:不强制授权不强制注册",
+        "source": "user_document"
+      },
+      {
+        "fact": "我的卡片:生成/分享即存档(当日同 kind 去重=前端做,见原型 pushMadeCard);双列卡片墙(封面=kicker+天数/emoji 渲染);再次分享直接重出海报;删除有确认;我的页统计三项(记着的日子/做过的卡片/收到的心)",
+        "source": "user_document"
+      },
+      {
+        "fact": "AI 成本控制(PRD §5):感恩信生成每日每人 ≤5 次;模板文案生成结果缓存复用;性能:海报 ≤3s、AI 加载动画 ≤2.5s 且可跳过;合规红线继承:AI 生成文案须过合规词表",
+        "source": "user_document"
+      },
+      {
+        "fact": "已拍板:AI 走 OpenAI 兼容网关(后端读 OPENAI_BASE_URL/OPENAI_API_KEY/HARNESS_LLM_MODEL 风格环境变量),无 Key/调用失败降级本地文案库(每素材双写法组合),信件功能永不报错不可用;海报前端 canvas 渲染,后端只下发带参二维码链接(scene 协议指向访客页);访客防刷 device 维度(前端生成持久 deviceId),同一设备不重复计数;本 change 含时光胶囊(封存→开箱日召回→开箱→分享开箱)",
+        "source": "user_decision"
+      },
+      {
+        "fact": "既有资产:契约 v1.6.0 tag=days 已有 7 端点,DayRecord 含 kind=TOGETHER 与 togetherDays 计算字段(天数卡数据基础);错误码五枚 40000/40100/40300/40400/40900;后端 DayTextLib 有违禁词表+类加载期断言机制(FORBIDDEN_WORDS 37 词,含 v1.5 追加),可扩展承载降级文案库;NotifyDtos 订阅登记(templateId+accepted,remainingQuota)语义可复用于胶囊开箱日提醒;前端 utils/request.js 双通道网络层可复用,登录链路已有;tpl 页当前为占位页",
+        "source": "code"
+      }
+    ],
+    "decisions": [
+      {
+        "id": "D1",
+        "decision": "AI 供应商形态:OpenAI 兼容网关,环境变量 OPENAI_BASE_URL/OPENAI_API_KEY/HARNESS_LLM_MODEL;无 Key/超时/异常一律静默降级本地文案库(source=FALLBACK),信件端点除频控外永不因 AI 故障报错"
+      },
+      {
+        "id": "D2",
+        "decision": "海报渲染位置=前端 canvas(拍板):后端不出图;后端职责=卡片存档+签发唯一 shareScene+下发访客页路径(scene 协议 ≤40 字符满足小程序码限制);二维码由前端本地绘制"
+      },
+      {
+        "id": "D3",
+        "decision": "访客 3 心防刷=device 维度(拍板):前端首次进入访客页生成 UUID 持久化于 storage 作为 deviceId;deviceId+cardId 唯一计数,同设备同卡片封顶 3 不重复计数;不做登录态绑定(免注册红线)"
+      },
+      {
+        "id": "D4",
+        "decision": "TimeCapsule 为独立实体而非 MadeCard 子类型:①有独立状态机 SEALED→OPENED 与开箱日语义(到期判定/召回/提醒),MadeCard.status 承载不了时间门控;②开箱前内容不可读需要实体级字段级读取门控(本人详情+访客视图都要遮挡),payload 黑盒做不到字段级;③胶囊与邀请函卡片是引用关系(capsuleId)非包含关系。存储形态=明文存+读接口门控:威胁模型无拖库对抗需求(个人主体/内容无金融医疗敏感数据),加密引入密钥管理成本且门控逻辑一寸不少;加密存储列为后续安全增强"
+      },
+      {
+        "id": "D5",
+        "decision": "AI 降级文案库规模与结构:故事素材 5 键×每键 ≥2 写法,语气 3 种×每种 ≥2 收尾,开头 ≥3 写法;类加载期全量过 DayTextLib 违禁词表断言(违禁即启动失败);AI 模式输出亦逐段运行时过滤,命中违禁词即丢弃该段并以降级写法补位"
+      },
+      {
+        "id": "D6",
+        "decision": "逐句改稿实现:generate 响应每段携带 variants(≥2 备选)与 selected,前端在同段 variants 内循环点换(对齐原型 renderLetter 循环取下一写法);导航栏整体重写=同参再次调 generate(计入每日 5 次频控);服务端不存草稿,定稿才 POST /api/cards 存档"
+      },
+      {
+        "id": "D7",
+        "decision": "胶囊开箱日判定:openDate(yyyy-MM-dd)为唯一权威字段,openRule 枚举仅用于前端展示预设文案;ONE_YEAR_LATER 由服务端按封存日+365 天计算 openDate,其余预设(GAOKAO_SCORE_DAY/WEDDING_ANNIVERSARY/BABY_18)由前端让用户落定具体日期传入;openDate 必须 > 封存日(当天不可封存当天开)"
+      },
+      {
+        "id": "D8",
+        "decision": "胶囊照片本 change 形态:payload 级 photoUrl 可空字符串;前端可先以「照片标记」交互(选照片占位)联调,真实图片上传链路(云存储直传)若 Stage 2 评审确认需要,属契约外前端资源问题不动契约;photoUrl 为空时开箱页只揭示文字"
+      },
+      {
+        "id": "D9",
+        "decision": "42900 新增错误码:访客点亮心软频控(单设备对单卡片 >3 次调用/分钟),提示「点太快啦，稍等一下再点」;区别于 40300(AI 生成每日 >5 次的硬频控)"
+      },
+      {
+        "id": "D10",
+        "decision": "当日同 kind 卡片去重=前端做(拍板,对齐原型 pushMadeCard 的 today 标记);服务端不去重不拦截,重复定稿各自成档;删除为软删(status=DELETED),已分享 scene 访客端随之 40400"
+      }
+    ],
+    "assumptions": [
+      {
+        "assumption": "OpenAI 兼容网关的具体 baseUrl/key 由部署环境变量注入,本 change 不在契约/代码中固化供应商;开发本地无 Key 即走降级路径可全量验收",
+        "needs_verification": false
+      },
+      {
+        "assumption": "胶囊开箱日订阅消息模板 ID 需微信后台申请,开发期占位;复用 /api/notify/subscribe 的 templateId 机制,真实下发属后续部署联调",
+        "needs_verification": true
+      },
+      {
+        "assumption": "访客页通过小程序码 scene 进入(长按识别/扫码打开小程序),visitor 页面在小程序内打开,端点免鉴权但请求仍可走云托管 callContainer 通道;免鉴权指不依赖登录 token、不返回 40100",
+        "needs_verification": true
+      },
+      {
+        "assumption": "模板社会证明人数(12.4 万人已写等)初期为静态运营数字(TemplateConfig.usedCount 种子值),非真实统计;后续接真实计数不改契约字段",
+        "needs_verification": false
+      }
+    ],
+    "unresolved_questions": [],
+    "coverage": {
+      "goal_value": "covered",
+      "users_permissions": "covered",
+      "scope": "covered",
+      "main_flow": "covered",
+      "state": "covered",
+      "data": "covered",
+      "exceptions": "covered",
+      "interaction": "covered",
+      "dependencies": "covered",
+      "non_functional": "covered",
+      "acceptance": "covered"
+    }
+  },
+  "contract_readiness": {
+    "api_draft": [
+      {
+        "path": "/api/templates",
+        "method": "GET",
+        "operationId": "listTemplates",
+        "summary": "模板清单(服务端配置驱动:分类/上下架/预约态/节点倒计时数据/预览弹层元数据);节点日历横滑与首页节日横幅同源消费此数据,前端本地算倒计时",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "category",
+            "type": "string(query)",
+            "required": false,
+            "bounds": "枚举 FESTIVAL|FAMILY|COUPLE|FUN;缺省=全部"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "items",
+            "type": "array<TemplateView>",
+            "required": true,
+            "bounds": "按 sort 升序;含 live=false 模板(预约态展示)"
+          }
+        ],
+        "error_codes": [
+          "40100"
+        ]
+      },
+      {
+        "path": "/api/templates/letter/generate",
+        "method": "POST",
+        "operationId": "generateLetter",
+        "summary": "感恩信生成(AI 优先,无 Key/异常静默降级本地文案库;无服务端草稿态);响应每段 ≥2 备选 variants;导航栏整体重写=同参重调本端点;每日每人 ≤5 次(40300)",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "recipient",
+            "type": "string",
+            "required": true,
+            "bounds": "1-12 字(妈妈/岳母/婆婆/奶奶/自定义文本)"
+          },
+          {
+            "name": "stories",
+            "type": "array<string>",
+            "required": true,
+            "bounds": "1-5 项,去重,值域=5 个固定素材键(留饭/上学/唠叨/带大/视频);空数组返回 40000"
+          },
+          {
+            "name": "tone",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 TEAR(戳泪点)|FUN(幽默)|CALM(平淡)"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "generationId",
+            "type": "string",
+            "required": true,
+            "bounds": "本次生成标识(幂等用途,前端定稿时随 payload 记录来源,服务端不存草稿)"
+          },
+          {
+            "name": "source",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 AI|FALLBACK;降级路径对用户无感,仅埋点用"
+          },
+          {
+            "name": "paragraphs",
+            "type": "array<object>",
+            "required": true,
+            "bounds": "5-9 项,顺序=开头1+每故事1+收尾1;每项 {index,role(OPENING|STORY|CLOSING),storyKey(可空),variants(array<string>,≥2 项,均过违禁词表),selected(string,当前采用写法)}"
+          },
+          {
+            "name": "signText",
+            "type": "string",
+            "required": true,
+            "bounds": "落款固定文案(如「—— 你的孩子」),不可换"
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40100",
+          "40300"
+        ]
+      },
+      {
+        "path": "/api/cards",
+        "method": "POST",
+        "operationId": "createCard",
+        "summary": "卡片定稿存档(三类统一:LETTER 定稿/DAYS_CARD 生成/CAPSULE 邀请函);payload 按 templateKind 异构;当日去重前端做(决策 D10)",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "templateKind",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 LETTER|DAYS_CARD|CAPSULE"
+          },
+          {
+            "name": "payload",
+            "type": "object",
+            "required": true,
+            "bounds": "按 kind 校验(见实体 MadeCard.payload 三形态);字段缺失/非法 40000"
+          },
+          {
+            "name": "sourceDayId",
+            "type": "integer",
+            "required": false,
+            "bounds": "仅 DAYS_CARD 可关联 DayRecord(kind=TOGETHER);传入非本人/非 TOGETHER 日子 40000"
+          },
+          {
+            "name": "capsuleId",
+            "type": "integer",
+            "required": false,
+            "bounds": "仅 CAPSULE 必填,须为本人 SEALED 胶囊"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "MadeCardView",
+            "type": "object",
+            "required": true,
+            "bounds": "见实体定义,含 id/status/createdAt;shareScene 此时为 null(首分享才签发)"
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40100",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/cards",
+        "method": "GET",
+        "operationId": "listMyCards",
+        "summary": "我的卡片列表(双列卡片墙数据源)+统计;按 createdAt 降序",
+        "auth": "登录(40100)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "items",
+            "type": "array<MadeCardView>",
+            "required": true,
+            "bounds": "仅 status=ACTIVE;封面渲染元数据从 payload 归并"
+          },
+          {
+            "name": "total",
+            "type": "integer",
+            "required": true,
+            "bounds": "做过的卡片数(我的页统计)"
+          },
+          {
+            "name": "heartsReceived",
+            "type": "integer",
+            "required": true,
+            "bounds": "收到的心=本人全部卡片 totalHearts 之和(我的页统计)"
+          }
+        ],
+        "error_codes": [
+          "40100"
+        ]
+      },
+      {
+        "path": "/api/cards/{id}",
+        "method": "GET",
+        "operationId": "getMyCard",
+        "summary": "卡片详情(再次分享/重出海报数据源);仅本人可见",
+        "auth": "登录(40100)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "MadeCardView",
+            "type": "object",
+            "required": true,
+            "bounds": "含完整 payload 与 totalHearts;他人卡片 40400"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/cards/{id}",
+        "method": "DELETE",
+        "operationId": "deleteMyCard",
+        "summary": "删除卡片(软删 status=DELETED);已签发 scene 随之失效(访客端 40400);前端删除前需二次确认",
+        "auth": "登录(40100)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "deleted",
+            "type": "boolean",
+            "required": true,
+            "bounds": "恒 true;重复删除幂等"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/cards/{id}/share",
+        "method": "POST",
+        "operationId": "issueShareScene",
+        "summary": "签发分享场景码(幂等:同卡片恒返回同一 scene)+下发访客页路径(scene 协议,前端据此本地绘二维码/海报)",
+        "auth": "登录(40100)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "scene",
+            "type": "string",
+            "required": true,
+            "bounds": "8-12 位随机串(base62),卡片维度唯一;首次调用生成,后续恒定"
+          },
+          {
+            "name": "pagePath",
+            "type": "string",
+            "required": true,
+            "bounds": "pages/visitor/visitor?scene=...,总长 ≤40 字符(小程序码 scene 限制)"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/capsules",
+        "method": "POST",
+        "operationId": "sealCapsule",
+        "summary": "封存时光胶囊(openDate>封存日;contentText 明文存,读取由接口门控,决策 D4/D7);开箱日订阅提醒复用既有 /api/notify/subscribe 语义",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "type",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 SELF(给未来的自己)|PARTNER(给未来的 TA)"
+          },
+          {
+            "name": "openRule",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 ONE_YEAR_LATER|GAOKAO_SCORE_DAY|WEDDING_ANNIVERSARY|BABY_18;仅展示用,判定看 openDate"
+          },
+          {
+            "name": "openDate",
+            "type": "string",
+            "required": true,
+            "bounds": "yyyy-MM-dd;ONE_YEAR_LATER 由服务端按封存日+365 天计算可缺省,其余预设必填;必须 > 今天,否则 40000"
+          },
+          {
+            "name": "coverHint",
+            "type": "string",
+            "required": true,
+            "bounds": "1-40 字(预置点选或自定义);开箱人扫码第一眼所见,过违禁词表"
+          },
+          {
+            "name": "contentText",
+            "type": "string",
+            "required": true,
+            "bounds": "1-500 字;过违禁词表(静态+运行时)"
+          },
+          {
+            "name": "photoUrl",
+            "type": "string",
+            "required": false,
+            "bounds": "可空;本 change 允许为空串或前端自托管链接(决策 D8)"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "CapsuleView",
+            "type": "object",
+            "required": true,
+            "bounds": "SEALED 态:含 id/openDate/daysUntilOpen/coverHint,不含 contentText/photoUrl(门控)"
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40100"
+        ]
+      },
+      {
+        "path": "/api/capsules",
+        "method": "GET",
+        "operationId": "listMyCapsules",
+        "summary": "我的胶囊列表(我的页「待开红点」数据源);按 openDate 升序,已开的按 openedAt 降序排后",
+        "auth": "登录(40100)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "items",
+            "type": "array<CapsuleView>",
+            "required": true,
+            "bounds": "SEALED 态项不含内容字段;每项含 dueNow(today≥openDate 且未开)=首页召回横幅数据源"
+          },
+          {
+            "name": "dueCount",
+            "type": "integer",
+            "required": true,
+            "bounds": "待开数(红点角标)"
+          }
+        ],
+        "error_codes": [
+          "40100"
+        ]
+      },
+      {
+        "path": "/api/capsules/{id}",
+        "method": "GET",
+        "operationId": "getMyCapsule",
+        "summary": "胶囊详情:SEALED 态仅返回封面提示语/开箱日/倒计时(不下发内容);OPENED 态返回完整内容(开箱后可反复回看)",
+        "auth": "登录(40100)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "CapsuleView",
+            "type": "object",
+            "required": true,
+            "bounds": "status=SEALED:无 contentText/photoUrl 字段;status=OPENED:含内容+openRule/type/coverHint/openedAt"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/capsules/{id}/open",
+        "method": "POST",
+        "operationId": "openCapsule",
+        "summary": "开箱:today≥openDate 才允许;成功置 OPENED 并首次下发内容;重复调用幂等返回首次结果",
+        "auth": "登录(40100)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "CapsuleView",
+            "type": "object",
+            "required": true,
+            "bounds": "OPENED 态完整内容(信件+照片揭示)"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40400",
+          "40900"
+        ]
+      },
+      {
+        "path": "/api/public/cards/{scene}",
+        "method": "GET",
+        "operationId": "getVisitorCard",
+        "summary": "【免鉴权】访客扫码落地:按卡片可见策略返回体面内容+打码钩子+本设备心进度;不要求登录 token,不返回 40100",
+        "auth": "无(免鉴权,visitor 组)",
+        "request": [
+          {
+            "name": "deviceId",
+            "type": "string(query)",
+            "required": true,
+            "bounds": "前端生成并持久化的 UUID(决策 D3);32-64 字符"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "templateKind",
+            "type": "string",
+            "required": true,
+            "bounds": "LETTER|DAYS_CARD|CAPSULE;驱动访客页样式"
+          },
+          {
+            "name": "publicPayload",
+            "type": "object",
+            "required": true,
+            "bounds": "体面内容:LETTER=recipient+前3段+落款;DAYS_CARD=relation/startDate/daysTogether(服务端实时算)/styleKey;CAPSULE=type/coverHint/openDate/daysUntilOpen(不含信件本体)"
+          },
+          {
+            "name": "lockedTeaser",
+            "type": "string",
+            "required": true,
+            "bounds": "打码钩子提示文案(「还有一段 TA 没发出来的话」),前端渲染渐隐遮罩"
+          },
+          {
+            "name": "hearts",
+            "type": "integer",
+            "required": true,
+            "bounds": "本设备已点亮数 0-3"
+          },
+          {
+            "name": "unlocked",
+            "type": "boolean",
+            "required": true,
+            "bounds": "hearts≥3 即 true;true 时前端展示深色转化 CTA"
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40400"
+        ]
+      },
+      {
+        "path": "/api/public/cards/{scene}/hearts",
+        "method": "POST",
+        "operationId": "lightHeart",
+        "summary": "【免鉴权】点亮一颗心(device 维度计数,同设备同卡片封顶 3 不重复计数);软频控 42900(>3 次/分钟)",
+        "auth": "无(免鉴权,visitor 组)",
+        "request": [
+          {
+            "name": "deviceId",
+            "type": "string",
+            "required": true,
+            "bounds": "32-64 字符 UUID;与 VisitorUnlock.deviceId 对应"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "hearts",
+            "type": "integer",
+            "required": true,
+            "bounds": "点亮后本设备计数 0-3;已满 3 后再调恒返回 3(幂等不报错)"
+          },
+          {
+            "name": "unlocked",
+            "type": "boolean",
+            "required": true,
+            "bounds": "hearts≥3 即 true"
+          },
+          {
+            "name": "remainingHint",
+            "type": "string",
+            "required": true,
+            "bounds": "「还差 N 颗 ❤️」/「已解锁」;过违禁词表"
+          },
+          {
+            "name": "totalHearts",
+            "type": "integer",
+            "required": true,
+            "bounds": "该卡片累计收到的总心数(卡片主人统计同源)"
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40400",
+          "42900"
+        ]
+      },
+      {
+        "path": "/api/public/cards/{scene}/content",
+        "method": "GET",
+        "operationId": "getUnlockedContent",
+        "summary": "【免鉴权】解锁后取隐藏内容(LETTER=完整段落;DAYS_CARD=隐藏一句话;CAPSULE=开箱前为 coverHint 之外的封存信摘要,开箱日后=信件本体+照片);未解锁 40900",
+        "auth": "无(免鉴权,visitor 组)",
+        "request": [
+          {
+            "name": "deviceId",
+            "type": "string(query)",
+            "required": true,
+            "bounds": "32-64 字符 UUID"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "templateKind",
+            "type": "string",
+            "required": true,
+            "bounds": "同 getVisitorCard"
+          },
+          {
+            "name": "hiddenContent",
+            "type": "object",
+            "required": true,
+            "bounds": "按 kind:LETTER={paragraphs(完整定稿段落),signText};DAYS_CARD={hiddenLine(如「下一个 N 天，打算继续赖着你」)};CAPSULE={contentText,photoUrl(开箱日前为预置悬念文案,不含真实内容)}"
+          },
+          {
+            "name": "ctaCopy",
+            "type": "object",
+            "required": true,
+            "bounds": "深色转化 CTA 数据:{title:用「念家时」打开你们的照片,sub:免费记日子·做卡片·埋时光胶囊,buttonText:打开念家时}"
+          }
+        ],
+        "error_codes": [
+          "40000",
+          "40400",
+          "40900"
+        ]
+      }
+    ],
+    "reused_endpoints": [
+      {
+        "path": "/api/auth/login",
+        "note": "登录链路不变;访客端点组不走登录"
+      },
+      {
+        "path": "/api/days(含 GET /api/days 与详情)",
+        "note": "天数卡数据基础:kind=TOGETHER 的 DayRecord.togetherDays 计算字段直接派生起始日;做卡片入口从日子详情直达"
+      },
+      {
+        "path": "/api/notify/subscribe",
+        "note": "胶囊开箱日提醒的订阅登记复用该语义(templateId 换「胶囊开箱提醒」模板,开发期占位,本 spec 不展开);拒绝登记静默降级"
+      },
+      {
+        "path": "/api/calendar/convert",
+        "note": "天数卡独立输入起始日如需农历换算可复用,契约不改"
+      }
+    ],
+    "entities": [
+      {
+        "name": "TemplateConfig",
+        "table": "template_config",
+        "fields": [
+          {
+            "name": "key",
+            "type": "string",
+            "required": true,
+            "bounds": "主键,枚举值:LETTER|DAYS_CARD|CAPSULE|BIRTHDAY_CARD|HARD_FOR_DAD|WEDDING_CARD"
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "bounds": "模板名(给妈妈的感恩信/相伴天数卡/时光胶囊邀请函/生日福卡/给爸爸的一句硬话/结婚纪念日卡)"
+          },
+          {
+            "name": "category",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 FESTIVAL(节日)|FAMILY(家人)|COUPLE(情侣)|FUN(整活);前端分类 Tab 过滤"
+          },
+          {
+            "name": "live",
+            "type": "boolean",
+            "required": true,
+            "bounds": "上下架;false=可预约态(主按钮「上线提醒我」,预约仅前端本地收藏)"
+          },
+          {
+            "name": "sort",
+            "type": "integer",
+            "required": true,
+            "bounds": "展示序,升序"
+          },
+          {
+            "name": "festivalDate",
+            "type": "string",
+            "required": false,
+            "bounds": "yyyy-MM-dd 可空;节点日历横滑倒计时数据源(母亲节/父亲节/七夕),前端本地算 X 天后;FR-5 仅前端展示层"
+          },
+          {
+            "name": "festivalLabel",
+            "type": "string",
+            "required": false,
+            "bounds": "节点卡名称(母亲节等)+emoji;可空"
+          },
+          {
+            "name": "previewMeta",
+            "type": "object(JSON)",
+            "required": true,
+            "bounds": "预览弹层渲染数据:{kicker,emoji,sampleText,backgroundKey(样式渲染键),sub(一句话说明),feats(array<string>特性标签),usedLabel(社会证明文案如「12.4 万人已写」),durationLabel(如「约 3 分钟」),freeLabel(恒「✅ 免费」),hint(场景化提示)}"
+          },
+          {
+            "name": "makerPage",
+            "type": "string",
+            "required": false,
+            "bounds": "可空(live 但无制作页的模板如 BIRTHDAY_CARD 为 null,按钮提示「生日当天首页提醒你」)"
+          }
+        ],
+        "computed_view_fields": [],
+        "states": [
+          "live=true:主按钮「✨ 开始制作」(makerPage 非空)或提示文案(makerPage 空);live=false:主按钮「🔔 上线提醒我」+「先收藏」",
+          "配置维护:无管理端点,SQL/种子数据驱动(运营上下架)"
+        ]
+      },
+      {
+        "name": "MadeCard",
+        "table": "made_card",
+        "fields": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "bounds": "主键"
+          },
+          {
+            "name": "userId",
+            "type": "integer",
+            "required": true,
+            "bounds": "创建人=卡片主人"
+          },
+          {
+            "name": "templateKind",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 LETTER(感恩信)|DAYS_CARD(相伴天数卡)|CAPSULE(胶囊邀请函)"
+          },
+          {
+            "name": "payload",
+            "type": "object(JSON)",
+            "required": true,
+            "bounds": "按 kind 异构:LETTER={recipient,tone,paragraphs(array<string>定稿段落),signText,styleKey(恒 NIGHT)};DAYS_CARD={relation,startDate(yyyy-MM-dd 含年),styleKey(SUNSET|NIGHT|MINT)};CAPSULE={capsuleId,coverHint,openDate,type,styleKey(恒 MINT)};服务端按 kind 校验结构与长度,非法 40000"
+          },
+          {
+            "name": "sourceDayId",
+            "type": "integer",
+            "required": false,
+            "bounds": "可空;仅 DAYS_CARD 使用,指向 DayRecord(kind=TOGETHER);为空=独立输入起始日"
+          },
+          {
+            "name": "capsuleId",
+            "type": "integer",
+            "required": false,
+            "bounds": "可空;仅 CAPSULE 使用,指向 TimeCapsule;一对一会引用非包含(决策 D4)"
+          },
+          {
+            "name": "shareScene",
+            "type": "string",
+            "required": false,
+            "bounds": "可空;首次 POST /share 时签发;全局唯一;软删后该 scene 访客端 40400"
+          },
+          {
+            "name": "status",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 ACTIVE(默认)|DELETED(软删,列表/详情/访客端均不可见)"
+          },
+          {
+            "name": "createdAt",
+            "type": "string",
+            "required": true,
+            "bounds": "ISO 时间;列表按此降序"
+          }
+        ],
+        "computed_view_fields": [
+          {
+            "name": "totalHearts",
+            "type": "integer",
+            "bounds": "收到的心:该卡片 VisitorUnlock hearts 之和(跨设备累计);我的页「收到的心」=各卡合计"
+          }
+        ],
+        "states": [
+          "ACTIVE → DELETED(软删,幂等);shareScene 签发仅一次(幂等恒定)",
+          "当日同 kind 去重由前端做(决策 D10),服务端不去重"
+        ]
+      },
+      {
+        "name": "TimeCapsule",
+        "table": "time_capsule",
+        "fields": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "bounds": "主键"
+          },
+          {
+            "name": "userId",
+            "type": "integer",
+            "required": true,
+            "bounds": "封存人;仅本人可读/开箱"
+          },
+          {
+            "name": "type",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 SELF|PARTNER"
+          },
+          {
+            "name": "openRule",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 ONE_YEAR_LATER|GAOKAO_SCORE_DAY|WEDDING_ANNIVERSARY|BABY_18;仅展示用"
+          },
+          {
+            "name": "openDate",
+            "type": "string",
+            "required": true,
+            "bounds": "yyyy-MM-dd,唯一权威开箱判定字段(决策 D7);必须>封存日"
+          },
+          {
+            "name": "coverHint",
+            "type": "string",
+            "required": true,
+            "bounds": "1-40 字,开箱人扫码第一眼所见;SEALED 态访客可见"
+          },
+          {
+            "name": "contentText",
+            "type": "string",
+            "required": true,
+            "bounds": "1-500 字;明文存+读接口门控(决策 D4):SEALED 态任何端点不下发;过违禁词表"
+          },
+          {
+            "name": "photoUrl",
+            "type": "string",
+            "required": false,
+            "bounds": "可空;门控同 contentText(决策 D8)"
+          },
+          {
+            "name": "status",
+            "type": "string",
+            "required": true,
+            "bounds": "枚举 SEALED(默认)|OPENED"
+          },
+          {
+            "name": "sealedAt",
+            "type": "string",
+            "required": true,
+            "bounds": "ISO 时间;ONE_YEAR_LATER 的 openDate=sealedAt+365 天"
+          },
+          {
+            "name": "openedAt",
+            "type": "string",
+            "required": false,
+            "bounds": "可空;首次 POST /open 时间"
+          }
+        ],
+        "computed_view_fields": [
+          {
+            "name": "daysUntilOpen",
+            "type": "integer",
+            "bounds": "today 到 openDate 天数,≥0;=0 即到期可开(dueNow)"
+          },
+          {
+            "name": "dueNow",
+            "type": "boolean",
+            "bounds": "today≥openDate 且 status=SEALED;首页召回横幅数据源"
+          }
+        ],
+        "states": [
+          "SEALED(内容门控:本人详情不返回 contentText/photoUrl,访客仅见 coverHint)→ OPENED(today≥openDate 时 POST /open,幂等;之后内容对本人常开)",
+          "独立实体裁定理由与存储形态裁定见 clarification.decisions D4"
+        ]
+      },
+      {
+        "name": "VisitorUnlock",
+        "table": "visitor_unlock",
+        "fields": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "bounds": "主键"
+          },
+          {
+            "name": "deviceId",
+            "type": "string",
+            "required": true,
+            "bounds": "前端生成持久 UUID(32-64 字符);deviceId+cardId 唯一(防刷核心,决策 D3)"
+          },
+          {
+            "name": "cardId",
+            "type": "integer",
+            "required": true,
+            "bounds": "关联 MadeCard;卡片软删后记录保留但 scene 查询 40400"
+          },
+          {
+            "name": "hearts",
+            "type": "integer",
+            "required": true,
+            "bounds": "0-3,本设备已点亮数;≥3 即 unlocked;每设备每卡片封顶 3 不重复计数"
+          },
+          {
+            "name": "unlockedAt",
+            "type": "string",
+            "required": false,
+            "bounds": "可空;hearts 首次达 3 的时间"
+          },
+          {
+            "name": "lastHeartAt",
+            "type": "string",
+            "required": true,
+            "bounds": "最近一次点亮时间;42900 软频控(>3 次/分钟)判定依据"
+          }
+        ],
+        "states": [
+          "计数:每次 hearts +1(封顶 3);同 deviceId 同 cardId 重复行不允许(唯一约束)",
+          "解锁不可逆:unlocked 后再调 hearts 恒返回 3/true(幂等)"
+        ]
+      },
+      {
+        "name": "LetterTextLib(服务端文案资产,非数据库实体)",
+        "table": null,
+        "fields": [
+          {
+            "name": "STORY_PARAS",
+            "type": "map<string,array<string>>",
+            "required": true,
+            "bounds": "5 素材键(留饭/上学/唠叨/带大/视频)×每键 ≥2 写法;降级模式的段落 variants 来源(对齐原型 STORY_PARAS 双写法结构)"
+          },
+          {
+            "name": "TONE_END",
+            "type": "map<string,array<string>>",
+            "required": true,
+            "bounds": "3 语气(TEAR|FUN|CALM)×每种 ≥2 收尾写法"
+          },
+          {
+            "name": "OPENINGS",
+            "type": "array<string>",
+            "required": true,
+            "bounds": "开头 ≥3 写法"
+          },
+          {
+            "name": "合规断言",
+            "type": "static",
+            "required": true,
+            "bounds": "类加载期全量过 DayTextLib.FORBIDDEN_WORDS 断言(违禁即启动失败);AI 运行时输出逐段过滤,命中即丢弃该段并以降级写法补位(决策 D5)"
+          }
+        ],
+        "states": []
+      }
+    ],
+    "error_codes": [
+      {
+        "code": "40000",
+        "meaning": "参数错误(recipient/stories/tone/templateKind/openDate 非法、payload 结构与 templateKind 不符、openDate≤今天、sourceDayId 非本人或非 TOGETHER、deviceId 缺失)"
+      },
+      {
+        "code": "40100",
+        "meaning": "未登录或身份失效;visitor 组(/api/public/*)四端点免鉴权,不适用"
+      },
+      {
+        "code": "40300",
+        "meaning": "硬频控:感恩信生成每日每人 >5 次(AI 与降级路径统一计数)"
+      },
+      {
+        "code": "40400",
+        "meaning": "资源不存在/越权(卡片/胶囊非本人、scene 无效或卡片已软删;不泄露存在性)"
+      },
+      {
+        "code": "40900",
+        "meaning": "状态冲突(新增语义:胶囊未到期开箱、访客未解锁取隐藏内容)"
+      },
+      {
+        "code": "42900",
+        "meaning": "新增:软频控——访客点亮心操作过于频繁(单设备对单卡片 >3 次/分钟),提示稍后再点;不阻断解锁目标"
+      }
+    ]
+  },
+  "document": {
+    "approved": true,
+    "quality_gate": "passed",
+    "quality_gate_detail": {
+      "complexity": "L",
+      "coverage": {
+        "FR-4": "covered",
+        "FR-5(前端展示层)": "covered",
+        "FR-6": "covered",
+        "FR-7": "covered",
+        "FR-8": "covered",
+        "FR-9": "covered",
+        "FR-10": "covered",
+        "FR-11": "covered"
+      },
+      "risks": [
+        {
+          "id": "R1",
+          "risk": "AI 网关输出不稳定(超时/格式坏/违禁词),感恩信体验劣化或合规事故",
+          "severity": "high",
+          "mitigation": "三重防线:无 Key/异常静默降级文案库(source=FALLBACK 用户无感)+AI 输出逐段运行时违禁词过滤(命中丢弃并降级补位)+降级文案库类加载期断言;验收含「无 Key 全量可用」与「违禁词永不返回」两条"
+        },
+        {
+          "id": "R2",
+          "risk": "免鉴权 visitor 端点被脚本刷心/刷内容,污染「收到的心」统计与 AI 成本外的服务负载",
+          "severity": "medium",
+          "mitigation": "scene 为高熵随机串(8-12 位 base62)不可枚举;deviceId+cardId 唯一约束+42900 软频控;Stage 2 评审可加云托管层 IP 限流(不进契约)"
+        },
+        {
+          "id": "R3",
+          "risk": "胶囊明文存储:拖库场景信件内容与照片链接泄露",
+          "severity": "medium",
+          "mitigation": "已裁定为可接受风险(决策 D4,个人主体/无金融医疗敏感数据/接口门控已满足产品承诺);加密存储列为后续安全增强,photoUrl 建议前端使用无索引云存储链接"
+        },
+        {
+          "id": "R4",
+          "risk": "胶囊开箱日召回横幅依赖用户主动打开小程序,无服务端推送时召回率不达 PRD 目标(≥50%)",
+          "severity": "medium",
+          "mitigation": "订阅消息开箱日提醒复用既有 /api/notify/subscribe 语义(开发期模板占位);dueNow 数据源本 change 交付,推送下发与 Stage 9 联调对齐"
+        },
+        {
+          "id": "R5",
+          "risk": "前端 canvas 海报绘制在低端机超 3s 性能预算,或三样式渲染与设计稿偏差",
+          "severity": "low",
+          "mitigation": "海报数据全部来自卡片 payload/模板 previewMeta,无网络往返;Stage 2 出视觉标注稿并真机性能验收;二维码本地生成库(如 weapp-qrcode)打包体积提前评估"
+        },
+        {
+          "id": "R6",
+          "risk": "新增 8+ 小程序页面使提审包与审核风险上升(三 Tab 全量功能首提)",
+          "severity": "medium",
+          "mitigation": "与 Change 1 合并排期:本 change 完成后三 Tab 均为真实功能,占位页清零,恰为改名提审的完整形态;访客页免注册体验符合审核口径"
+        }
+      ]
+    },
+    "frs": [
+      {
+        "id": "FR-4",
+        "name": "模板预览",
+        "user_story": "作为想表达仪式感的用户,我先在模板馆看到每类卡片的迷你成品、特性和多少人做过,再决定做哪一张。",
+        "details": [
+          "模板馆数据由 GET /api/templates 驱动:分类 Tab(全部/节日/家人/情侣/整活)前端过滤 category;节点日历横滑用 festivalDate 本地算倒计时(FR-5 仅前端展示层)",
+          "每模板点击先进预览弹层:迷你成品(真实样式渲染,backgroundKey)+特性标签(feats)+社会证明(usedLabel/durationLabel/freeLabel)+场景化提示(hint),全部来自 previewMeta",
+          "live=true 且 makerPage 非空:主按钮「✨ 开始制作」;live=true 但 makerPage 空(生日福卡):提示「生日当天会在首页提醒你」;live=false:主按钮「🔔 上线提醒我」(仅前端本地收藏,服务端预约推送 V1.1)+「先收藏」",
+          "模板上下架由 TemplateConfig 配置驱动(SQL/种子),无管理端点"
+        ],
+        "acceptance_criteria": [
+          "GET /api/templates 返回 ≥6 条模板(letter/days/capsule/birthday/father/wedding),按 sort 升序",
+          "预览弹层所有展示字段可由 previewMeta 渲染,前端无模板名/文案硬编码",
+          "live=false 模板无进入制作页路径;birthday 模板点击提示「生日当天首页提醒你」",
+          "分类过滤 FESTIVAL/FAMILY/COUPLE/FUN 各返回正确子集",
+          "festivalDate 节点卡倒计时与本地日期计算一致(跨天用例)"
+        ]
+      },
+      {
+        "id": "FR-6",
+        "name": "感恩信(AI 代笔)",
+        "user_story": "作为表达笨拙的子女,我点选写给谁、你们的故事和语气,AI 替我写出一封能发出去的信,每句还能换到我满意。",
+        "details": [
+          "输入全点选:recipient(妈妈/岳母/婆婆/奶奶/自定义 1-12 字)→stories 多选(5 固定素材键,1-5 项)→tone(TEAR/FUN/CALM)",
+          "生成 5 段式:开头+每故事一段+语气收尾+落款(落款固定不可换);AI 优先(OpenAI 兼容网关,OPENAI_BASE_URL/OPENAI_API_KEY/HARNESS_LLM_MODEL 环境变量),无 Key/异常静默降级文案库(source=FALLBACK)",
+          "降级文案库规模:每故事素材 ≥2 写法×语气 3 种每种 ≥2 收尾×开头 ≥3 写法,类加载期全量过违禁词表断言(违禁即启动失败);AI 输出逐段运行时过滤,命中违禁词丢弃该段并以降级写法补位",
+          "逐句改稿:响应每段 variants ≥2 备选+selected,前端同段循环点换;导航栏 🔄 整体重写=同参重调 generate(计入频控);服务端不存草稿",
+          "定稿:POST /api/cards(templateKind=LETTER,payload=recipient/tone/定稿段落/signText/styleKey);海报正文引用定稿内容",
+          "频控:每日每人 ≤5 次(40300,AI 与降级统一计数);加载动画 ≤2.5s 且可跳过;信件功能永不因 AI 故障报错不可用"
+        ],
+        "acceptance_criteria": [
+          "无 OPENAI_API_KEY 环境下 generate 返回完整段落信(source=FALLBACK),5 段结构与素材选择一致",
+          "每段 variants ≥2 且均过违禁词表;同段点换在 variants 内循环,不出现相邻重复",
+          "构造含违禁词的 AI 返回,接口输出中该段被降级写法替代,响应永不包含违禁词",
+          "同一用户当日第 6 次调 generate 返回 40300;第 1-5 次正常(含 AI 与降级混合)",
+          "stories 传空数组/未知素材键、tone 非法、recipient>12 字均 40000",
+          "定稿存档后 GET /api/cards 出现该卡,payload 段落与定稿一致"
+        ]
+      },
+      {
+        "id": "FR-7",
+        "name": "相伴天数卡",
+        "user_story": "作为想纪念在一起的情侣/密友,我选关系和起始日,拿到一张每天自动 +1 的天数卡,发出去永不过期。",
+        "details": [
+          "输入全点选:relation(恋人/结婚/闺蜜/好友)→起始日(两种来源:关联 DayRecord kind=TOGETHER(sourceDayId,togetherDays 服务端计算);或独立输入含年起始日 payload.startDate)→styleKey(SUNSET 霞橘/NIGHT 星河/MINT 薄荷)",
+          "天数=今天−起始日(下限 1),实时预览前端本地算,每天自动 +1",
+          "生成即存档 POST /api/cards(templateKind=DAYS_CARD);当日去重前端做"
+        ],
+        "acceptance_criteria": [
+          "关联 TOGETHER 日子:sourceDayId 指向该 DayRecord,访客端 daysTogether 与 /api/days 的 togetherDays 一致",
+          "独立起始日(如 2019-10-22)生成,天数与本地计算一致且次日 +1",
+          "三种 styleKey 均可存档并正确回显/渲染",
+          "sourceDayId 传非本人或非 TOGETHER 日子返回 40000"
+        ]
+      },
+      {
+        "id": "FR-8",
+        "name": "时光胶囊",
+        "user_story": "作为想给未来留一句话的用户,我封存一段话和一张照片,到了约定那天打开,还能分享这份开箱的感动。",
+        "details": [
+          "输入:type(SELF/PARTNER)→开箱日(openRule 预设枚举仅展示;openDate 为权威判定,ONE_YEAR_LATER=封存日+365 天服务端计算,其余预设由用户落定具体日期)→coverHint 点选(1-40 字)→contentText(1-500 字)+photoUrl 可空",
+          "独立实体 TimeCapsule(决策 D4);存储形态=明文存+读接口门控(决策 D5):SEALED 态本人详情/访客端均不下发 contentText/photoUrl",
+          "封存即生成邀请函 MadeCard(templateKind=CAPSULE,capsuleId 引用);访客体面内容=coverHint+开箱倒计时,隐藏内容=封存信",
+          "开箱日召回:GET /api/capsules 的 dueNow(today≥openDate 且 SEALED)驱动首页横幅;开箱 POST /open(未到期 40900,幂等)→摇晃动画→信件+照片揭示→双 CTA(我也埋一个/分享开箱)",
+          "开箱日订阅提醒复用 /api/notify/subscribe 语义(templateId 占位,不展开);内容过违禁词表(coverHint/contentText)"
+        ],
+        "acceptance_criteria": [
+          "封存 ONE_YEAR_LATER 胶囊:openDate=封存日+365 天,status=SEALED,daysUntilOpen 正确",
+          "SEALED 态 GET /api/capsules/{id} 与访客端响应均无 contentText/photoUrl 字段(不下发,非空值遮挡)",
+          "未到期 POST /open 返回 40900;到期 open 成功置 OPENED 返回内容;重复 open 幂等返回首次结果不重复计数",
+          "到期当天 dueNow=true(横幅出现),开箱后横幅消失、列表红点-1",
+          "openDate 传过去日期/当天封存返回 40000;coverHint/contentText 含违禁词被 40000 拒绝或过滤",
+          "胶囊邀请函进我的卡片;访客开箱前仅见 coverHint+倒计时,开箱日后访客解锁可见信件本体"
+        ]
+      },
+      {
+        "id": "FR-9",
+        "name": "海报生成",
+        "user_story": "作为做完卡片的用户,我一张带品牌位和二维码的海报,保存或分享出去,好友扫码就能看。",
+        "details": [
+          "后端职责:卡片存档+POST /api/cards/{id}/share 签发唯一 scene(8-12 位 base62,幂等)+下发 pagePath(pages/visitor/visitor?scene=...,≤40 字符)",
+          "前端 canvas:正文(引用定稿 payload)+固定品牌位(念家时+「把重要的日子，记在心上」)+二维码(本地按 pagePath 生成);三套类样式;分享面板四通道(微信好友/朋友圈/面对面/保存图片)",
+          "性能:海报生成 ≤3s,无额外网络往返(数据源=卡片详情)"
+        ],
+        "acceptance_criteria": [
+          "同卡片两次 share 返回同一 scene;不同卡片 scene 不同",
+          "canvas 海报含品牌位与可扫二维码,扫码直达访客视图且内容一致",
+          "三类卡片海报渲染各正确(样式/正文引用一致);海报生成 ≤3s"
+        ]
+      },
+      {
+        "id": "FR-10",
+        "name": "访客视图(免注册转化落地页)",
+        "user_story": "作为扫到海报的微信好友,我不用注册就能看到体面内容,点亮 3 颗心解锁隐藏话,再决定要不要装。",
+        "details": [
+          "visitor 组三端点免鉴权(无 40100):GET /public/cards/{scene}(体面内容+打码钩子+本设备进度)/POST /hearts(device 维度点亮)/GET /content(解锁后取隐藏内容)",
+          "deviceId=前端生成持久 UUID(决策 D3);deviceId+cardId 唯一,同设备同卡片封顶 3 不重复计数;42900 软频控(>3 次/分钟)",
+          "体面内容按 kind:LETTER=recipient+前 3 段+落款;DAYS_CARD=relation/startDate/daysTogether/styleKey;CAPSULE=coverHint/openDate/daysUntilOpen;lockedTeaser=「还有一段 TA 没发出来的话」",
+          "解锁后 content 返回 hiddenContent+ctaCopy(深色转化 CTA 固定数据:用念家时打开你们的照片/免费记日子做卡片埋胶囊/打开念家时)",
+          "合规红线:不强制授权不强制注册;已删卡片 scene 返回 40400 不泄露存在性"
+        ],
+        "acceptance_criteria": [
+          "无登录 token 设备全流程走通:查看→3 心点亮→解锁→CTA 展示",
+          "同一 deviceId 重复点亮不增计数(第 4 次起恒返回 3/true);A/B 设备进度互不影响;totalHearts 跨设备累计正确",
+          "未解锁 GET content 返回 40900;无效/已删 scene 返回 40400;deviceId 缺失返回 40000",
+          "剩余提示「还差 N 颗」与服务端 hearts 一致;单设备分钟级连点触发 42900 且不破坏已有进度",
+          "访客页面无任何强制授权/注册交互(合规)"
+        ]
+      },
+      {
+        "id": "FR-11",
+        "name": "我的卡片(二次裂变)",
+        "user_story": "作为做过卡片的用户,我的卡片墙能再次分享、能删除,让旧卡片继续带来新的访客。",
+        "details": [
+          "生成即存档(信定稿/天数卡生成/胶囊封存即邀请函);当日同 kind 去重前端做(决策 D10),服务端不去重",
+          "GET /api/cards:双列卡片墙(封面元数据由 templateKind+payload 归并)+total+heartsReceived(我的页统计:做过的卡片/收到的心;记着的日子=既有 /api/days 计数)",
+          "再次分享=GET /api/cards/{id} 数据源直接重出海报;删除二次确认,软删(status=DELETED)后 scene 访客端 40400"
+        ],
+        "acceptance_criteria": [
+          "三类卡片各做 1 张后列表 3 条、按 createdAt 降序、封面渲染正确",
+          "再次分享出图与定稿一致;heartsReceived=各卡 totalHearts 之和,随访客点亮实时增长",
+          "删除后:本人列表/详情 40400(或列表消失)、访客 scene 40400;重复删除幂等",
+          "前端当日同 kind 去重生效(当日第二次同 kind 生成不新增档)"
+        ]
+      }
+    ],
+    "pages": [
+      {
+        "path": "pages/tpl/tpl",
+        "tab": "模板馆",
+        "scope": "改版:节点日历横滑+分类 Tab+模板网格+预览弹层(既有占位页替换)"
+      },
+      {
+        "path": "pages/letter-edit/letter-edit",
+        "tab": "模板馆",
+        "scope": "感恩信选素材:recipient/故事多选/语气;生成触发 AI 动画"
+      },
+      {
+        "path": "pages/letter-preview/letter-preview",
+        "tab": "模板馆",
+        "scope": "信纸预览改稿:逐句点换(variants 循环)+整体重写+定稿生成海报"
+      },
+      {
+        "path": "pages/days-card/days-card",
+        "tab": "模板馆",
+        "scope": "相伴天数卡:关系/起始日(关联 TOGETHER 日子或独立输入)/样式/实时预览"
+      },
+      {
+        "path": "pages/capsule-edit/capsule-edit",
+        "tab": "模板馆",
+        "scope": "时光胶囊:类型/开箱日预设/封面提示语/内容+照片标记/封存"
+      },
+      {
+        "path": "pages/capsule-open/capsule-open",
+        "tab": "日子(首页召回)",
+        "scope": "开箱页:摇晃动画→信件+照片揭示→双 CTA(我也埋一个/分享开箱)"
+      },
+      {
+        "path": "pages/visitor/visitor",
+        "tab": "免登录落地页",
+        "scope": "访客视图:体面内容+打码钩子+3 心点亮+解锁+转化 CTA(免注册)"
+      },
+      {
+        "path": "pages/my-cards/my-cards",
+        "tab": "我的",
+        "scope": "我的卡片:双列卡片墙/再次分享/删除"
+      },
+      {
+        "path": "components/poster(组件)",
+        "tab": "跨页",
+        "scope": "canvas 海报组件+分享面板(微信好友/朋友圈/面对面/保存图片)"
+      },
+      {
+        "path": "pages/me/me",
+        "tab": "我的",
+        "scope": "改版:资料+三项统计(记着的日子/做过的卡片/收到的心)+我的卡片/我的胶囊入口"
+      },
+      {
+        "path": "pages/days/days",
+        "tab": "日子(首页)",
+        "scope": "增量:胶囊到期召回横幅(dueNow)+节日横幅接模板数据(仅展示)"
+      }
+    ],
+    "non_functional": [
+      "合规红线(一票否决):AI 生成文案须过合规词表断言——降级文案库类加载期断言(沿用 DayTextLib.FORBIDDEN_WORDS 机制,违禁即启动失败)+AI 运行时逐段过滤(命中丢弃并降级补位);分享奖励制非强制;访客免注册免授权;隐私最小化(AI 信件内容不含敏感个人信息上报,deviceId 不关联真实身份)",
+      "AI 成本控制:生成每日每人 ≤5 次(40300);降级路径零外部依赖;AI 结果可缓存复用(同素材组合)",
+      "性能:海报生成 ≤3s;AI 写信加载动画 ≤2.5s 且可跳过;访客首屏无登录依赖",
+      "视觉规范 v2:沿用 PRD §5 色板/字重/渐变;动画 ≤2.5s 可跳过;prefers-reduced-motion 全量降级",
+      "安全:scene 高熵随机不可枚举;visitor 端点最小数据下发(体面内容白名单字段)"
+    ]
+  }
+}

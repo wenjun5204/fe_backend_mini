@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "我的卡片",
+  "backgroundColor": "#fbfaf7",
+  "usingComponents": {
+    "poster": "/components/poster/poster"
+  }
+}

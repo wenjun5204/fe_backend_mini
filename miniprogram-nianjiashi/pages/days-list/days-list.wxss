@@ -1,0 +1,247 @@
+.page-alldays {
+  padding-bottom: 48rpx;
+}
+
+.view-seg {
+  margin: 24rpx 32rpx 0;
+}
+
+/* 时间线分组 */
+.tl-month {
+  padding: 20rpx 40rpx 16rpx;
+  font-size: 26rpx;
+  font-weight: 800;
+  color: var(--ink-3);
+  letter-spacing: 2rpx;
+  display: flex;
+  gap: 16rpx;
+  align-items: baseline;
+}
+.tl-name {
+  color: var(--ink);
+  font-size: 30rpx;
+}
+.tl-cnt {
+  font-size: 22rpx;
+  font-weight: 600;
+  background: #f1efe9;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+}
+
+/* 日子行(与首页同款) */
+.day-feed {
+  padding: 0 32rpx 12rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+.day-row {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 32rpx;
+  padding: 26rpx 30rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  box-shadow: 0 8rpx 40rpx rgba(28, 28, 40, 0.07);
+}
+.dr-ava {
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 46rpx;
+  flex-shrink: 0;
+  color: #fff;
+}
+.grad-hot { background: var(--grad-sunset); }
+.grad-teal { background: var(--grad-teal); }
+.grad-violet { background: var(--grad-violet); }
+.dr-info {
+  flex: 1;
+  min-width: 0;
+}
+.dr-name {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+.tag {
+  font-size: 22rpx;
+  font-weight: 700;
+  padding: 4rpx 16rpx;
+  border-radius: 14rpx;
+  margin-left: 12rpx;
+  vertical-align: 2rpx;
+}
+.tag-hot { background: #ffe9ee; color: var(--rose); }
+.tag-teal { background: #e6f7f4; color: var(--teal); }
+.tag-violet { background: #efeefc; color: var(--violet); }
+.dr-date {
+  font-size: 24rpx;
+  color: var(--ink-3);
+  margin-top: 6rpx;
+}
+.dr-right {
+  text-align: right;
+  flex-shrink: 0;
+}
+.dr-count {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+.dr-count.tog { color: var(--rose); }
+.dr-count.today { color: var(--teal); }
+.dr-unit {
+  font-size: 22rpx;
+  color: var(--ink-3);
+}
+
+.list-empty {
+  margin: 80rpx 64rpx;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 28rpx;
+  line-height: 1.8;
+}
+.list-empty .big {
+  font-size: 88rpx;
+  display: block;
+  margin-bottom: 24rpx;
+}
+
+/* 日历视图 */
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 40rpx 20rpx;
+}
+.cm {
+  font-size: 38rpx;
+  font-weight: 900;
+  color: var(--ink);
+}
+.cbtn {
+  width: 72rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  border: none;
+  border-radius: 24rpx;
+  background: #f1efe9;
+  color: var(--ink);
+  font-size: 34rpx;
+  text-align: center;
+}
+.cal-week {
+  display: flex;
+  padding: 0 20rpx 12rpx;
+}
+.cal-wd {
+  flex: 1;
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--ink-3);
+  font-weight: 700;
+}
+.cal-grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 20rpx 20rpx;
+}
+.cal-cell {
+  width: calc(100% / 7);
+  box-sizing: border-box;
+  height: 104rpx;
+  border-radius: 26rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6rpx;
+}
+.cal-cell.other {
+  color: #d8d5cc;
+}
+.cal-cell.today {
+  background: var(--ink);
+  color: #fff;
+  font-weight: 900;
+}
+.cal-cell.has {
+  background: #fdf2f4;
+  box-shadow: inset 0 0 0 3rpx #ffd3dc;
+}
+.cal-cell.today.has {
+  background: var(--grad-sunset);
+  box-shadow: none;
+}
+.dots {
+  display: flex;
+  gap: 6rpx;
+}
+.cd-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+}
+.cd-dot.b { background: var(--violet); }
+.cd-dot.a { background: var(--teal); }
+/* 家人创建的日子(本人可见):同色空心 */
+.cd-dot.b-hollow { background: transparent; border: 3rpx solid var(--violet); }
+.cd-dot.a-hollow { background: transparent; border: 3rpx solid var(--teal); }
+.cal-summary {
+  margin: 0 32rpx 24rpx;
+  padding: 24rpx 28rpx;
+  background: #fdf2f4;
+  border-radius: 28rpx;
+  font-size: 26rpx;
+  color: var(--rose);
+  font-weight: 700;
+  text-align: center;
+}
+
+/* 当日事件弹层 */
+.ds-row {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 26rpx 28rpx;
+  border: 1px solid var(--line);
+  border-radius: 30rpx;
+  margin-bottom: 18rpx;
+  background: #fff;
+}
+.ds-ava {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+  color: #fff;
+  flex-shrink: 0;
+}
+.ds-info {
+  flex: 1;
+  min-width: 0;
+}
+.ds-name {
+  font-size: 31rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+.ds-sub {
+  font-size: 24rpx;
+  color: var(--ink-3);
+  margin-top: 6rpx;
+}

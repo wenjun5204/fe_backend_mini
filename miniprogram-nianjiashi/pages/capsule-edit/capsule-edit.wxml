@@ -1,0 +1,89 @@
+<view class="page-capsule-edit">
+  <!-- 青金头部(对齐原型 .gen-head grad-teal) -->
+  <view class="gen-head bg-teal">
+    <view class="g-kicker">⏳ TIME CAPSULE</view>
+    <view class="g-title">写给一年后的{{type === 'SELF' ? '自己' : ' TA'}}</view>
+    <view class="g-sub">写一段话封存到指定日子，生成「邀请函海报」发给{{type === 'SELF' ? '未来的自己' : ' TA'}}，扫码就能看</view>
+  </view>
+
+  <view class="form-block">
+    <view class="f-label">胶囊类型</view>
+    <view class="seg">
+      <view
+        wx:for="{{types}}"
+        wx:key="key"
+        class="seg-btn {{type === item.key ? 'on' : ''}}"
+        bindtap="pickType"
+        data-key="{{item.key}}"
+      >{{item.name}}</view>
+    </view>
+
+    <view class="f-label">什么时候打开</view>
+    <view class="pick-chips">
+      <view
+        wx:for="{{rules}}"
+        wx:key="key"
+        class="chip {{openRule === item.key ? 'on' : ''}}"
+        bindtap="pickRule"
+        data-key="{{item.key}}"
+        data-need="{{item.needDate}}"
+      >{{item.name}}</view>
+    </view>
+    <picker
+      wx:if="{{needDate}}"
+      mode="date"
+      value="{{openDate}}"
+      start="{{dateStart}}"
+      bindchange="onDate"
+    >
+      <view class="date-box">
+        <text class="date-text num-font">{{openDate ? openDate : '选一个未来的日子'}}</text>
+        <text class="date-arrow">▾</text>
+      </view>
+    </picker>
+
+    <view class="f-label">封面提示语 <text class="f-small">开箱人扫码第一眼看到的</text></view>
+    <view class="pick-chips">
+      <view
+        wx:for="{{coverHints}}"
+        wx:key="*this"
+        class="chip {{coverHint === item ? 'on' : ''}}"
+        bindtap="pickHint"
+        data-hint="{{item}}"
+      >{{item}}</view>
+    </view>
+
+    <view class="f-label">想对{{type === 'SELF' ? '未来的自己' : ' TA'}}说的话 <text class="f-small">{{contentLen}}/200</text></view>
+    <textarea
+      class="content-input"
+      value="{{contentText}}"
+      maxlength="200"
+      placeholder="写 20-200 个字，封存到开箱那天…"
+      bindinput="onContent"
+    ></textarea>
+
+    <view class="f-label">放一张照片 <text class="f-small">可选，随胶囊一起封存，开箱那天看到</text></view>
+    <view class="photo-row">
+      <view wx:if="{{photoPath}}" class="photo-box">
+        <image class="photo-img" src="{{photoPath}}" mode="aspectFill" />
+        <view class="photo-del" bindtap="removePhoto">✕</view>
+      </view>
+      <view wx:else class="photo-add" bindtap="choosePhoto">📷</view>
+    </view>
+  </view>
+
+  <!-- 深色预览(封存倒计时) -->
+  <view class="counter-preview">
+    <view class="cp-kicker">{{previewKicker}}</view>
+    <view wx:if="{{previewPending}}" class="cp-days num-font">🔒 待定</view>
+    <view wx:else class="cp-days num-font">🔒 {{previewDays}}<text class="cp-unit"> 天后开启</text></view>
+    <view class="cp-line">{{coverHint}}</view>
+  </view>
+
+  <view class="next-row">
+    <button class="btn-main" bindtap="seal" disabled="{{submitting}}">✨ 封存并生成邀请函</button>
+  </view>
+</view>
+
+<!-- 海报舞台(canvas 成品图 + 分享面板) -->
+<poster id="poster" bindsharecfg="onShareCfg" />

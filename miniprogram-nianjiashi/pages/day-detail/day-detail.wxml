@@ -1,0 +1,63 @@
+<view class="page-detail" wx:if="{{r}}">
+  <view class="detail-card">
+    <view class="dt-ava {{r.gradClass}}">{{r.emoji}}</view>
+    <view class="dt-title">{{r.name}}</view>
+    <view class="dt-date">{{r.dateText}} · {{r.visText}}</view>
+
+    <view wx:if="{{r.isTogether}}" class="dt-days">
+      <text class="dt-num num-font">{{r.togetherDays}}</text>
+      <text class="dt-unit">天，每天 +1</text>
+    </view>
+    <view wx:elif="{{r.isToday}}" class="dt-days">
+      <text class="dt-today">就是今天 🎉</text>
+    </view>
+    <view wx:else class="dt-days">
+      <text class="dt-num num-font">{{r.daysUntil}}</text>
+      <text class="dt-unit">天后</text>
+    </view>
+
+    <view class="dt-tags">
+      <text class="dt-tag hot">{{r.tagText}}</text>
+      <text class="dt-tag" wx:if="{{r.anniversaryText}}">{{r.anniversaryText}}</text>
+      <text class="dt-tag">{{r.calText}}</text>
+      <text class="dt-tag">{{remText}}</text>
+    </view>
+  </view>
+
+  <view class="dt-actions">
+    <button class="dt-btn" bindtap="makeCard">{{r.isBirthday ? '🎂 做生日福卡' : '✨ 做一张卡片'}}</button>
+    <button class="dt-btn primary" bindtap="editDay">✎ 编辑</button>
+  </view>
+
+  <view class="section-head">
+    <text class="section-title">到时候送这句话</text>
+    <text class="section-more">点一下就能复制</text>
+  </view>
+  <view class="dt-wishes">
+    <button
+      wx:for="{{wishes}}"
+      wx:key="*this"
+      class="wish-row"
+      data-text="{{item}}"
+      bindtap="copyWish"
+    >
+      <text class="wish-idx">{{index + 1}}</text>
+      <text class="wish-text">{{item}}</text>
+    </button>
+  </view>
+
+  <view class="remind-block">
+    <view class="f-label">提醒我 <text class="f-small">每人每天最多 3 条</text></view>
+    <view class="reminder-options">
+      <button
+        wx:for="{{reminderOptions}}"
+        wx:key="value"
+        class="reminder-option {{reminderOn[item.value] ? 'on' : ''}}"
+        data-value="{{item.value}}"
+        bindtap="toggleReminder"
+      >{{item.label}}</button>
+    </view>
+  </view>
+
+  <button class="dt-danger" bindtap="removeDay">删除这个日子</button>
+</view>

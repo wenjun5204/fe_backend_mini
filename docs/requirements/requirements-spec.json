@@ -1,0 +1,149 @@
+{
+  "schema_version": "1.0",
+  "status": "approved",
+  "scope": {
+    "complexity": "M",
+    "subsystems": ["miniprogram 前端(原生小程序)", "backend 服务(Spring Boot + H2)", "OpenAPI 契约层"],
+    "cross_team_dependencies": [],
+    "split_required": false,
+    "split_decision": "coupled"
+  },
+  "clarification": {
+    "round": 1,
+    "max_rounds": 3,
+    "questions": [
+      {"question": "MVP 的核心转化行为是什么,如何度量?", "category": "goal_value"},
+      {"question": "用户身份与家族权限如何设计,一人可加入几个家族?", "category": "users_permissions"},
+      {"question": "MVP 包含哪些功能,明确排除哪些?", "category": "scope"},
+      {"question": "每日福签从生成到分享激活的主流程是什么?", "category": "main_flow"},
+      {"question": "福签等级与门牌等级如何流转?", "category": "state"}
+    ],
+    "answers": [
+      {"question": "MVP 的核心转化行为是什么,如何度量?", "answer": "核心行为是抽福签并转发到家人群;北极星指标为每日激活家庭数 DBF(当日≥2名成员完成抽卡并转发),福卡分享率目标≥60%", "source": "user_document", "category": "goal_value"},
+      {"question": "用户身份与家族权限如何设计,一人可加入几个家族?", "answer": "微信登录(openid+昵称+头像),MVP 每人限加入 1 个家族;户主可解散家族,无踢人功能;成员上限 8 人", "source": "user_document", "category": "users_permissions"},
+      {"question": "MVP 包含哪些功能,明确排除哪些?", "answer": "MVP 含建家/邀请、每日福签(摇卡/翻卡/转发)、今日宜微任务、添福、催福、家内榜+好友家族榜、青铜/白银门牌;排除支付、老照片修复、自定义福卡、私信、同城榜、提现", "source": "user_document", "category": "scope"},
+      {"question": "每日福签从生成到分享激活的主流程是什么?", "answer": "定时任务每日 0 点为每个家族生成当日福签(全家同签,等级概率 70/25/5);用户摇一摇或点按钮读取当日福签;转发家人群得 +10 福值;完成今日宜事项得 +15 福值", "source": "user_document", "category": "main_flow"},
+      {"question": "福签等级与门牌等级如何流转?", "answer": "福签等级(平安/如意/鸿福)每日生成后固定,只影响卡面华丽度与宜事项数量,不影响福值倍率;门牌等级 NONE→青铜500→白银2000→黄金5000→玉匾20000,只升不降", "source": "user_document", "category": "state"}
+    ],
+    "confirmed_facts": [
+      {"fact": "产品方向为福卡(祈福引擎)+家族福值榜(攀比引擎)合体,健康微任务降级为福签附赠", "source": "user"},
+      {"fact": "冷启动策略为家族群内测(5-8个群,100-150人种子)", "source": "user"},
+      {"fact": "老照片付费修复放 V2.0,MVP 纯免费", "source": "user"},
+      {"fact": "转发采用软引导奖励制(+10福值),不做强制分享,规避微信诱导分享红线", "source": "user_document"},
+      {"fact": "合规词表已固化于 .agents/docs/conventions.md:禁用运势/吉凶/求签/算命/占卜/八字/塔罗/改运/挡灾/化解/开光/大师;黄历式福签只宜不忌;无医疗暗示词汇", "source": "code"},
+      {"fact": "领域模型 6 实体已定义于 .agents/docs/domain-model.md:Family/FamilyMember/User/DailyFortuneCard/BlessEvent/FortuneDrawRecord", "source": "code"},
+      {"fact": "福值只涨不跌,所有变更走 BlessEvent 事件路径,禁止直接改余额", "source": "code"},
+      {"fact": "订阅消息每人每日≤4条;催福对同一人每日≤3次;添福每人每天对每位家人1次", "source": "user_document"},
+      {"fact": "主前端为 miniprogram/(原生微信小程序),frontend/ React 仅作契约演示端", "source": "code"},
+      {"fact": "后端 Spring Boot + Java 21,接口前缀 /api,端口 8080,数据库 H2 文件模式", "source": "code"},
+      {"fact": "适老化规范:正文≥17pt,核心≥22pt,主按钮≥88rpx,一屏一个主按钮,功能≤3次点击,零键盘输入优先,文案用您", "source": "user_document"},
+      {"fact": "主题色中国红 #b01f24、描金 #ffd76e、米黄底 #fff8ec,福签大字用楷体", "source": "user_document"},
+      {"fact": "接口以 OpenAPI 契约为唯一事实源,由 fe-be-contract-harness 驱动,改接口先改契约", "source": "user"}
+    ],
+    "assumptions": [
+      {"assumption": "MVP 阶段微信好友关系由后端互关家族模拟实现(小程序侧无批量好友 API),V1.1 再接微信社交数据", "accepted": true},
+      {"assumption": "订阅消息推送在 MVP 以接口形式预留(sendNotification),实际微信模板推送延后到内测配置模板后启用", "accepted": true},
+      {"assumption": "微信步数同步不进 MVP(福签微任务全部为确认制,无自动采集)", "accepted": true}
+    ],
+    "unresolved_questions": [],
+    "coverage": {
+      "goal_value": "covered",
+      "users_permissions": "covered",
+      "scope": "covered",
+      "main_flow": "covered",
+      "state": "covered",
+      "data": "covered",
+      "exceptions": "covered",
+      "interaction": "covered",
+      "dependencies": "covered",
+      "non_functional": "covered",
+      "acceptance": "covered"
+    }
+  },
+  "contract_readiness": {
+    "entities": [
+      {
+        "name": "User",
+        "fields": [
+          {"name": "id", "type": "integer", "required": true, "bounds": null},
+          {"name": "openid", "type": "string", "required": true, "bounds": "唯一"},
+          {"name": "nickname", "type": "string", "required": true, "bounds": "长度1-24"},
+          {"name": "avatarUrl", "type": "string", "required": false, "bounds": null}
+        ],
+        "states": []
+      },
+      {
+        "name": "Family",
+        "fields": [
+          {"name": "id", "type": "integer", "required": true, "bounds": null},
+          {"name": "name", "type": "string", "required": true, "bounds": "长度1-10"},
+          {"name": "inviteCode", "type": "string", "required": true, "bounds": "唯一,8位"},
+          {"name": "totalBless", "type": "integer", "required": true, "bounds": "≥0,只增"},
+          {"name": "plateLevel", "type": "string", "required": true, "bounds": "枚举 NONE/BRONZE/SILVER/GOLD/JADE"},
+          {"name": "memberCount", "type": "integer", "required": true, "bounds": "1-8"}
+        ],
+        "states": ["门牌等级 NONE→BRONZE(500)→SILVER(2000)→GOLD(5000)→JADE(20000),只升不降"]
+      },
+      {
+        "name": "FamilyMember",
+        "fields": [
+          {"name": "id", "type": "integer", "required": true, "bounds": null},
+          {"name": "familyId", "type": "integer", "required": true, "bounds": null},
+          {"name": "userId", "type": "integer", "required": true, "bounds": null},
+          {"name": "role", "type": "string", "required": true, "bounds": "枚举 OWNER/MEMBER"},
+          {"name": "remark", "type": "string", "required": false, "bounds": "长度≤10,家庭称谓"},
+          {"name": "personalBless", "type": "integer", "required": true, "bounds": "≥0,只增"},
+          {"name": "streakDays", "type": "integer", "required": true, "bounds": "≥0"}
+        ],
+        "states": []
+      },
+      {
+        "name": "DailyFortuneCard",
+        "fields": [
+          {"name": "id", "type": "integer", "required": true, "bounds": null},
+          {"name": "familyId", "type": "integer", "required": true, "bounds": null},
+          {"name": "date", "type": "string", "required": true, "bounds": "日期 yyyy-MM-dd,家族+日期唯一"},
+          {"name": "level", "type": "string", "required": true, "bounds": "枚举 PINGAN/RUYI/HONGFU,概率70/25/5"},
+          {"name": "yiItems", "type": "array", "required": true, "bounds": "2-3项,生活化表述,无禁忌词"},
+          {"name": "blessText", "type": "string", "required": true, "bounds": "长度≤50,过合规词表"}
+        ],
+        "states": ["每日0点生成后当日固定不变"]
+      },
+      {
+        "name": "BlessEvent",
+        "fields": [
+          {"name": "id", "type": "integer", "required": true, "bounds": null},
+          {"name": "userId", "type": "integer", "required": true, "bounds": null},
+          {"name": "familyId", "type": "integer", "required": true, "bounds": null},
+          {"name": "type", "type": "string", "required": true, "bounds": "枚举 DRAW_CARD/SHARE_CARD/TASK_DONE/TIAN_FU/INVITE_JOIN/FAMILY_STREAK_7D"},
+          {"name": "amount", "type": "integer", "required": true, "bounds": "正整数>0"},
+          {"name": "createdAt", "type": "string", "required": true, "bounds": "ISO8601"}
+        ],
+        "states": []
+      },
+      {
+        "name": "FortuneDrawRecord",
+        "fields": [
+          {"name": "id", "type": "integer", "required": true, "bounds": null},
+          {"name": "userId", "type": "integer", "required": true, "bounds": null},
+          {"name": "familyId", "type": "integer", "required": true, "bounds": null},
+          {"name": "date", "type": "string", "required": true, "bounds": "日期,用户+日期唯一"},
+          {"name": "shared", "type": "boolean", "required": true, "bounds": null},
+          {"name": "taskDone", "type": "boolean", "required": true, "bounds": null}
+        ],
+        "states": ["未抽签→已抽签→(已分享/任务已完成)各一次性"]
+      }
+    ],
+    "error_codes": [
+      {"code": "40000", "meaning": "参数错误(含字段校验失败)"},
+      {"code": "40100", "meaning": "未登录或身份失效"},
+      {"code": "40300", "meaning": "频控超限(催福>3次/天、添福重复、通知>4条/天)"},
+      {"code": "40400", "meaning": "资源不存在(家族/福签/成员)"},
+      {"code": "40900", "meaning": "状态冲突(已在家族中不能重复加入、家族满员8人、今日已抽签、今日已分享、今日任务已完成)"}
+    ]
+  },
+  "document": {
+    "approved": true,
+    "quality_gate": "passed"
+  }
+}

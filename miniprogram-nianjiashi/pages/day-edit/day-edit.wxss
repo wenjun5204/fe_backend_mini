@@ -1,0 +1,80 @@
+.page-edit {
+  padding-bottom: 60rpx;
+}
+
+.form-block {
+  padding: 12rpx 32rpx 8rpx;
+}
+
+/* 自定义称呼输入兜底(全页唯一键盘输入) */
+.custom-wrap {
+  margin-top: 20rpx;
+}
+.custom-input {
+  min-height: 96rpx;
+  border: 3rpx solid var(--line);
+  border-radius: 26rpx;
+  background: var(--card);
+  padding: 0 32rpx;
+  font-size: 34rpx;
+  color: var(--ink);
+}
+.custom-ph {
+  color: var(--ink-3);
+}
+
+.seg.three {
+  margin-top: 8rpx;
+}
+
+/* 月日选择 */
+.date-pick {
+  display: flex;
+  gap: 20rpx;
+}
+.pick-box {
+  flex: 1;
+  min-height: 96rpx;
+  line-height: 96rpx;
+  text-align: center;
+  border: 3rpx solid var(--line);
+  border-radius: 26rpx;
+  background: var(--card);
+  font-size: 34rpx;
+  color: var(--ink);
+}
+
+/* 实时换算卡 */
+.conv-card {
+  margin-top: 28rpx;
+  padding: 30rpx 32rpx;
+  color: #7b5a2e;
+  background: linear-gradient(135deg, #fff8e8, #ffefce);
+  border: 1px solid #eed9a5;
+  border-radius: 32rpx;
+}
+.conv-kicker {
+  font-size: 22rpx;
+  font-weight: 800;
+  color: #a8873f;
+  letter-spacing: 2rpx;
+}
+.conv-main {
+  margin-top: 8rpx;
+  font-size: 38rpx;
+  font-weight: 900;
+  color: #6b4c1d;
+}
+.conv-sub {
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #a8873f;
+}
+
+/* 保存按钮 */
+.save-row {
+  margin: 40rpx 32rpx 0;
+}
+.save-row .btn-main {
+  width: 100%;
+}

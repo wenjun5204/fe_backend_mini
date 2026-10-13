@@ -1,0 +1,190 @@
+/* 解忧册页(视觉规范沿用原型:红 #b01f24 / 描金 #ffd76e / 米黄 #fff8ec) */
+.page-jieyou {
+  min-height: 100vh;
+  background: #fff8ec;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40rpx 40rpx 60rpx;
+}
+
+.book-tip {
+  font-size: 36rpx; color: #7a6a52; letter-spacing: 4rpx; text-align: center; margin-top: 20rpx;
+}
+.tip-strong { color: #b01f24; font-weight: 800; }
+.book-tip-sub {
+  font-size: 30rpx; color: #a5987a; margin-top: 14rpx; letter-spacing: 2rpx;
+}
+
+/* ============ 书舞台 ============ */
+.book-stage {
+  position: relative; width: 480rpx; height: 672rpx;
+  margin-top: 50rpx; perspective: 2200rpx;
+}
+.book { position: relative; width: 100%; height: 100%; }
+
+/* 按住时的暖光(呼吸) */
+.book-glow {
+  position: absolute; left: -28rpx; top: -28rpx; right: -28rpx; bottom: -28rpx;
+  border-radius: 36rpx; pointer-events: none;
+  background: radial-gradient(circle, rgba(240, 190, 90, .55) 0%, transparent 70%);
+  opacity: 0; transition: opacity .4s;
+}
+.book-stage.pressing .book-glow {
+  opacity: 1;
+  animation: glowBreath 1.6s ease-in-out infinite;
+}
+@keyframes glowBreath {
+  0%, 100% { opacity: .55; }
+  50% { opacity: 1; }
+}
+
+/* 封面(烫金书名竖排) */
+.book-cover {
+  position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+  border-radius: 12rpx 28rpx 28rpx 12rpx;
+  background: linear-gradient(145deg, #8c1418 0%, #a11c21 45%, #6d0f13 100%);
+  border: 10rpx solid #c9982f;
+  box-shadow: 0 32rpx 80rpx rgba(30, 10, 5, .5);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 24rpx;
+  transform-origin: left center;
+  transition: transform 1.1s cubic-bezier(.55, .06, .25, 1);
+  z-index: 2;
+}
+.book-stage.pressing .book-cover {
+  box-shadow: 0 32rpx 80rpx rgba(30, 10, 5, .5), 0 0 68rpx rgba(240, 190, 90, .55);
+}
+.book-cover.opening { transform: rotateY(-150deg); }
+/* 书脊 */
+.bc-spine {
+  position: absolute; left: 16rpx; top: 20rpx; bottom: 20rpx;
+  width: 6rpx; border-radius: 4rpx;
+  background: linear-gradient(180deg, transparent, #ffd76e, transparent);
+  opacity: .7;
+}
+.bc-title {
+  display: flex; flex-direction: column; align-items: center; gap: 18rpx;
+}
+.bc-char {
+  font-size: 88rpx; color: #ffd76e; font-weight: 800; line-height: 1.1;
+  text-shadow: 0 4rpx 20rpx rgba(0, 0, 0, .5);
+}
+.bc-sub { font-size: 26rpx; color: rgba(245, 231, 193, .75); letter-spacing: 6rpx; }
+.bc-press-hint {
+  margin-top: 16rpx; font-size: 28rpx; color: rgba(245, 231, 193, .85);
+  letter-spacing: 4rpx; padding: 12rpx 28rpx;
+  border: 2rpx solid rgba(255, 215, 110, .4); border-radius: 999rpx;
+}
+
+/* 内页 */
+.book-inner {
+  position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+  border-radius: 12rpx 28rpx 28rpx 12rpx;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 60rpx, rgba(120, 95, 60, .06) 60rpx 62rpx),
+    linear-gradient(160deg, #fbf3df 0%, #f3e6c4 100%);
+  border: 10rpx solid #a8842f;
+  box-shadow: 0 32rpx 80rpx rgba(30, 10, 5, .45);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 44rpx 36rpx;
+  opacity: 0; transform: scale(.96);
+  transition: opacity .5s .55s, transform .5s .55s;
+}
+.book-stage.opened .book-inner { opacity: 1; transform: scale(1); }
+.bp-quote {
+  font-size: 48rpx; color: #3a2e20; line-height: 1.75; text-align: center; letter-spacing: 4rpx;
+}
+.bp-type {
+  margin-top: 36rpx; font-size: 26rpx; letter-spacing: 6rpx; padding: 6rpx 24rpx;
+  border-radius: 999rpx; color: #fff; font-weight: 700;
+}
+.bt-cucheng { background: #4a7c59; }
+.bt-huanxing { background: #b06010; }
+.bt-fangxia { background: #6b5b9e; }
+.bp-page-no { margin-top: 32rpx; font-size: 24rpx; color: #a5987a; letter-spacing: 2rpx; }
+.bp-disclaimer {
+  position: absolute; bottom: 20rpx; left: 0; right: 0;
+  text-align: center; font-size: 22rpx; color: #b3a685; letter-spacing: 2rpx;
+}
+
+/* 「定」印章(rotate+scale 入场) */
+.seal {
+  position: absolute; left: 50%; top: 50%;
+  width: 236rpx; height: 236rpx; margin: -118rpx 0 0 -118rpx;
+  border: 10rpx solid #c0272c; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 112rpx; color: #c0272c; font-weight: 800;
+  pointer-events: none; z-index: 30;
+  background: rgba(255, 248, 236, .15);
+  animation: stampIn .45s cubic-bezier(.2, .9, .3, 1.2) forwards;
+}
+@keyframes stampIn {
+  0%   { transform: rotate(-14deg) scale(3); opacity: 0; }
+  55%  { transform: rotate(-14deg) scale(.92); opacity: 1; }
+  100% { transform: rotate(-14deg) scale(1); opacity: .92; }
+}
+
+/* ============ 按钮 ============ */
+.book-actions {
+  width: 480rpx; margin-top: 36rpx;
+  display: flex; flex-direction: column; gap: 20rpx;
+  opacity: 0; transform: translateY(16rpx);
+  pointer-events: none; transition: all .4s;
+  height: 0;
+}
+.book-actions.show {
+  opacity: 1; transform: none; pointer-events: auto;
+  height: auto;
+}
+.ba-main { width: 100%; }
+.ba-share { width: 100%; }
+.ba-save {
+  width: 100%;
+  background: linear-gradient(180deg, #ffe9ab, #e8c66a);
+  color: #4a3407; border: 3rpx solid #a8842f;
+}
+.ba-save.saved { filter: grayscale(.4); opacity: .8; }
+
+.book-hint {
+  margin-top: 28rpx; font-size: 26rpx; color: #a5987a;
+  text-align: center; line-height: 1.7;
+}
+
+/* ============ 册子的记忆(仅本地) ============ */
+.book-records {
+  margin-top: 40rpx; width: 100%;
+  background: #ffffff; border: 1rpx solid #eee2c8; border-radius: 28rpx;
+  padding: 24rpx 28rpx;
+}
+.rec-head {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.rec-title { font-size: 30rpx; color: #7a6a52; letter-spacing: 2rpx; font-weight: 700; }
+.rec-count {
+  font-size: 26rpx; color: #a3511f; background: #fdeec9;
+  border: 1rpx solid #e8c06a; border-radius: 999rpx; padding: 4rpx 20rpx; font-weight: 700;
+}
+.rec-note { font-size: 22rpx; color: #b3a685; margin-top: 8rpx; }
+.rec-item {
+  display: flex; align-items: center; gap: 16rpx;
+  padding: 20rpx 0; border-bottom: 1rpx dashed #eee2c8;
+}
+.rec-item:last-child { border-bottom: none; padding-bottom: 4rpx; }
+.rec-main { flex: 1; min-width: 0; }
+.rec-quote { color: #3a2e20; font-size: 32rpx; }
+.rec-meta { margin-top: 8rpx; display: flex; align-items: center; gap: 16rpx; }
+.rec-type { font-size: 22rpx; color: #a5987a; }
+.rec-date { font-size: 22rpx; color: #b3a685; }
+/* 「办成了」小金印 */
+.rec-done-btn {
+  flex-shrink: 0; font-size: 26rpx; color: #8f6a1f; font-weight: 700;
+  border: 2rpx solid #e8c06a; background: #fdeec9;
+  border-radius: 999rpx; padding: 10rpx 24rpx;
+}
+.rec-done-seal {
+  flex-shrink: 0; font-size: 26rpx; color: #c9982f; font-weight: 800;
+  border: 3rpx solid #c9982f; border-radius: 12rpx;
+  padding: 8rpx 18rpx; transform: rotate(-8deg);
+  background: rgba(255, 233, 171, .35);
+}

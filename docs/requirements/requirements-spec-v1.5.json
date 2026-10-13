@@ -1,0 +1,363 @@
+{
+ "schema_version": "1.0",
+ "status": "approved",
+ "scope": {
+  "complexity": "M",
+  "subsystems": [
+   "miniprogram 前端(原生小程序,三Tab重构)",
+   "backend 服务(Spring Boot + H2)",
+   "OpenAPI 契约层(v1.0 → v1.5 增量)"
+  ],
+  "cross_team_dependencies": [],
+  "split_required": false,
+  "split_decision": "coupled"
+ },
+ "clarification": {
+  "round": 2,
+  "max_rounds": 3,
+  "questions": [
+   {
+    "question": "v1.5 新增功能的范围与边界是什么?哪些明确排除?",
+    "category": "scope"
+   },
+   {
+    "question": "转罗盘抽卡的主流程是什么,卦位是否影响结果?",
+    "category": "main_flow"
+   },
+   {
+    "question": "八卦阵与解忧册的状态如何流转?",
+    "category": "state"
+   },
+   {
+    "question": "新增哪些数据实体与字段边界?",
+    "category": "data"
+   },
+   {
+    "question": "新增/复用哪些错误码与异常场景?",
+    "category": "exceptions"
+   },
+   {
+    "question": "v1.5 的目标与价值如何度量?",
+    "category": "goal_value"
+   },
+   {
+    "question": "用户身份与权限有何变化?",
+    "category": "users_permissions"
+   },
+   {
+    "question": "三Tab导航与罗盘/翻页的交互规范是什么?",
+    "category": "interaction"
+   },
+   {
+    "question": "对外部依赖(微信能力/模板ID)有何依赖?",
+    "category": "dependencies"
+   },
+   {
+    "question": "v1.5 的验收口径是什么?",
+    "category": "acceptance"
+   }
+  ],
+  "answers": [
+   {
+    "question": "v1.5 新增功能的范围与边界是什么?哪些明确排除?",
+    "answer": "6项:八卦集福阵/转罗盘抽卡/解忧册/三Tab导航重构/触点体系(订阅消息)/首页功能入口条;排除:公众号推送(V1.6演进)、解忧册服务端记录与推送、卦位对概率的任何影响",
+    "source": "user_document",
+    "category": "scope"
+   },
+   {
+    "question": "转罗盘抽卡的主流程是什么,卦位是否影响结果?",
+    "answer": "连续点击罗盘施加角速度→停转指针定当日卦位→3D翻卡展示当日福签;等级概率平安70/如意25/鸿福5由服务端生成,卦位只决定卡面主题图;全家同卦每日一卦;保留大按钮兜底直接抽",
+    "source": "user_document",
+    "category": "main_flow"
+   },
+   {
+    "question": "八卦阵与解忧册的状态如何流转?",
+    "answer": "八卦:未点亮(current<target)→已点亮(只涨不跌永不熄灭)→8卦全亮触发一次性大阵图庆祝(服务端标记防重复);解忧册:当日首次翻页固定quoteId,同日重复请求返回同条(幂等),册子的记忆仅本地最近3条",
+    "source": "user_document",
+    "category": "state"
+   },
+   {
+    "question": "新增哪些数据实体与字段边界?",
+    "answer": "BaguaProgress(familyId+gua枚举8卦,lit,current,target,hint,服务端推导只读);JieyouQuote(type枚举促成/缓行/放下,text≤16字,40×3=120条);JieyouDailyRecord(userId+date唯一,quoteId);NotifySubscription(userId,templateId,accepted,remainingQuota≤4/天);DailyFortuneCard增gua+cardTheme字段",
+    "source": "user_document",
+    "category": "data"
+   },
+   {
+    "question": "新增/复用哪些错误码与异常场景?",
+    "answer": "复用v1.0五码:40000参数/40100未登录/40300频控(通知>4条/天)/40400资源不存在(含卦阵)/40900状态冲突;解忧册同日重复不报错而是幂等返回同条;客户端写卦阵进度返回40000",
+    "source": "user_document",
+    "category": "exceptions"
+   },
+   {
+    "question": "v1.5 的目标与价值如何度量?",
+    "answer": "八卦阵提高家庭留存的集体目标感(度量:八卦页周访问率、圆满达成家族数);解忧册承接私密情绪需求(度量:Tab渗透率、次日回访率);订阅消息拉回访(度量:授权登记率、订阅触达回访率);北极星DBF不变",
+    "source": "user_document",
+    "category": "goal_value"
+   },
+   {
+    "question": "用户身份与权限有何变化?",
+    "answer": "无变化:微信openid静默注入,每人限1家族,成员上限8人;新增权限点仅订阅授权登记(用户可拒绝,静默降级不影响功能);解忧册内容仅本人可见且不采集问题内容",
+    "source": "user_document",
+    "category": "users_permissions"
+   },
+   {
+    "question": "三Tab导航与罗盘/翻页的交互规范是什么?",
+    "answer": "TabBar:福签(罗盘+入口条)/解忧册(中部,无红点)/家(合并双榜+设置+个人卡片);罗盘为竹知了式连续点击(点击施加冲量,摩擦衰减,音调随转速升高);解忧册长按封皮蓄力→松手3D翻页→印章仪式;适老化:主按钮≥88rpx,一屏一主按钮,零键盘输入",
+    "source": "user_document",
+    "category": "interaction"
+   },
+   {
+    "question": "对外部依赖(微信能力/模板ID)有何依赖?",
+    "answer": "wx.requestSubscribeMessage(基础库2.8.2+);订阅消息模板ID需微信后台申请,开发期占位联调;无公众号依赖;节气数据内置离线表",
+    "source": "user_document",
+    "category": "dependencies"
+   },
+   {
+    "question": "v1.5 的验收口径是什么?",
+    "answer": "每个新端点覆盖正常/边界/错误码;解忧册幂等(同日同条)必须有用例;八卦进度只读推导,客户端写入尝试被拒;前端验收含三Tab走查/罗盘连续点击/长按翻页/入口条跳转完整路径;合规词表扫描全量通过(含新增卦象/卦运/宜忌等14词)",
+    "source": "user_document",
+    "category": "acceptance"
+   }
+  ],
+  "confirmed_facts": [
+   {
+    "fact": "TabBar 重构为三 Tab:福签(含功能入口条)/解忧册(中部私密)/家(合并我的家+家族榜,吸收原我的Tab全部内容:右上角设置、个人卡片、我家/家族榜子Tab)",
+    "source": "user_document"
+   },
+   {
+    "fact": "罗盘交互为竹知了式连续点击:每次点击施加角速度冲量,摩擦衰减,停转定卦;保留大按钮兜底直接抽卡(适老化)",
+    "source": "user_document"
+   },
+   {
+    "fact": "解忧册入口独立中部 Tab 的理由:需要型入口(非冲动型)、隐私隔离(无红点无推送)、冷启动友好",
+    "source": "user_document"
+   },
+   {
+    "fact": "8 卦点亮条件:乾=连续7天全员抽卡/兑=转发激活30次/离=早睡30天次/震=新成员加入(可重复庆祝)/巽=打电话10次/坎=喝水30天次/艮=个人连续接福30天/坤=节气微任务≥1次",
+    "source": "user_document"
+   },
+   {
+    "fact": "八卦圆满(8卦全亮)触发一次性『全家福大阵图』庆祝,服务端标记防重复",
+    "source": "user_document"
+   },
+   {
+    "fact": "合规扫描词表在既有清单上追加:卦象/卦运/宜忌/生门/吉位/凶位/能成/不行/会有/注定/天意/预示/破财/有灾",
+    "source": "user_document"
+   },
+   {
+    "fact": "订阅授权嵌入正向时刻的三规则:正向动作之后/非阻断/静默降级(拒绝不影响功能)",
+    "source": "user_document"
+   },
+   {
+    "fact": "首页(福签页)新增横向双入口chip:集福阵(已点亮N/8卦)+生日簿(最近生日倒计时);家页原有入口保留,双保险",
+    "source": "user_document"
+   },
+   {
+    "fact": "主前端为 miniprogram/(原生微信小程序),frontend/ React 仅作契约演示端;后端 Spring Boot + Java 21 + H2,接口前缀 /api,端口 8080",
+    "source": "code"
+   },
+   {
+    "fact": "解忧册服务端幂等:同日重复请求返回当日同一条(每人每日一翻,翻一次认一次)",
+    "source": "user_document"
+   }
+  ],
+  "assumptions": [
+   {
+    "assumption": "『打电话/喝水/早睡』任务完成数据可从现有任务完成记录按任务类型聚合;若现有表无任务类型字段,则由实现阶段在任务完成时补充记录类型(仅增量,不改历史语义)",
+    "needs_verification": true
+   },
+   {
+    "assumption": "订阅消息模板 ID 在微信后台申请后配置于服务端;开发期用占位模板 ID 联调",
+    "needs_verification": true
+   }
+  ],
+  "unresolved_questions": [],
+  "coverage": {
+   "goal_value": "covered",
+   "users_permissions": "covered",
+   "scope": "covered",
+   "main_flow": "covered",
+   "state": "covered",
+   "data": "covered",
+   "exceptions": "covered",
+   "interaction": "covered",
+   "dependencies": "covered",
+   "non_functional": "covered",
+   "acceptance": "covered"
+  }
+ },
+ "contract_readiness": {
+  "entities": [
+   {
+    "name": "BaguaProgress",
+    "fields": [
+     {
+      "name": "familyId",
+      "type": "integer",
+      "required": true,
+      "bounds": null
+     },
+     {
+      "name": "gua",
+      "type": "string",
+      "required": true,
+      "bounds": "枚举 QIAN/DUI/LI/ZHEN/XUN/KAN/GEN/KUN(乾兑离震巽坎艮坤)"
+     },
+     {
+      "name": "lit",
+      "type": "boolean",
+      "required": true,
+      "bounds": "只涨不跌,永不熄灭"
+     },
+     {
+      "name": "current",
+      "type": "integer",
+      "required": true,
+      "bounds": "≥0,服务端推导,客户端只读"
+     },
+     {
+      "name": "target",
+      "type": "integer",
+      "required": true,
+      "bounds": ">0,点亮阈值"
+     },
+     {
+      "name": "hint",
+      "type": "string",
+      "required": true,
+      "bounds": "进度提示文案,过合规词表"
+     }
+    ],
+    "states": [
+     "未点亮(current<target) → 已点亮(lit=true,current=min(current,target));8卦全亮 → BAGUA_COMPLETE 一次性庆祝(服务端标记防重复)"
+    ]
+   },
+   {
+    "name": "JieyouQuote",
+    "fields": [
+     {
+      "name": "id",
+      "type": "integer",
+      "required": true,
+      "bounds": null
+     },
+     {
+      "name": "type",
+      "type": "string",
+      "required": true,
+      "bounds": "枚举 CU_CHENG(促成)/HUAN_XING(缓行)/FANG_XIA(放下)"
+     },
+     {
+      "name": "text",
+      "type": "string",
+      "required": true,
+      "bounds": "长度≤16,禁吉凶与承诺结果词汇"
+     }
+    ],
+    "states": []
+   },
+   {
+    "name": "JieyouDailyRecord",
+    "fields": [
+     {
+      "name": "userId",
+      "type": "integer",
+      "required": true,
+      "bounds": null
+     },
+     {
+      "name": "date",
+      "type": "string",
+      "required": true,
+      "bounds": "yyyy-MM-dd,用户+日期唯一"
+     },
+     {
+      "name": "quoteId",
+      "type": "integer",
+      "required": true,
+      "bounds": "当日固定,幂等"
+     }
+    ],
+    "states": [
+     "当日首次翻页 → 固定 quoteId;同日重复请求返回同条,不产生新记录"
+    ]
+   },
+   {
+    "name": "NotifySubscription",
+    "fields": [
+     {
+      "name": "userId",
+      "type": "integer",
+      "required": true,
+      "bounds": null
+     },
+     {
+      "name": "templateId",
+      "type": "string",
+      "required": true,
+      "bounds": "订阅消息模板ID"
+     },
+     {
+      "name": "accepted",
+      "type": "boolean",
+      "required": true,
+      "bounds": "本次授权是否接受"
+     },
+     {
+      "name": "remainingQuota",
+      "type": "integer",
+      "required": true,
+      "bounds": "≥0,发送频控≤4条/人/天"
+     }
+    ],
+    "states": [
+     "授权登记只增额度不减功能;拒绝登记不影响任何业务(静默降级)"
+    ]
+   },
+   {
+    "name": "DailyFortuneCard",
+    "fields": [
+     {
+      "name": "gua",
+      "type": "string",
+      "required": true,
+      "bounds": "枚举 QIAN/DUI/LI/ZHEN/XUN/KAN/GEN/KUN;家族+日期唯一确定,全家同卦"
+     },
+     {
+      "name": "cardTheme",
+      "type": "string",
+      "required": true,
+      "bounds": "卦位对应卡面主题(乾=云鹤/兑=锦鲤/离=灯笼/震=春雷/巽=风铃/坎=锦鲤戏水/艮=山景/坤=花开);只影响卡面,不影响等级/概率/福值"
+     }
+    ],
+    "states": []
+   }
+  ],
+  "error_codes": [
+   {
+    "code": "40000",
+    "meaning": "参数错误(含字段校验失败)"
+   },
+   {
+    "code": "40100",
+    "meaning": "未登录或身份失效"
+   },
+   {
+    "code": "40300",
+    "meaning": "频控超限(催福>3次/天、添福重复、通知>4条/天)"
+   },
+   {
+    "code": "40400",
+    "meaning": "资源不存在(家族/福签/成员/卦阵)"
+   },
+   {
+    "code": "40900",
+    "meaning": "状态冲突(已在家族中不能重复加入、家族满员8人、今日已抽签、今日已分享、今日任务已完成)"
+   }
+  ]
+ },
+ "document": {
+  "approved": true,
+  "quality_gate": "passed"
+ }
+}

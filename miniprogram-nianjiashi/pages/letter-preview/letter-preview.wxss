@@ -1,0 +1,224 @@
+/* 信纸预览/改稿,视觉对齐原型 .letter-paper/.lp-para/.ai-loading */
+.page-letter-preview {
+  padding-bottom: 260rpx;
+}
+
+/* ===== 信纸 ===== */
+.letter-paper {
+  margin: 28rpx 32rpx 0;
+  background: var(--card);
+  border-radius: 44rpx;
+  border: 2rpx solid var(--line);
+  box-shadow: 0 24rpx 64rpx rgba(28, 28, 40, 0.12);
+  padding: 52rpx 44rpx 40rpx;
+  position: relative;
+  overflow: hidden;
+}
+.letter-paper::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 44rpx;
+  right: 44rpx;
+  height: 6rpx;
+  border-radius: 0 0 8rpx 8rpx;
+  background: var(--grad-sunset);
+}
+.lp-kicker {
+  font-size: 22rpx;
+  letter-spacing: 5rpx;
+  color: var(--ink-3);
+  font-weight: 800;
+  text-align: center;
+}
+.lp-title {
+  font-size: 44rpx;
+  font-weight: 900;
+  text-align: center;
+  color: var(--ink);
+  margin-top: 12rpx;
+  letter-spacing: 2rpx;
+}
+.lp-body {
+  margin-top: 36rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 28rpx;
+}
+.lp-para {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  font-size: 32rpx;
+  line-height: 1.9;
+  color: var(--ink);
+  border-radius: 20rpx;
+}
+.lp-text {
+  flex: 1;
+}
+.lp-swap {
+  flex-shrink: 0;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: #f1efe9;
+  color: var(--ink-3);
+  font-size: 20rpx;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 14rpx;
+}
+.lp-swap:active {
+  background: #fdf2f4;
+  color: var(--rose);
+}
+.lp-sign {
+  text-align: right;
+  color: var(--ink-2);
+  font-size: 28rpx;
+}
+.lp-hint {
+  margin-top: 32rpx;
+  padding: 20rpx 28rpx;
+  background: #fdf2f4;
+  border-radius: 24rpx;
+  font-size: 24rpx;
+  color: var(--rose);
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ===== 首刷失败态 ===== */
+.lp-failed {
+  margin: 28rpx 32rpx 0;
+  padding: 40rpx;
+  text-align: center;
+}
+.lp-failed-text {
+  color: var(--ink-3);
+  font-size: 27rpx;
+  line-height: 1.7;
+}
+.lp-retry {
+  margin-top: 24rpx;
+  min-height: 88rpx;
+  line-height: 88rpx;
+  border: 3rpx solid var(--line);
+  border-radius: 28rpx;
+  background: var(--card);
+  color: var(--ink-2);
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+/* ===== 底部操作区(吸底) ===== */
+.lp-actions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  padding: 20rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
+  background: rgba(251, 250, 247, 0.92);
+}
+.lp-regen {
+  min-height: 80rpx;
+  line-height: 80rpx;
+  border: 3rpx solid var(--line);
+  border-radius: 28rpx;
+  background: var(--card);
+  color: var(--ink-2);
+  font-size: 30rpx;
+  font-weight: 800;
+}
+.lp-go {
+  width: 100%;
+}
+
+/* ===== AI 生成中(≤2.5s 预算,超时转可返回态) ===== */
+.ai-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(251, 250, 247, 0.97);
+  gap: 36rpx;
+}
+.ai-orb {
+  width: 148rpx;
+  height: 148rpx;
+  border-radius: 50%;
+  position: relative;
+  background: linear-gradient(135deg, #ff7a59, #ff4d6d, #6c5ce7, #ff7a59);
+  animation: spin 1.1s linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ai-orb-emoji {
+  font-size: 60rpx;
+  animation: spin 1.1s linear infinite reverse;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.ai-text {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+.ai-sub {
+  font-size: 26rpx;
+  color: var(--ink-3);
+  margin-top: -20rpx;
+}
+.ai-dots {
+  display: flex;
+  gap: 12rpx;
+}
+.ai-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: var(--rose);
+  animation: blink 1s infinite;
+}
+.ai-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.ai-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes blink {
+  0%, 100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.ai-back {
+  margin-top: 8rpx;
+  min-height: 84rpx;
+  line-height: 84rpx;
+  padding: 0 48rpx;
+  border: 3rpx solid var(--line);
+  border-radius: 28rpx;
+  background: var(--card);
+  color: var(--ink-2);
+  font-size: 30rpx;
+  font-weight: 800;
+}

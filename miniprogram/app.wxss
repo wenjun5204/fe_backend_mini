@@ -1,4 +1,45 @@
+/**app.wxss 全家福·接福气 全局样式**/
 page {
-  background: #f6f6f6;
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  background: #fff8ec;
+  font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  color: #5a2018;
+  font-size: 34rpx; /* 正文 ≥17pt 适老化下限 */
+}
+
+/* 福签大字:楷体 */
+.kaiti {
+  font-family: "KaiTi", "STKaiti", serif;
+}
+
+/* 主按钮:高 ≥88rpx,红底描金 */
+.btn-main {
+  height: 96rpx;
+  border-radius: 48rpx;
+  background: linear-gradient(180deg, #d4463a, #b01f24);
+  color: #fff3d6;
+  font-size: 36rpx;
+  font-weight: 700;
+  letter-spacing: 4rpx;
+  border: 3rpx solid #ffd76e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-main.disabled {
+  filter: grayscale(0.75);
+  opacity: 0.6;
+}
+
+/* 次按钮 */
+.btn-sub {
+  height: 88rpx;
+  border-radius: 44rpx;
+  background: #f0e3c4;
+  color: #8f6a1f;
+  font-size: 32rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

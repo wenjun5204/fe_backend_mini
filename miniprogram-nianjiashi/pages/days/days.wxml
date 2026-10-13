@@ -1,0 +1,60 @@
+<view class="page-days">
+  <view class="greeting">{{greeting}}，<text class="greet-name">{{nickname}}</text> · 再过几天，就有值得庆祝的事</view>
+
+  <!-- 最近的日子 -->
+  <view wx:if="{{hero}}" class="hero-day" bindtap="openDetail" data-id="{{hero.id}}">
+    <view class="hd-ava {{hero.gradClass}}">{{hero.emoji}}</view>
+    <view class="hd-info">
+      <view class="hd-kicker">最近的日子</view>
+      <view class="hd-title">{{hero.name}}</view>
+      <view class="hd-date">{{hero.dateText}} · {{hero.visText}}</view>
+    </view>
+    <view class="hd-days">
+      <text class="hd-num num-font">{{hero.isToday ? '今天' : hero.daysUntil}}</text>
+      <text class="hd-unit">{{hero.isToday ? '' : '天后'}}</text>
+    </view>
+  </view>
+
+  <!-- 新用户空状态(FR-12 引导卡) -->
+  <view wx:if="{{isEmpty && !loading}}" class="empty-state">
+    <view class="es-art">🗓️</view>
+    <view class="es-title">记下第一个重要的日子</view>
+    <view class="es-sub">家人的生日、在一起的那天、结婚纪念日…</view>
+    <view class="es-sub">记下来，日子到了会提前提醒您</view>
+    <view class="es-chips">
+      <button class="es-chip primary" bindtap="goAdd">＋ 记一个日子</button>
+      <button class="es-chip" bindtap="goTpl">💌 先去模板馆逛逛</button>
+    </view>
+    <view class="es-note">💚 不用打字，点一点就能记好</view>
+  </view>
+
+  <!-- 所有日子 -->
+  <view wx:if="{{!isEmpty}}" class="section-head">
+    <text class="section-title">所有日子</text>
+    <text class="section-more" bindtap="goAllDays">查看全部 ›</text>
+  </view>
+  <view class="day-feed">
+    <view
+      wx:for="{{rows}}"
+      wx:key="id"
+      class="day-row"
+      bindtap="openDetail"
+      data-id="{{item.id}}"
+    >
+      <view class="dr-ava {{item.gradClass}}">{{item.emoji}}</view>
+      <view class="dr-info">
+        <view class="dr-name">{{item.name}}<text class="tag {{item.tagClass}}">{{item.tagText}}</text></view>
+        <view class="dr-date">{{item.dateText}}</view>
+      </view>
+      <view class="dr-right">
+        <view wx:if="{{item.isTogether}}" class="dr-count tog">{{item.togetherDays}}<text class="dr-unit"> 天</text></view>
+        <view wx:elif="{{item.isToday}}" class="dr-count today">今天</view>
+        <view wx:else class="dr-count">{{item.daysUntil}}<text class="dr-unit"> 天后</text></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="add-fab-row">
+    <button class="btn-main add-fab" bindtap="goAdd">＋ 记一个日子</button>
+  </view>
+</view>

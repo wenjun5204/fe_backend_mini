@@ -1,13 +1,35 @@
 {
   "compileType": "miniprogram",
   "miniprogramRoot": "./",
-  "appid": "touristappid",
-  "projectname": "fe-backend-mini",
+  "appid": "wx5e93c2b8cd8ef2bc",
+  "projectname": "bie-dian-zhe-ge-qian",
   "setting": {
     "es6": true,
     "enhance": true,
     "postcss": true,
     "minified": true,
-    "urlCheck": false
-  }
+    "urlCheck": false,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
 }

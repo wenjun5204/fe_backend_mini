@@ -1,0 +1,87 @@
+<view class="page-alldays">
+  <view class="view-seg">
+    <button class="seg-btn {{view === 'list' ? 'on' : ''}}" data-view="list" bindtap="switchView">📅 按时间线</button>
+    <button class="seg-btn {{view === 'calendar' ? 'on' : ''}}" data-view="calendar" bindtap="switchView">🗓 按日历看</button>
+  </view>
+
+  <!-- 时间线视图 -->
+  <view wx:if="{{view === 'list'}}">
+    <view wx:for="{{groups}}" wx:key="key" wx:for-item="group">
+      <view class="tl-month">
+        <text class="tl-name">{{group.name}}</text>
+        <text class="tl-cnt">{{group.count}}</text>
+      </view>
+      <view class="day-feed">
+        <view
+          wx:for="{{group.rows}}"
+          wx:key="id"
+          class="day-row"
+          bindtap="openDetail"
+          data-id="{{item.id}}"
+        >
+          <view class="dr-ava {{item.gradClass}}">{{item.emoji}}</view>
+          <view class="dr-info">
+            <view class="dr-name">{{item.name}}<text class="tag {{item.tagClass}}">{{item.tagText}}</text></view>
+            <view class="dr-date">{{item.dateText}}</view>
+          </view>
+          <view class="dr-right">
+            <view wx:if="{{item.isTogether}}" class="dr-count tog">{{item.togetherDays}}<text class="dr-unit"> 天</text></view>
+            <view wx:elif="{{item.isToday}}" class="dr-count today">今天</view>
+            <view wx:else class="dr-count">{{item.daysUntil}}<text class="dr-unit"> 天后</text></view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{!groups.length}}" class="list-empty">
+      <view class="big">🗓️</view>
+      还没有记着的日子
+    </view>
+  </view>
+
+  <!-- 日历视图 -->
+  <view wx:if="{{view === 'calendar'}}">
+    <view class="cal-nav">
+      <button class="cbtn" data-delta="-1" bindtap="calMove">‹</button>
+      <view class="cm num-font">{{calTitle}}</view>
+      <button class="cbtn" data-delta="1" bindtap="calMove">›</button>
+    </view>
+    <view class="cal-week">
+      <text wx:for="{{weekLabels}}" wx:key="*this" class="cal-wd">{{item}}</text>
+    </view>
+    <view class="cal-grid">
+      <view
+        wx:for="{{cells}}"
+        wx:key="idx"
+        class="cal-cell {{item.cls}}"
+        data-idx="{{item.idx}}"
+        bindtap="tapCell"
+      >
+        <text class="cal-num">{{item.num}}</text>
+        <view class="dots" wx:if="{{item.has}}">
+          <view wx:for="{{item.dots}}" wx:for-item="dot" wx:key="*this" class="cd-dot {{dot}}"></view>
+        </view>
+      </view>
+    </view>
+    <view class="cal-summary">{{calSummary}}</view>
+  </view>
+
+  <!-- 当日事件弹层 -->
+  <view class="sheet-mask {{sheetShow ? 'show' : ''}}" bindtap="closeSheet"></view>
+  <view class="sheet {{sheetShow ? 'show' : ''}}">
+    <view class="sheet-title">{{sheetTitle}}</view>
+    <view
+      wx:for="{{sheetRows}}"
+      wx:key="id"
+      class="ds-row"
+      bindtap="openDetail"
+      data-id="{{item.id}}"
+    >
+      <view class="ds-ava {{item.gradClass}}">{{item.emoji}}</view>
+      <view class="ds-info">
+        <view class="ds-name">{{item.name}}</view>
+        <view class="ds-sub">{{item.dateText}}{{item.isToday ? ' · 就是今天' : ''}}</view>
+      </view>
+    </view>
+    <button class="sheet-cancel" bindtap="closeSheet">关闭</button>
+  </view>
+</view>

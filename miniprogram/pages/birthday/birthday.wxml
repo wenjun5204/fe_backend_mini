@@ -1,0 +1,112 @@
+<view class="page-birthday">
+  <view wx:if="{{!editing}}">
+    <view class="hero">
+      <view class="hero-tag">把重要的日子记在心上</view>
+      <view class="hero-title kaiti">家庭生日簿</view>
+      <view class="hero-sub">提前记住家人的生日，想念和祝福都不迟到。</view>
+    </view>
+
+    <view wx:if="{{loading}}" class="loading" aria-live="polite">正在整理生日簿…</view>
+    <block wx:elif="{{records.length}}">
+      <view class="list-heading">
+        <view class="section-tip">按下一次生日由近到远排列</view>
+        <view class="record-count">共 {{records.length}} 位家人</view>
+      </view>
+      <view class="record-list">
+        <view wx:for="{{records}}" wx:key="id" class="record">
+          <view class="record-icon">🎂</view>
+          <view class="record-main">
+            <view class="record-name-row">
+              <view class="record-name">{{item.displayName}}</view>
+              <view class="visibility-tag {{item.visibility === 'PRIVATE' ? 'private' : ''}}">{{item.visibilityText}}</view>
+            </view>
+            <view class="record-date">{{item.nextBirthdayDate}} · {{item.nextBirthdayLunarText}}</view>
+            <view class="record-reminder">提醒：{{item.reminderText}}</view>
+          </view>
+          <view class="record-side">
+            <view class="days {{item.daysUntil === 0 ? 'today' : ''}}">{{item.daysText}}</view>
+            <button class="record-action" data-record="{{item}}" bindtap="onEdit">修改</button>
+            <button class="record-action delete" data-id="{{item.id}}" data-name="{{item.displayName}}" bindtap="onDelete">删除</button>
+          </view>
+        </view>
+      </view>
+    </block>
+    <view wx:else class="empty">
+      <view class="empty-icon">📖</view>
+      <view class="empty-title">还没有生日记录</view>
+      <view class="empty-sub">现在记下来，以后就不会错过。</view>
+    </view>
+
+    <button class="main-btn" bindtap="onAdd">＋ 记一位家人的生日</button>
+    <view class="privacy-tip">
+      <view class="privacy-title">您的记录，由您做主</view>
+      <view>只记录月、日和您填写的称呼；您可随时修改、删除，或设为仅您可见。</view>
+    </view>
+  </view>
+
+  <view wx:else class="form-page">
+    <view class="form-header">
+      <view class="form-title kaiti">{{editingId ? '修改生日' : '记下生日'}}</view>
+      <view class="form-step">按顺序填好三项，就完成了</view>
+    </view>
+    <view class="form-intro">只需记下月和日，不会保存出生年份、出生时刻或出生地点。</view>
+
+    <view class="form-section">
+      <view class="label"><text class="label-number">1</text>家人的称呼或姓名</view>
+      <input class="name-input" value="{{name}}" maxlength="12" placeholder="例如：妈妈、小宝" placeholder-class="input-placeholder" bindinput="onNameInput" />
+    </view>
+
+    <view class="form-section">
+      <view class="label"><text class="label-number">2</text>按哪种日期记？</view>
+      <view class="choice-row" role="radiogroup" aria-label="生日日期类型">
+        <button class="choice {{calendarType === 'SOLAR' ? 'selected' : ''}}" data-type="SOLAR" bindtap="onCalendarType">公历生日</button>
+        <button class="choice {{calendarType === 'LUNAR' ? 'selected' : ''}}" data-type="LUNAR" bindtap="onCalendarType">农历生日</button>
+      </view>
+    </view>
+
+    <view class="form-section">
+      <view class="label"><text class="label-number">3</text>生日月、日</view>
+      <view class="picker-row">
+        <picker mode="selector" range="{{months}}" value="{{monthIndex}}" bindchange="onMonthChange" aria-label="选择生日月份">
+          <view class="picker">{{months[monthIndex]}} 月<text class="picker-arrow">⌄</text></view>
+        </picker>
+        <picker mode="selector" range="{{days}}" value="{{dayIndex}}" bindchange="onDayChange" aria-label="选择生日日期">
+          <view class="picker">{{days[dayIndex]}} 日<text class="picker-arrow">⌄</text></view>
+        </picker>
+      </view>
+      <button wx:if="{{calendarType === 'LUNAR'}}" class="leap-btn {{isLeapMonth ? 'selected' : ''}}" bindtap="onLeapMonth">{{isLeapMonth ? '✓ 已选：这是闰月生日' : '这是闰月生日'}}</button>
+
+      <view class="convert-card {{conversionError ? 'error' : ''}}" aria-live="polite">
+        <view class="convert-label">{{conversionTitle}}</view>
+        <view wx:if="{{conversionLoading}}" class="convert-loading">正在换算，请稍等…</view>
+        <block wx:elif="{{converted}}">
+          <view class="convert-main">{{calendarType === 'LUNAR' ? converted.solarDate : converted.lunarText}}</view>
+          <view class="convert-sub">{{calendarType === 'LUNAR' ? converted.lunarText : '对应公历 ' + converted.solarDate}}</view>
+        </block>
+        <view wx:else class="convert-loading">{{conversionError ? '暂时无法换算，请换一个日期再试' : '正在准备换算结果…'}}</view>
+      </view>
+    </view>
+
+    <view class="form-section">
+      <view class="label">谁可以看到？</view>
+      <view class="choice-row" role="radiogroup" aria-label="生日记录可见范围">
+        <button class="choice {{visibility === 'FAMILY' ? 'selected' : ''}}" data-visibility="FAMILY" bindtap="onVisibility">家人可见</button>
+        <button class="choice {{visibility === 'PRIVATE' ? 'selected' : ''}}" data-visibility="PRIVATE" bindtap="onVisibility">仅您可见</button>
+      </view>
+      <view class="field-tip">选择“仅您可见”后，家人不会看到这条记录。</view>
+    </view>
+
+    <view class="form-section">
+      <view class="label">生日提醒 <text class="label-small">默认不提醒，由您自己决定</text></view>
+      <view class="reminder-box">
+        <view class="reminder-tip">提醒只会发给您。开启前，小程序会先征得您的允许。</view>
+        <view class="choice-row">
+          <button wx:for="{{reminderOptions}}" wx:key="*this" class="reminder {{reminderDays.indexOf(item) > -1 ? 'on' : ''}}" data-day="{{item}}" bindtap="onReminder">{{item === 0 ? '当天提醒' : '提前 ' + item + ' 天'}}</button>
+        </view>
+      </view>
+    </view>
+
+    <button class="main-btn {{saving ? 'disabled' : ''}}" loading="{{saving}}" disabled="{{saving}}" bindtap="onSave">{{saving ? '正在保存…' : '保存生日'}}</button>
+    <button class="cancel-btn" disabled="{{saving}}" bindtap="onCloseForm">暂不保存</button>
+  </view>
+</view>

@@ -1,0 +1,51 @@
+{
+  "pages": [
+    "pages/days/days",
+    "pages/tpl/tpl",
+    "pages/me/me",
+    "pages/day-edit/day-edit",
+    "pages/days-list/days-list",
+    "pages/day-detail/day-detail",
+    "pages/letter-edit/letter-edit",
+    "pages/letter-preview/letter-preview",
+    "pages/days-card-edit/days-card-edit",
+    "pages/capsule-edit/capsule-edit",
+    "pages/capsule-open/capsule-open",
+    "pages/mycards/mycards",
+    "pages/visitor/visitor",
+    "pages/family/family",
+    "pages/birthday-card-edit/birthday-card-edit"
+  ],
+  "window": {
+    "navigationBarTitleText": "念家时",
+    "navigationBarBackgroundColor": "#fbfaf7",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#fbfaf7"
+  },
+  "tabBar": {
+    "color": "#9a9aa4",
+    "selectedColor": "#ff4d6d",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/days/days",
+        "text": "日子"
+      },
+      {
+        "pagePath": "pages/family/family",
+        "text": "家人"
+      },
+      {
+        "pagePath": "pages/tpl/tpl",
+        "text": "模板馆"
+      },
+      {
+        "pagePath": "pages/me/me",
+        "text": "我的"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}

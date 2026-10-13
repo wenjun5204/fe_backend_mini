@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>别点这个签 · 家庭生日簿交互原型</title>
+  <style>
+    :root {
+      --red: #b01f24;
+      --red-deep: #7b141a;
+      --gold: #ffd76e;
+      --ink: #4e2820;
+      --warm: #fff8ec;
+      --paper: #fffdf8;
+      --line: #eddfc6;
+      --muted: #8d766a;
+      --green: #27724d;
+      --shadow: 0 12px 32px rgba(86, 35, 23, .13);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: start center; padding: 24px 12px 40px;
+      background: radial-gradient(circle at 50% 0%, #4d1719, #1e1110 58%);
+      color: var(--ink); font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .prototype-note { color: #f6dba6; max-width: 375px; width: 100%; margin: 0 0 10px; font-size: 13px; letter-spacing: .06em; text-align: center; }
+    .phone {
+      width: min(100%, 375px); height: min(790px, calc(100vh - 80px)); min-height: 680px; overflow: hidden; position: relative;
+      border: 10px solid #291311; border-radius: 42px; background: var(--warm); box-shadow: 0 24px 70px rgba(0,0,0,.55);
+    }
+    .status { height: 36px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; color: #5f3328; font-size: 12px; font-weight: 700; background: var(--warm); }
+    .app { height: calc(100% - 36px); position: relative; overflow: hidden; }
+    .page { display: none; height: 100%; overflow-y: auto; padding-bottom: 28px; background: var(--warm); }
+    .page.active { display: block; }
+    .page::-webkit-scrollbar { width: 0; }
+    .topbar { height: 58px; display: flex; align-items: center; gap: 10px; padding: 0 18px; background: rgba(255,248,236,.96); position: sticky; top: 0; z-index: 3; }
+    .topbar h1 { margin: 0; flex: 1; font-size: 22px; letter-spacing: .04em; color: var(--red-deep); }
+    .back { width: 38px; height: 38px; border: 0; border-radius: 50%; background: #f5e8d4; color: var(--red); font-size: 24px; line-height: 1; }
+    .more { width: 38px; height: 38px; border: 0; border-radius: 50%; background: transparent; color: var(--red); font-size: 24px; }
+
+    /* 首页 */
+    .hero { padding: 2px 16px 0; }
+    .hero-eyebrow { color: #977c55; font-size: 14px; letter-spacing: .08em; margin: 4px 0 8px; }
+    .hero-title { margin: 0; color: var(--red-deep); font-family: "STKaiti", "KaiTi", serif; font-size: 34px; letter-spacing: .08em; }
+    .hero-sub { margin: 8px 0 18px; color: var(--muted); font-size: 15px; line-height: 1.6; }
+    .calendar-card {
+      position: relative; overflow: hidden; min-height: 210px; padding: 20px; border-radius: 22px; color: #fff8e9;
+      background: linear-gradient(145deg, #ca3c3b, var(--red) 58%, #8e151b); box-shadow: 0 14px 25px rgba(136, 28, 30, .28);
+    }
+    .calendar-card::after { content: "生"; position: absolute; right: -12px; bottom: -44px; color: rgba(255, 215, 110, .14); font: 170px/1 "STKaiti", "KaiTi", serif; }
+    .calendar-badge { display: inline-flex; align-items: center; gap: 7px; padding: 5px 10px; border: 1px solid rgba(255,215,110,.55); border-radius: 999px; color: var(--gold); font-size: 13px; }
+    .upcoming-name { position: relative; z-index: 1; margin-top: 18px; font-size: 25px; font-weight: 800; letter-spacing: .05em; }
+    .upcoming-date { position: relative; z-index: 1; margin-top: 4px; color: #ffe9bc; font-size: 15px; }
+    .days { position: absolute; z-index: 1; right: 18px; bottom: 14px; text-align: center; color: var(--gold); }
+    .days strong { display: block; font-size: 64px; line-height: .9; font-family: Georgia, serif; }
+    .days span { font-size: 13px; }
+    .card-actions { position: relative; z-index: 1; display: flex; gap: 8px; margin-top: 18px; }
+    .soft-button, .gold-button, .primary-button, .outline-button { border-radius: 14px; min-height: 48px; padding: 0 16px; font-weight: 800; border: 0; }
+    .soft-button { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.48); color: #fff7e6; }
+    .gold-button { background: var(--gold); color: #8b191d; }
+    .primary-button { color: #fffaf0; background: linear-gradient(180deg, #d34341, var(--red)); box-shadow: 0 7px 13px rgba(152, 30, 31, .22); }
+    .outline-button { color: var(--red); background: #fffaf1; border: 1px solid #e6bd69; }
+    .section { margin: 22px 16px 0; }
+    .section-heading { display: flex; justify-content: space-between; align-items: center; margin: 0 0 10px; }
+    .section-heading h2 { margin: 0; font-size: 19px; color: var(--ink); }
+    .text-button { padding: 5px 0; border: 0; color: var(--red); background: transparent; font-size: 14px; font-weight: 800; }
+    .record-list { display: grid; gap: 10px; }
+    .record {
+      display: flex; align-items: center; gap: 12px; padding: 13px; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 3px 9px rgba(91, 55, 30, .05);
+    }
+    .record:active { transform: scale(.99); }
+    .record-avatar { width: 48px; height: 48px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 16px; background: #f9e6bd; font-size: 26px; }
+    .record-main { flex: 1; min-width: 0; }
+    .record-name { color: #562d22; font-size: 18px; font-weight: 800; }
+    .record-date { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 4px; color: var(--muted); font-size: 13px; }
+    .record-days { color: var(--red); font-weight: 800; font-size: 14px; text-align: right; }
+    .record-days small { display: block; margin-top: 3px; color: #a28669; font-size: 11px; font-weight: 500; }
+    .add-record { width: 100%; margin-top: 12px; min-height: 58px; color: #8d4e28; background: transparent; border: 2px dashed #e0b866; border-radius: 16px; font-size: 17px; font-weight: 800; }
+    .privacy-tip { margin: 16px; padding: 12px 14px; color: #8b725a; background: #f8ecd8; border-radius: 12px; font-size: 13px; line-height: 1.6; }
+
+    /* 编辑页 */
+    .form { padding: 4px 16px 26px; }
+    .form-intro { padding: 13px 14px; background: #fff1d7; border-left: 4px solid #d69c37; color: #805d30; border-radius: 10px; font-size: 14px; line-height: 1.6; }
+    .label { display: block; margin: 20px 0 9px; font-size: 16px; font-weight: 800; color: #5d3024; }
+    .label small { color: var(--muted); font-size: 12px; font-weight: 400; }
+    .field, .select { width: 100%; height: 52px; padding: 0 14px; color: #50342b; border: 1px solid #dfceb4; border-radius: 14px; outline: none; background: var(--paper); font-size: 17px; }
+    .field:focus, .select:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(176,31,36,.1); }
+    .segmented { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; background: #f1e4cf; border-radius: 14px; }
+    .segmented button { height: 43px; border: 0; border-radius: 10px; background: transparent; color: #8d766a; font-weight: 800; }
+    .segmented button.selected { color: #fffaf0; background: var(--red); box-shadow: 0 3px 8px rgba(119, 25, 26, .2); }
+    .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .result-card { margin-top: 14px; padding: 16px; color: #7b171b; background: linear-gradient(135deg, #fff6de, #ffe7af); border: 1px solid #ebcc85; border-radius: 17px; }
+    .result-kicker { color: #8c7041; font-size: 13px; }
+    .result-main { margin-top: 4px; font-family: "STKaiti", "KaiTi", serif; font-size: 28px; font-weight: 800; letter-spacing: .04em; }
+    .result-sub { margin-top: 5px; color: #896f4e; font-size: 13px; }
+    .choice-row { display: flex; gap: 9px; }
+    .choice { flex: 1; min-height: 51px; padding: 8px; border: 1px solid #dfceb4; border-radius: 13px; color: #806655; background: #fffdf8; font-size: 15px; font-weight: 800; }
+    .choice.selected { border-color: var(--red); color: var(--red); background: #fff1eb; box-shadow: inset 0 0 0 1px var(--red); }
+    .reminder-box { padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); }
+    .reminder-caption { color: var(--muted); font-size: 13px; line-height: 1.55; margin: 0 0 12px; }
+    .reminder-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .reminder-option { padding: 10px 2px; border: 1px solid #ded0bb; border-radius: 12px; color: #8c7462; background: #fff; font-size: 14px; font-weight: 800; }
+    .reminder-option.on { color: #fff9ec; border-color: var(--red); background: var(--red); }
+    .save { position: sticky; bottom: 0; width: 100%; margin-top: 23px; min-height: 58px; border: 0; border-radius: 17px; color: #fffaf0; background: linear-gradient(180deg, #d54845, var(--red)); font-size: 20px; font-weight: 900; box-shadow: 0 9px 18px rgba(166,27,30,.25); }
+    .query { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 18px; }
+    .query summary { color: var(--red); cursor: pointer; font-size: 16px; font-weight: 800; }
+    .query-inner { padding-top: 12px; }
+    .query-result { min-height: 24px; padding: 8px 0 0; color: var(--green); font-size: 14px; }
+
+    /* 详情页 */
+    .detail-head { margin: 3px 16px 0; padding: 18px; border-radius: 22px; color: #fff9ed; background: linear-gradient(145deg, #c13b3b, #8e171b); text-align: center; }
+    .detail-avatar { width: 70px; height: 70px; margin: 0 auto 9px; display: grid; place-items: center; border: 2px solid var(--gold); border-radius: 50%; background: rgba(255,255,255,.14); font-size: 38px; }
+    .detail-name { font-size: 25px; font-weight: 900; }
+    .detail-date { margin-top: 6px; color: #ffe2a3; font-size: 15px; }
+    .detail-days { margin: 13px 0 0; color: #fff6dc; font-size: 17px; }
+    .detail-days b { color: var(--gold); font-size: 26px; }
+    .detail-section { margin: 18px 16px; }
+    .detail-section h2 { margin: 0 0 10px; font-size: 18px; }
+    .blessings { display: grid; gap: 9px; }
+    .blessing { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 9px 12px; color: #654332; text-align: left; background: var(--paper); border: 1px solid var(--line); border-radius: 15px; font-size: 14px; line-height: 1.45; }
+    .blessing b { color: var(--red); font-size: 17px; }
+    .detail-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 22px 16px; }
+    .danger { width: 100%; min-height: 48px; margin-top: 10px; color: #a25246; border: 0; background: transparent; font-size: 15px; }
+
+    /* 弹层 */
+    .sheet-mask { display: none; position: absolute; inset: 0; z-index: 20; background: rgba(47,23,16,.45); }
+    .sheet-mask.show { display: block; }
+    .sheet { position: absolute; left: 0; right: 0; bottom: -370px; z-index: 21; padding: 22px 18px 28px; border-radius: 24px 24px 0 0; background: #fffaf1; transition: bottom .3s ease; box-shadow: 0 -15px 35px rgba(43,19,13,.2); }
+    .sheet.show { bottom: 0; }
+    .sheet h2 { margin: 0; color: var(--red-deep); font-size: 21px; }
+    .sheet p { color: #806b5b; font-size: 14px; line-height: 1.65; }
+    .sheet-buttons { display: grid; gap: 9px; margin-top: 17px; }
+    .sheet-buttons button { min-height: 51px; border-radius: 15px; font-size: 17px; font-weight: 900; }
+    .toast { display: none; position: absolute; z-index: 40; top: 73px; left: 50%; width: max-content; max-width: 88%; transform: translateX(-50%); padding: 12px 17px; color: #fff8eb; background: rgba(72,25,20,.95); border-radius: 999px; font-size: 14px; box-shadow: 0 5px 15px rgba(0,0,0,.2); }
+    .toast.show { display: block; animation: toast .2s ease; }
+    @keyframes toast { from { opacity: 0; transform: translate(-50%, -8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="prototype-note">别点这个签 · 家庭生日簿 · 可点击体验原型</div>
+    <div class="phone">
+      <div class="status"><span>9:41</span><span>▰▰▰ ᴡɪꜰɪ ◉</span></div>
+      <div class="app" id="app">
+        <section class="page active" id="page-home">
+          <header class="topbar"><h1>我的家</h1><button class="more" aria-label="更多">···</button></header>
+          <div class="hero">
+            <p class="hero-eyebrow">王家庄 · 把重要的日子记在心上</p>
+            <h2 class="hero-title">家庭生日簿</h2>
+            <p class="hero-sub">提前记住家人的生日，想念和祝福都不迟到。</p>
+            <article class="calendar-card" id="upcomingCard">
+              <div class="calendar-badge">◉ 最近一个生日</div>
+              <div class="upcoming-name" id="upcomingName">妈妈的生日</div>
+              <div class="upcoming-date" id="upcomingDate">正在计算日期…</div>
+              <div class="days"><strong id="upcomingDays">--</strong><span>天后</span></div>
+              <div class="card-actions"><button class="soft-button" id="openUpcoming">查看详情</button><button class="gold-button" id="tryBirthday">试试生日当天</button></div>
+            </article>
+          </div>
+          <div class="section">
+            <div class="section-heading"><h2>家人的生日</h2><button class="text-button" id="openAll">查看全部</button></div>
+            <div class="record-list" id="homeRecords"></div>
+            <button class="add-record" id="openAdd">＋ 记一位家人的生日</button>
+          </div>
+          <p class="privacy-tip">生日信息只用于日期换算和提醒。您可以随时编辑、删除，或选择只让自己看到。</p>
+        </section>
+
+        <section class="page" id="page-list">
+          <header class="topbar"><button class="back" data-back="home" aria-label="返回">‹</button><h1>家庭生日簿</h1><button class="more" id="listAdd" aria-label="添加生日">＋</button></header>
+          <div class="section" style="margin-top:8px"><p class="hero-sub" style="margin-top:0">按下一次生日由近到远排列</p><div class="record-list" id="allRecords"></div><button class="add-record" id="listAddLarge">＋ 记一位家人的生日</button></div>
+        </section>
+
+        <section class="page" id="page-edit">
+          <header class="topbar"><button class="back" data-back="list" aria-label="返回">‹</button><h1 id="editTitle">记下生日</h1><span style="width:38px"></span></header>
+          <form class="form" id="birthdayForm">
+            <p class="form-intro">只要记下月和日就可以了。完整日期只用于下面的临时查询，不会保存。</p>
+            <label class="label" for="personName">家人的称呼或姓名</label>
+            <input class="field" id="personName" maxlength="12" placeholder="例如：妈妈、小宝" required />
+            <label class="label">按哪种日期记？</label>
+            <div class="segmented" id="calendarSwitch"><button type="button" class="selected" data-calendar="solar">公历生日</button><button type="button" data-calendar="lunar">农历生日</button></div>
+            <label class="label">生日月、日</label>
+            <div class="date-row"><select class="select" id="monthSelect" aria-label="生日月份"></select><select class="select" id="daySelect" aria-label="生日日期"></select></div>
+            <div id="leapWrap" style="display:none;margin-top:10px"><button class="choice" type="button" id="leapButton">这是闰月生日</button></div>
+            <div class="result-card"><div class="result-kicker" id="resultKicker">下一次生日的农历日期</div><div class="result-main" id="conversionMain">正在计算…</div><div class="result-sub" id="conversionSub"></div></div>
+            <label class="label">谁可以看到？</label>
+            <div class="choice-row" id="visibilitySwitch"><button class="choice selected" type="button" data-visibility="FAMILY">家人可见</button><button class="choice" type="button" data-visibility="PRIVATE">只我可见</button></div>
+            <label class="label">生日提醒 <small>默认关闭，由您自己决定</small></label>
+            <div class="reminder-box"><p class="reminder-caption">开启时会先说明提醒内容，并请求您的订阅消息授权。</p><div class="reminder-options"><button type="button" class="reminder-option" data-reminder="7">提前 7 天</button><button type="button" class="reminder-option" data-reminder="3">提前 3 天</button><button type="button" class="reminder-option" data-reminder="0">当天提醒</button></div></div>
+            <button class="save" type="submit">保存生日</button>
+            <details class="query"><summary>只想查一下农历日期？</summary><div class="query-inner"><input class="field" id="queryDate" type="date" /><button class="outline-button" type="button" id="queryButton" style="width:100%;margin-top:10px">查询，不保存</button><div class="query-result" id="queryResult"></div></div></details>
+          </form>
+        </section>
+
+        <section class="page" id="page-detail">
+          <header class="topbar"><button class="back" data-back="list" aria-label="返回">‹</button><h1>生日详情</h1><button class="more" id="editRecord" aria-label="编辑">✎</button></header>
+          <article class="detail-head"><div class="detail-avatar" id="detailAvatar">👩</div><div class="detail-name" id="detailName">妈妈</div><div class="detail-date" id="detailDate"></div><p class="detail-days">离生日还有 <b id="detailDays">--</b> 天</p></article>
+          <section class="detail-section"><h2>送一句祝福</h2><div class="blessings" id="blessingList"></div></section>
+          <div class="detail-actions"><button class="outline-button" id="showBirthdayCard">看看生日当天</button><button class="primary-button" id="shareBlessing">主动分享祝福</button></div>
+          <section class="detail-section" style="border-top:1px solid var(--line);padding-top:12px"><div class="record-date" id="detailVisibility"></div><button class="danger" id="deleteRecord">删除这条生日记录</button></section>
+        </section>
+
+        <div class="sheet-mask" id="sheetMask"></div>
+        <section class="sheet" id="permissionSheet"><h2>开启生日提醒</h2><p>您将收到所选生日的提醒。提醒只发送给您，不会向其他人公开。</p><div class="sheet-buttons"><button class="primary-button" id="permissionAllow">同意并开启</button><button class="outline-button" id="permissionCancel">暂不开启</button></div></section>
+        <section class="sheet" id="birthdaySheet"><h2 id="birthdaySheetTitle">今天是妈妈的生日</h2><p id="birthdaySheetText">送一句祝福吧，让家人知道您一直记得。</p><div class="sheet-buttons"><button class="primary-button" id="copyBirthdayBlessing">复制一句祝福</button><button class="outline-button" id="closeBirthdaySheet">我知道了</button></div></section>
+        <div class="toast" id="toast" role="status"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const state = {
+      calendarType: 'SOLAR', visibility: 'FAMILY', isLeapMonth: false, selectedReminders: [], editingId: null, selectedId: null,
+      records: [
+        { id: 1, name: '妈妈', emoji: '👩', calendarType: 'SOLAR', month: 9, day: 21, isLeapMonth: false, visibility: 'FAMILY', reminders: [3, 0] },
+        { id: 2, name: '小宝', emoji: '👦', calendarType: 'SOLAR', month: 10, day: 3, isLeapMonth: false, visibility: 'FAMILY', reminders: [] },
+        { id: 3, name: '爸爸', emoji: '👨', calendarType: 'LUNAR', month: 8, day: 15, isLeapMonth: false, visibility: 'PRIVATE', reminders: [0] }
+      ]
+    };
+
+    const $ = (selector) => document.querySelector(selector);
+    const pages = ['home', 'list', 'edit', 'detail'];
+    const monthSelect = $('#monthSelect'); const daySelect = $('#daySelect');
+
+    function showPage(name) {
+      pages.forEach(page => $('#page-' + page).classList.toggle('active', page === name));
+      if (name === 'home') renderHome();
+      if (name === 'list') renderList();
+      if (name === 'detail') renderDetail();
+      $('.page.active').scrollTop = 0;
+    }
+
+    function toast(message) {
+      const element = $('#toast'); element.textContent = message; element.classList.add('show');
+      clearTimeout(window.toastTimer); window.toastTimer = setTimeout(() => element.classList.remove('show'), 2400);
+    }
+
+    function solarDate(year, month, day) { return new Date(year, month - 1, day, 12); }
+    function dateKey(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`; }
+    function chineseParts(date) { return new Intl.DateTimeFormat('zh-CN-u-ca-chinese', { year: 'numeric', month: 'long', day: 'numeric' }).formatToParts(date); }
+    function partValue(parts, type) { return parts.find(part => part.type === type)?.value || ''; }
+    function lunarInfo(date) {
+      const parts = chineseParts(date); const monthText = partValue(parts, 'month'); const dayText = partValue(parts, 'day');
+      const isLeap = monthText.includes('闰'); const cleanMonth = monthText.replace('闰','').replace('月','');
+      const monthMap = { '正':1, '一':1, '二':2, '三':3, '四':4, '五':5, '六':6, '七':7, '八':8, '九':9, '十':10, '十一':11, '冬':11, '十二':12, '腊':12 };
+      let month = monthMap[cleanMonth];
+      if (!month) { const matched = cleanMonth.match(/\d+/); month = matched ? Number(matched[0]) : 1; }
+      const nums = { '初一':1,'初二':2,'初三':3,'初四':4,'初五':5,'初六':6,'初七':7,'初八':8,'初九':9,'初十':10,'十一':11,'十二':12,'十三':13,'十四':14,'十五':15,'十六':16,'十七':17,'十八':18,'十九':19,'二十':20,'廿一':21,'廿二':22,'廿三':23,'廿四':24,'廿五':25,'廿六':26,'廿七':27,'廿八':28,'廿九':29,'三十':30 };
+      return { month, day: nums[dayText] || 1, isLeap, text: `农历${monthText}${dayText}` };
+    }
+    function formatSolar(date) { return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`; }
+    function findLunarDate(month, day, isLeap, start = new Date()) {
+      const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 12);
+      for (let i = 0; i < 760; i++) { const info = lunarInfo(cursor); if (info.month === Number(month) && info.day === Number(day) && info.isLeap === isLeap) return new Date(cursor); cursor.setDate(cursor.getDate() + 1); }
+      return null;
+    }
+    function nextBirthday(record) {
+      const today = new Date(); today.setHours(12,0,0,0);
+      if (record.calendarType === 'LUNAR') return findLunarDate(record.month, record.day, record.isLeapMonth, today);
+      let date = solarDate(today.getFullYear(), record.month, record.day); if (date < today) date = solarDate(today.getFullYear() + 1, record.month, record.day); return date;
+    }
+    function diffDays(date) { const today = new Date(); today.setHours(12,0,0,0); return Math.max(0, Math.round((date - today) / 86400000)); }
+    function recordDateText(record) { const date = nextBirthday(record); if (!date) return '日期暂时无法换算'; const lunar = lunarInfo(date).text; return record.calendarType === 'SOLAR' ? `${record.month}月${record.day}日 · ${lunar}` : `${lunar} · ${formatSolar(date)}`; }
+    function sortRecords() { return [...state.records].sort((a, b) => diffDays(nextBirthday(a)) - diffDays(nextBirthday(b))); }
+    function escapeHtml(text) { return String(text).replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char])); }
+
+    function recordHtml(record) {
+      const days = diffDays(nextBirthday(record)); const visibility = record.visibility === 'PRIVATE' ? '仅自己可见' : '家人可见';
+      return `<button class="record" data-record-id="${record.id}" aria-label="查看${escapeHtml(record.name)}的生日详情"><span class="record-avatar">${record.emoji}</span><span class="record-main"><span class="record-name">${escapeHtml(record.name)}</span><span class="record-date">${recordDateText(record)} · ${visibility}</span></span><span class="record-days">${days === 0 ? '就是今天' : days + ' 天后'}<small>查看</small></span></button>`;
+    }
+    function bindRecordClicks(container) { container.querySelectorAll('[data-record-id]').forEach(button => button.addEventListener('click', () => { state.selectedId = Number(button.dataset.recordId); showPage('detail'); })); }
+    function renderHome() {
+      const records = sortRecords(); const next = records[0]; $('#homeRecords').innerHTML = records.slice(0, 3).map(recordHtml).join(''); bindRecordClicks($('#homeRecords'));
+      if (!next) return; const date = nextBirthday(next); $('#upcomingName').textContent = `${next.name}的生日`; $('#upcomingDate').textContent = recordDateText(next); $('#upcomingDays').textContent = diffDays(date); $('#openUpcoming').onclick = () => { state.selectedId = next.id; showPage('detail'); }; $('#tryBirthday').onclick = () => openBirthdaySheet(next);
+    }
+    function renderList() { const records = sortRecords(); $('#allRecords').innerHTML = records.map(recordHtml).join(''); bindRecordClicks($('#allRecords')); }
+
+    function populateDateSelects() {
+      monthSelect.innerHTML = Array.from({length: 12}, (_, i) => `<option value="${i + 1}">${i + 1} 月</option>`).join(''); updateDayOptions();
+    }
+    function updateDayOptions(selectedDay) {
+      const days = state.calendarType === 'SOLAR' ? new Date(2028, Number(monthSelect.value || 1), 0).getDate() : 30;
+      daySelect.innerHTML = Array.from({length: days}, (_, i) => `<option value="${i + 1}">${i + 1} 日</option>`).join('');
+      if (selectedDay) daySelect.value = Math.min(selectedDay, days); updateConversion();
+    }
+    function updateConversion() {
+      const month = Number(monthSelect.value); const day = Number(daySelect.value); let date;
+      if (state.calendarType === 'SOLAR') { const today = new Date(); date = solarDate(today.getFullYear(), month, day); if (date < new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12)) date = solarDate(today.getFullYear() + 1, month, day); $('#resultKicker').textContent = '下一次生日的农历日期'; $('#conversionMain').textContent = lunarInfo(date).text; $('#conversionSub').textContent = `对应公历 ${formatSolar(date)}`; }
+      else { date = findLunarDate(month, day, state.isLeapMonth); $('#resultKicker').textContent = '下一次生日的公历日期'; $('#conversionMain').textContent = date ? formatSolar(date) : '暂时无法换算'; $('#conversionSub').textContent = date ? lunarInfo(date).text : '请检查农历日期'; }
+    }
+    function syncSwitches() {
+      $('#calendarSwitch').querySelectorAll('button').forEach(button => button.classList.toggle('selected', button.dataset.calendar === state.calendarType.toLowerCase()));
+      $('#visibilitySwitch').querySelectorAll('button').forEach(button => button.classList.toggle('selected', button.dataset.visibility === state.visibility));
+      $('#leapWrap').style.display = state.calendarType === 'LUNAR' ? 'block' : 'none'; $('#leapButton').classList.toggle('selected', state.isLeapMonth); $('#leapButton').textContent = state.isLeapMonth ? '✓ 这是闰月生日' : '这是闰月生日';
+      document.querySelectorAll('.reminder-option').forEach(button => button.classList.toggle('on', state.selectedReminders.includes(Number(button.dataset.reminder))));
+    }
+    function openEdit(record = null) {
+      state.editingId = record?.id || null; state.calendarType = record?.calendarType || 'SOLAR'; state.visibility = record?.visibility || 'FAMILY'; state.isLeapMonth = record?.isLeapMonth || false; state.selectedReminders = [...(record?.reminders || [])]; $('#editTitle').textContent = record ? '编辑生日' : '记下生日'; $('#personName').value = record?.name || ''; populateDateSelects(); monthSelect.value = record?.month || new Date().getMonth() + 1; updateDayOptions(record?.day || new Date().getDate()); syncSwitches(); updateConversion(); showPage('edit');
+    }
+    function renderDetail() {
+      const record = state.records.find(item => item.id === state.selectedId); if (!record) return showPage('list'); const date = nextBirthday(record); $('#detailAvatar').textContent = record.emoji; $('#detailName').textContent = record.name; $('#detailDate').textContent = recordDateText(record); $('#detailDays').textContent = diffDays(date); $('#detailVisibility').textContent = record.visibility === 'PRIVATE' ? '此记录只让您自己看到' : '此记录可被家人看到';
+      const messages = [`祝${record.name}生日快乐，天天都有好心情。`, `今天想您啦，祝${record.name}生日快乐！`, `愿${record.name}吃得香、睡得甜，和家人常相见。`]; $('#blessingList').innerHTML = messages.map((message, index) => `<button class="blessing" data-message="${escapeHtml(message)}"><b>${index + 1}</b><span>${message}</span></button>`).join(''); $('#blessingList').querySelectorAll('.blessing').forEach(button => button.addEventListener('click', () => copyText(button.dataset.message, '祝福已复制，您可以自己发给家人了')));
+    }
+    async function copyText(text, message) { try { await navigator.clipboard?.writeText(text); } catch (e) { /* 原型环境可能不支持剪贴板 */ } toast(message); }
+    function showSheet(id) { $('#sheetMask').classList.add('show'); $(id).classList.add('show'); }
+    function closeSheets() { $('#sheetMask').classList.remove('show'); document.querySelectorAll('.sheet').forEach(sheet => sheet.classList.remove('show')); }
+    function openBirthdaySheet(record) { $('#birthdaySheetTitle').textContent = `今天是${record.name}的生日`; $('#birthdaySheetText').textContent = `送一句祝福吧，让${record.name}知道您一直记得。`; $('#copyBirthdayBlessing').onclick = () => { copyText(`祝${record.name}生日快乐，天天都有好心情。`, '祝福已复制'); closeSheets(); }; showSheet('#birthdaySheet'); }
+
+    $('#openAdd').addEventListener('click', () => openEdit()); $('#listAdd').addEventListener('click', () => openEdit()); $('#listAddLarge').addEventListener('click', () => openEdit()); $('#openAll').addEventListener('click', () => showPage('list'));
+    document.querySelectorAll('.back').forEach(button => button.addEventListener('click', () => showPage(button.dataset.back)));
+    $('#calendarSwitch').addEventListener('click', event => { const button = event.target.closest('button'); if (!button) return; state.calendarType = button.dataset.calendar.toUpperCase(); syncSwitches(); updateDayOptions(); });
+    $('#visibilitySwitch').addEventListener('click', event => { const button = event.target.closest('button'); if (!button) return; state.visibility = button.dataset.visibility; syncSwitches(); });
+    $('#leapButton').addEventListener('click', () => { state.isLeapMonth = !state.isLeapMonth; syncSwitches(); updateConversion(); });
+    document.querySelectorAll('.reminder-option').forEach(button => button.addEventListener('click', () => { const value = Number(button.dataset.reminder); const next = state.selectedReminders.includes(value) ? state.selectedReminders.filter(item => item !== value) : [...state.selectedReminders, value]; if (next.length > state.selectedReminders.length) { window.pendingReminder = value; showSheet('#permissionSheet'); } else { state.selectedReminders = next; syncSwitches(); } }));
+    $('#permissionAllow').addEventListener('click', () => { if (!state.selectedReminders.includes(window.pendingReminder)) state.selectedReminders.push(window.pendingReminder); closeSheets(); syncSwitches(); toast('提醒已开启，会先经过您的订阅授权'); });
+    $('#permissionCancel').addEventListener('click', () => { closeSheets(); toast('提醒保持关闭'); }); $('#sheetMask').addEventListener('click', closeSheets); $('#closeBirthdaySheet').addEventListener('click', closeSheets);
+    monthSelect.addEventListener('change', () => updateDayOptions()); daySelect.addEventListener('change', updateConversion);
+    $('#birthdayForm').addEventListener('submit', event => { event.preventDefault(); const name = $('#personName').value.trim(); if (!name) return toast('请先写下家人的称呼'); const old = state.records.find(record => record.id === state.editingId); const record = { id: state.editingId || Date.now(), name, emoji: old?.emoji || '🎂', calendarType: state.calendarType, month: Number(monthSelect.value), day: Number(daySelect.value), isLeapMonth: state.isLeapMonth, visibility: state.visibility, reminders: [...state.selectedReminders] }; if (state.editingId) state.records = state.records.map(item => item.id === state.editingId ? record : item); else state.records.push(record); state.selectedId = record.id; toast('生日已记下'); showPage('detail'); });
+    $('#queryButton').addEventListener('click', () => { const value = $('#queryDate').value; if (!value) return toast('请选择一个日期'); const [year, month, day] = value.split('-').map(Number); const date = solarDate(year, month, day); $('#queryResult').textContent = `${formatSolar(date)} 对应 ${lunarInfo(date).text}。本次查询不会保存。`; });
+    $('#editRecord').addEventListener('click', () => openEdit(state.records.find(item => item.id === state.selectedId))); $('#showBirthdayCard').addEventListener('click', () => openBirthdaySheet(state.records.find(item => item.id === state.selectedId))); $('#shareBlessing').addEventListener('click', () => { const record = state.records.find(item => item.id === state.selectedId); copyText(`祝${record.name}生日快乐，天天都有好心情。`, '祝福已复制，请由您主动分享'); });
+    $('#deleteRecord').addEventListener('click', () => { const record = state.records.find(item => item.id === state.selectedId); if (window.confirm(`确定删除“${record.name}”的生日记录吗？相关提醒也会停止。`)) { state.records = state.records.filter(item => item.id !== state.selectedId); toast('生日记录已删除，提醒已停止'); showPage('list'); } });
+
+    populateDateSelects(); renderHome();
+  </script>
+</body>
+</html>

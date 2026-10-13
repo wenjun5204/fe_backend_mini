@@ -1,0 +1,224 @@
+/* 时光胶囊开箱页,深色背景,对齐原型 .page-capsule-open/.co-capsule/.co-msg */
+.page-capsule-open {
+  min-height: 100vh;
+  background: #12121f;
+  color: #fff;
+}
+
+/* ===== 通用态(加载/失败) ===== */
+.co-state {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32rpx;
+}
+.co-state-text {
+  font-size: 27rpx;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.7;
+}
+.co-retry {
+  min-height: 88rpx;
+  line-height: 88rpx;
+  padding: 0 64rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.2);
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+/* ===== 主体(居中) ===== */
+.co-body {
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx 60rpx calc(60rpx + env(safe-area-inset-bottom));
+  text-align: center;
+}
+.co-kicker {
+  font-size: 22rpx;
+  letter-spacing: 6rpx;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 800;
+}
+
+/* ===== 胶囊球(待开呼吸 / 摇晃 / 爆开,总预算 ≤2.5s) ===== */
+.co-capsule {
+  width: 260rpx;
+  height: 260rpx;
+  border-radius: 50%;
+  margin: 52rpx 0;
+  background: radial-gradient(
+      circle at 32% 30%,
+      rgba(255, 255, 255, 0.35),
+      rgba(255, 255, 255, 0.05) 55%
+    ),
+    rgba(255, 255, 255, 0.08);
+  border: 2rpx solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 112rpx;
+  box-shadow: 0 0 120rpx rgba(43, 196, 180, 0.4), inset 0 0 60rpx rgba(255, 255, 255, 0.1);
+  animation: cofloat 2.4s ease-in-out infinite;
+}
+@keyframes cofloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-16rpx);
+  }
+}
+.co-capsule.shake {
+  animation: coshake 0.45s ease-in-out 2;
+}
+@keyframes coshake {
+  0%,
+  100% {
+    transform: rotate(0) scale(1);
+  }
+  25% {
+    transform: rotate(-7deg) scale(1.04);
+  }
+  50% {
+    transform: rotate(6deg) scale(1.07);
+  }
+  75% {
+    transform: rotate(-4deg) scale(1.04);
+  }
+}
+.co-capsule.burst {
+  animation: coburst 0.5s ease-out forwards;
+}
+@keyframes coburst {
+  to {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+/* ===== 状态标题/副文案 ===== */
+.co-title {
+  font-size: 52rpx;
+  font-weight: 900;
+  letter-spacing: 2rpx;
+}
+.co-sub {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 20rpx;
+  line-height: 1.7;
+}
+.co-sub text {
+  display: block;
+}
+
+/* ===== 开箱按钮(青金渐变,主按钮 ≥88rpx) ===== */
+.co-btn {
+  margin-top: 52rpx;
+  width: 100%;
+  max-width: 560rpx;
+  min-height: 96rpx;
+  line-height: 96rpx;
+  border: none;
+  border-radius: 34rpx;
+  background: var(--grad-teal);
+  color: #fff;
+  font-size: 34rpx;
+  font-weight: 900;
+  letter-spacing: 2rpx;
+  box-shadow: 0 20rpx 52rpx rgba(18, 178, 163, 0.4);
+}
+.co-btn.off {
+  filter: grayscale(0.6);
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+/* ===== 揭示态:信件 + 照片位(pop 0.5s) ===== */
+.co-msg {
+  margin-top: 40rpx;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 48rpx 40rpx;
+  border-radius: 44rpx;
+  background: rgba(255, 255, 255, 0.07);
+  border: 2rpx solid rgba(255, 255, 255, 0.16);
+  animation: copop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+@keyframes copop {
+  from {
+    transform: scale(0.86);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.m-emoji {
+  font-size: 92rpx;
+}
+.m-text {
+  font-size: 34rpx;
+  line-height: 2;
+  margin-top: 28rpx;
+  color: rgba(255, 255, 255, 0.95);
+  text-align: center;
+}
+.m-photo {
+  margin-top: 32rpx;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+.m-img {
+  width: 100%;
+  display: block;
+}
+.m-photo-empty {
+  margin-top: 32rpx;
+  padding: 36rpx 24rpx;
+  border: 2rpx dashed rgba(255, 255, 255, 0.25);
+  border-radius: 24rpx;
+  font-size: 25rpx;
+  color: rgba(255, 255, 255, 0.5);
+}
+.m-from {
+  margin-top: 32rpx;
+  font-size: 25rpx;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ===== 双 CTA ===== */
+.co-cta-row {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 48rpx;
+  width: 100%;
+  max-width: 560rpx;
+}
+.co-cta {
+  flex: 1;
+  min-height: 88rpx;
+  line-height: 88rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.25);
+  border-radius: 30rpx;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 29rpx;
+  font-weight: 800;
+}
+.co-cta.primary {
+  border: none;
+  background: var(--grad-teal);
+  box-shadow: 0 16rpx 40rpx rgba(18, 178, 163, 0.35);
+}

@@ -1,0 +1,89 @@
+.page-pendant {
+  min-height: 100vh;
+  background: #fff8ec;
+  padding: 32rpx 32rpx 48rpx;
+  box-sizing: border-box;
+}
+
+.pd-tip {
+  font-size: 34rpx;
+  color: #8a6f4d;
+  text-align: center;
+  margin-bottom: 32rpx;
+}
+
+.pd-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.pd-card {
+  width: 328rpx;
+  background: #ffffff;
+  border-radius: 24rpx;
+  border: 4rpx solid #f3e3c3;
+  padding: 32rpx 24rpx;
+  margin-bottom: 24rpx;
+  text-align: center;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.pd-wearing {
+  border-color: #ffd76e;
+  background: #fffdf4;
+}
+
+.pd-locked {
+  opacity: 0.65;
+}
+
+.pd-emoji {
+  font-size: 88rpx;
+  line-height: 1.2;
+}
+
+.pd-name {
+  font-size: 36rpx;
+  color: #4a3b2a;
+  font-family: 'Kaiti SC', 'STKaiti', serif;
+  margin-top: 12rpx;
+}
+
+.pd-cond {
+  font-size: 30rpx;
+  color: #8a6f4d;
+  margin-top: 8rpx;
+}
+
+.pd-progress {
+  font-size: 28rpx;
+  color: #b01f24;
+  margin-top: 8rpx;
+}
+
+.pd-badge {
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
+  background: #b01f24;
+  color: #ffd76e;
+  font-size: 24rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+}
+
+.btn-main {
+  margin-top: 16rpx;
+  background: #b01f24;
+  color: #ffffff;
+  font-size: 36rpx;
+  height: 96rpx;
+  line-height: 96rpx;
+  border-radius: 48rpx;
+}
+
+.pd-back {
+  margin-top: 40rpx;
+}
