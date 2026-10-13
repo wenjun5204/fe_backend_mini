@@ -2478,7 +2478,7 @@ components:
           description: 仅 CAPSULE:给未来的自己/给未来的 TA
         dayId:
           type: integer
-          description: 仅 BIRTHDAY_CARD:关联 DayRecord id(须 kind=BIRTHDAY 且本人可见且当天 daysUntil=0,否则 40900)
+          description: 仅 BIRTHDAY_CARD:关联 DayRecord id(须 kind=BIRTHDAY 且本人可见,否则 40000;随时可生成,生日当天由提醒自然触达)
         blessingText:
           type: string
           minLength: 1

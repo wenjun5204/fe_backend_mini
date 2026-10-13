@@ -18,6 +18,7 @@
 
     <view class="dt-tags">
       <text class="dt-tag hot">{{r.tagText}}</text>
+      <text class="dt-tag" wx:if="{{r.anniversaryText}}">{{r.anniversaryText}}</text>
       <text class="dt-tag">{{r.calText}}</text>
       <text class="dt-tag">{{remText}}</text>
     </view>

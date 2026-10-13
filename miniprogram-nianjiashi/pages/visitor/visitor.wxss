@@ -288,3 +288,18 @@
   font-size: 24rpx;
   color: var(--ink-3);
 }
+
+/* ===== BIRTHDAY_CARD:瞬间照片(体面内容,≤3 张横排) ===== */
+.vp-photos {
+  display: flex;
+  gap: 14rpx;
+  justify-content: center;
+  margin-top: 22rpx;
+}
+.vp-photo {
+  width: 152rpx;
+  height: 152rpx;
+  border-radius: 20rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.2);
+}

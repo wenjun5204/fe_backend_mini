@@ -63,6 +63,14 @@
       </view>
     </view>
 
+    <!-- 纪念日/在一起:起始年份(可选;纪念日→周年称谓,在一起→补录起始年);生日不收(隐私红线) -->
+    <view wx:if="{{kind !== 'BIRTHDAY'}}">
+      <view class="f-label">{{kind === 'ANNIVERSARY' ? '哪一年开始的？' : '在一起是哪一年？'}} <text class="f-small">记得才填,周年称谓靠它</text></view>
+      <picker range="{{yearRange}}" value="{{yearIndex}}" bindchange="onYearChange">
+        <view class="pick-box">{{yearRange[yearIndex]}}</view>
+      </picker>
+    </view>
+
     <view class="f-label">提前提醒 <text class="f-small">默认关闭</text></view>
     <view class="reminder-options">
       <button

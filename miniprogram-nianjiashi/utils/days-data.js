@@ -83,6 +83,8 @@ function viewOf(r) {
     calText: CAL_LABEL[r.calendarType] || '',
     visText: VIS_LABEL[r.visibility] || '',
     dateText,
+    // 周年称谓:服务端 ANNIVERSARY 且补录年份时输出(如「红宝石婚·40 周年」)
+    anniversaryText: r.anniversaryLabel || r.anniversaryTitle || '',
     gradClass: isTogether ? 'grad-hot' : r.kind === 'ANNIVERSARY' ? 'grad-teal' : 'grad-violet',
     tagClass: isTogether ? 'tag-hot' : r.kind === 'ANNIVERSARY' ? 'tag-teal' : 'tag-violet',
   }
