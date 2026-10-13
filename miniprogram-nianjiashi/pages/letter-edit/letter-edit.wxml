@@ -1,0 +1,57 @@
+<view class="page-letter-edit">
+  <!-- 深夜星河头部 -->
+  <view class="gen-head bg-night">
+    <view class="g-kicker">✉ 感恩信</view>
+    <view class="g-title">写一封信，给{{recipient}}</view>
+    <view class="g-sub">AI 根据你的选择代笔，写成一封信，你只需要点头或改两个字</view>
+  </view>
+
+  <view class="form-block">
+    <view class="f-label">写给谁</view>
+    <view class="pick-chips">
+      <view
+        wx:for="{{recipients}}"
+        wx:key="name"
+        class="chip {{recipient === item.name ? 'on' : ''}}"
+        bindtap="pickRecipient"
+        data-name="{{item.name}}"
+      >{{item.name}}</view>
+      <view
+        class="chip {{isCustom ? 'on' : ''}}"
+        bindtap="pickRecipient"
+        data-name="__custom"
+      >{{isCustom ? recipient : '自定义 +'}}</view>
+    </view>
+
+    <view class="f-label">你们之间的故事 <text class="f-small">点选会写进信里，可多选</text></view>
+    <view class="pick-chips">
+      <view
+        wx:for="{{stories}}"
+        wx:key="text"
+        wx:for-index="idx"
+        class="chip {{item.on ? 'on' : ''}}"
+        bindtap="toggleStory"
+        data-idx="{{idx}}"
+      >{{item.text}}</view>
+    </view>
+
+    <view class="f-label">想要什么语气</view>
+    <view class="tone-cards">
+      <view
+        wx:for="{{tones}}"
+        wx:key="key"
+        class="tone-card {{tone === item.key ? 'on' : ''}}"
+        bindtap="pickTone"
+        data-key="{{item.key}}"
+      >
+        <view class="tone-emoji">{{item.emoji}}</view>
+        <view class="tone-name">{{item.name}}</view>
+        <view class="tone-desc">{{item.desc}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="next-row">
+    <button class="btn-main" bindtap="generate">✨ AI 帮我写这封信</button>
+  </view>
+</view>

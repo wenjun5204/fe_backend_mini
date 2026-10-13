@@ -49,6 +49,10 @@ public class DayRecordEntity {
     @Column(name = "day_day", nullable = false)
     private int day;
 
+    /** 存档年份,可空;列名避让关键字(沿用 day_month/day_day 命名法);缺省 null 完全兼容既有数据 */
+    @Column(name = "day_year")
+    private Integer year;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 8)
     private DayVisibility visibility;
@@ -74,6 +78,8 @@ public class DayRecordEntity {
     public void setMonth(int month) { this.month = month; }
     public int getDay() { return day; }
     public void setDay(int day) { this.day = day; }
+    public Integer getYear() { return year; }
+    public void setYear(Integer year) { this.year = year; }
     public DayVisibility getVisibility() { return visibility; }
     public void setVisibility(DayVisibility visibility) { this.visibility = visibility; }
     public LocalDateTime getCreatedAt() { return createdAt; }

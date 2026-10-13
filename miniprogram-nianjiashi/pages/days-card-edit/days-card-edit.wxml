@@ -1,0 +1,55 @@
+<view class="page-days-card-edit">
+  <!-- 霞橘渐变头部(对齐原型 .gen-head) -->
+  <view class="gen-head bg-sunset">
+    <view class="g-kicker">💕 DAYS TOGETHER</view>
+    <view class="g-title">在一起的第 N 天</view>
+    <view class="g-sub">发朋友圈、纪念日、表白日都能用，每天数字自动 +1，永不过期</view>
+  </view>
+
+  <view class="form-block">
+    <view class="f-label">关系</view>
+    <view class="pick-chips">
+      <view
+        wx:for="{{relations}}"
+        wx:key="*this"
+        class="chip {{relation === item ? 'on' : ''}}"
+        bindtap="pickRelation"
+        data-name="{{item}}"
+      >{{item}}</view>
+    </view>
+
+    <view class="f-label">在一起的日子</view>
+    <picker mode="date" value="{{startDate}}" end="{{dateEnd}}" bindchange="onDate">
+      <view class="date-box">
+        <text class="date-text num-font">{{startDateDot}}</text>
+        <text class="date-arrow">▾</text>
+      </view>
+    </picker>
+
+    <view class="f-label">样式</view>
+    <view class="pick-chips">
+      <view
+        wx:for="{{styles}}"
+        wx:key="key"
+        class="chip {{styleKey === item.key ? 'on' : ''}}"
+        bindtap="pickStyle"
+        data-key="{{item.key}}"
+      >{{item.name}}</view>
+    </view>
+  </view>
+
+  <!-- 深色实时预览卡(对齐原型 .counter-preview) -->
+  <view class="counter-preview">
+    <view class="cp-kicker">DAYS TOGETHER</view>
+    <view class="cp-days num-font">{{days}}<text class="cp-unit"> 天</text></view>
+    <view class="cp-sub">{{startDateDot}} · 至今 · 每天自动 +1</view>
+    <view class="cp-line">"第 {{days}} 天，依然觉得遇见你真好。"</view>
+  </view>
+
+  <view class="next-row">
+    <button class="btn-main" bindtap="makePoster" disabled="{{submitting}}">✨ 生成天数卡片</button>
+  </view>
+</view>
+
+<!-- 海报舞台(canvas 成品图 + 分享面板) -->
+<poster id="poster" bindsharecfg="onShareCfg" />

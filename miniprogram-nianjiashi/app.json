@@ -5,7 +5,16 @@
     "pages/me/me",
     "pages/day-edit/day-edit",
     "pages/days-list/days-list",
-    "pages/day-detail/day-detail"
+    "pages/day-detail/day-detail",
+    "pages/letter-edit/letter-edit",
+    "pages/letter-preview/letter-preview",
+    "pages/days-card-edit/days-card-edit",
+    "pages/capsule-edit/capsule-edit",
+    "pages/capsule-open/capsule-open",
+    "pages/mycards/mycards",
+    "pages/visitor/visitor",
+    "pages/family/family",
+    "pages/birthday-card-edit/birthday-card-edit"
   ],
   "window": {
     "navigationBarTitleText": "念家时",
@@ -22,6 +31,10 @@
       {
         "pagePath": "pages/days/days",
         "text": "日子"
+      },
+      {
+        "pagePath": "pages/family/family",
+        "text": "家人"
       },
       {
         "pagePath": "pages/tpl/tpl",

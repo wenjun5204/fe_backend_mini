@@ -1,0 +1,37 @@
+<view class="page-mycards">
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="mc-loading">正在取出你的卡片…</view>
+
+  <block wx:elif="{{cards.length > 0}}">
+    <!-- 双列卡片墙 -->
+    <view class="mc-grid">
+      <view wx:for="{{cards}}" wx:key="id" class="mc-card">
+        <view class="mc-cover {{item.bg}}">
+          <view class="mc-kicker">{{item.kicker}}</view>
+          <view class="mc-emoji" wx:if="{{item.emoji}}">{{item.emoji}}</view>
+          <view class="mc-days num-font" wx:if="{{item.big}}">{{item.big}}<text class="mc-unit">{{item.unit}}</text></view>
+        </view>
+        <view class="mc-body">
+          <view class="mc-name">{{item.name}}</view>
+          <view class="mc-when">{{item.when}}</view>
+          <view class="mc-when">已收到 {{item.hearts}} 颗 ❤️</view>
+          <view class="mc-acts">
+            <button class="mc-view" bindtap="tapShare" data-id="{{item.id}}" disabled="{{item.sharing}}">{{item.sharing ? '取码中…' : '再次分享'}}</button>
+            <button class="mc-del" bindtap="tapDelete" data-id="{{item.id}}" disabled="{{item.deleting}}">删除</button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 空态:引导去模板馆 -->
+  <view wx:else class="mc-empty">
+    <text class="big">🖼️</text>
+    <view>还没有做过卡片</view>
+    <view>去「模板馆」做第一张——<text class="hl">3 分钟就好</text></view>
+    <button class="btn-main mc-go" bindtap="goTpl">去模板馆 →</button>
+  </view>
+</view>
+
+<!-- 海报舞台(canvas 成品图 + 分享面板) -->
+<poster id="poster" bindsharecfg="onShareCfg" />

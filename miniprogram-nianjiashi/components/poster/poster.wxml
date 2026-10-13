@@ -1,0 +1,29 @@
+<!-- 海报舞台:canvas 750×1200 成品图 + 分享面板(微信好友/保存图片/面对面预览) -->
+<view class="poster-stage {{visible ? 'show' : ''}}">
+  <view class="stage-mask" bindtap="close"></view>
+  <view class="stage-scroll" catchtap="noop">
+    <view class="stage-tip">长按识别二维码 · {{footText}}</view>
+    <canvas type="2d" id="posterCanvas" class="poster-canvas"></canvas>
+    <view wx:if="{{drawing}}" class="drawing-tip">海报绘制中…</view>
+  </view>
+
+  <view class="share-panel {{visible ? 'show' : ''}}">
+    <view class="sp-title">分享这张卡片</view>
+    <view class="sp-hint">好友点开就能看，无需注册</view>
+    <view class="sp-actions">
+      <button class="sp-item" open-type="share">
+        <view class="ico ico-chat">💬</view>
+        <view class="sp-name">微信好友</view>
+      </button>
+      <button class="sp-item" bindtap="saveAlbum">
+        <view class="ico ico-save">⬇️</view>
+        <view class="sp-name">保存图片</view>
+      </button>
+      <button class="sp-item" bindtap="faceToFace">
+        <view class="ico ico-face">📱</view>
+        <view class="sp-name">面对面</view>
+      </button>
+    </view>
+    <button class="sp-cancel" bindtap="close">取消</button>
+  </view>
+</view>

@@ -50,6 +50,7 @@ public final class DayDtos {
         private Integer day;
         private DayVisibility visibility;
         private List<Integer> reminders;
+        private Integer year;
 
         public String getRelation() { return relation; }
         public void setRelation(String relation) { this.relation = relation; }
@@ -63,6 +64,8 @@ public final class DayDtos {
         public void setMonth(Integer month) { this.month = month; }
         public Integer getDay() { return day; }
         public void setDay(Integer day) { this.day = day; }
+        public Integer getYear() { return year; }
+        public void setYear(Integer year) { this.year = year; }
         public DayVisibility getVisibility() { return visibility; }
         public void setVisibility(DayVisibility visibility) { this.visibility = visibility; }
         public List<Integer> getReminders() { return reminders; }
@@ -85,6 +88,10 @@ public final class DayDtos {
         private String nextDateLunarText;
         private Integer daysUntil;
         private Integer togetherDays;
+        private Integer year;
+        private Integer anniversaryNumber;
+        private String anniversaryTitle;
+        private String anniversaryLabel;
 
         public Long getId() { return id; }
         public void setId(Long id) { this.id = id; }
@@ -116,6 +123,14 @@ public final class DayDtos {
         public void setDaysUntil(Integer daysUntil) { this.daysUntil = daysUntil; }
         public Integer getTogetherDays() { return togetherDays; }
         public void setTogetherDays(Integer togetherDays) { this.togetherDays = togetherDays; }
+        public Integer getYear() { return year; }
+        public void setYear(Integer year) { this.year = year; }
+        public Integer getAnniversaryNumber() { return anniversaryNumber; }
+        public void setAnniversaryNumber(Integer anniversaryNumber) { this.anniversaryNumber = anniversaryNumber; }
+        public String getAnniversaryTitle() { return anniversaryTitle; }
+        public void setAnniversaryTitle(String anniversaryTitle) { this.anniversaryTitle = anniversaryTitle; }
+        public String getAnniversaryLabel() { return anniversaryLabel; }
+        public void setAnniversaryLabel(String anniversaryLabel) { this.anniversaryLabel = anniversaryLabel; }
     }
 
     public static class DayListResponse {

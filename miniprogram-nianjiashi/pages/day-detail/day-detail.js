@@ -56,9 +56,21 @@ Page({
     })
   },
 
-  /* 做卡片(Change 2) */
+  /* 做卡片:按 kind 分流(设计 v2.2 §2.2)——BIRTHDAY→生日福卡(无时间门控,随时可做)、
+   * TOGETHER→相伴天数卡、其余→模板馆引导 */
   makeCard() {
-    wx.showToast({ title: '做卡片功能 Change 2 上线', icon: 'none' })
+    const r = this.data.r
+    if (!r) return
+    if (r.isBirthday) {
+      wx.navigateTo({ url: '/pages/birthday-card-edit/birthday-card-edit?dayId=' + r.id })
+      return
+    }
+    if (r.isTogether) {
+      wx.navigateTo({ url: '/pages/days-card-edit/days-card-edit' })
+      return
+    }
+    wx.showToast({ title: '这类日子的卡片在模板馆，先去逛逛', icon: 'none', duration: 2200 })
+    setTimeout(() => wx.switchTab({ url: '/pages/tpl/tpl' }), 900)
   },
 
   /* 编辑 */

@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "时光胶囊 · 开箱日",
+  "navigationBarBackgroundColor": "#12121f",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#12121f",
+  "usingComponents": {
+    "poster": "/components/poster/poster"
+  }
+}

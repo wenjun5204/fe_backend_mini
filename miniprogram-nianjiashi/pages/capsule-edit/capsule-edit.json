@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "时光胶囊",
+  "backgroundColor": "#fbfaf7",
+  "usingComponents": {
+    "poster": "/components/poster/poster"
+  }
+}

@@ -18,13 +18,14 @@
 
     <view class="dt-tags">
       <text class="dt-tag hot">{{r.tagText}}</text>
+      <text class="dt-tag" wx:if="{{r.anniversaryText}}">{{r.anniversaryText}}</text>
       <text class="dt-tag">{{r.calText}}</text>
       <text class="dt-tag">{{remText}}</text>
     </view>
   </view>
 
   <view class="dt-actions">
-    <button class="dt-btn" bindtap="makeCard">✨ 做一张卡片</button>
+    <button class="dt-btn" bindtap="makeCard">{{r.isBirthday ? '🎂 做生日福卡' : '✨ 做一张卡片'}}</button>
     <button class="dt-btn primary" bindtap="editDay">✎ 编辑</button>
   </view>
 

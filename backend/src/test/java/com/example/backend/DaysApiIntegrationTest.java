@@ -98,6 +98,16 @@ class DaysApiIntegrationTest {
         return new int[] { date.getMonthValue(), date.getDayOfMonth() };
     }
 
+    /** v1.8.0 year 扩展:带年份的日子载荷(其余字段同 dayPayload) */
+    private Map<String, Object> yearPayload(String relation, String kind, Integer month, Integer day,
+                                             Integer year) {
+        Map<String, Object> payload = dayPayload(relation, kind, "SOLAR", month, day, "PRIVATE", null);
+        if (year != null) {
+            payload.put("year", year);
+        }
+        return payload;
+    }
+
     private JsonNode get(String path, String token) {
         return exchange(HttpMethod.GET, path, token, null);
     }
@@ -506,5 +516,109 @@ class DaysApiIntegrationTest {
     @Test
     void 到期计算未登录被拒() {
         assertErrorCode(get("/api/days/reminder-due", null), "40100");
+    }
+
+    // ---- v1.8.0 year 扩展与周年称谓(设计 v2.2 §3 用例 20-23) ----
+
+    @Test
+    void 纪念日补year_周年称谓与标签输出() {
+        String token = login();
+        int[] plus0 = monthDayAfter(0);
+        int thisYear = LocalDate.now().getYear();
+        JsonNode day = post("/api/days", token, yearPayload("结婚", "ANNIVERSARY", plus0[0], plus0[1],
+                thisYear - 40));
+
+        assertEquals(thisYear - 40, day.get("year").asInt());
+        assertEquals(40, day.get("anniversaryNumber").asInt(), "N=nextDate 年-year");
+        assertEquals("红宝石婚", day.get("anniversaryTitle").asText());
+        assertEquals("结婚 40 周年 · 红宝石婚", day.get("anniversaryLabel").asText());
+
+        // 未收录档位(16 周年):title 为 null,label 仍输出「N 周年」
+        JsonNode day16 = post("/api/days", token, yearPayload("结婚", "ANNIVERSARY", plus0[0], plus0[1],
+                thisYear - 16));
+        assertEquals(16, day16.get("anniversaryNumber").asInt());
+        assertTrue(day16.get("anniversaryTitle").isNull(), "16 周年未收录为 null");
+        assertEquals("结婚 16 周年", day16.get("anniversaryLabel").asText());
+    }
+
+    @Test
+    void 纪念日year缺省_周年字段全为null() {
+        String token = login();
+        int[] plus7 = monthDayAfter(7);
+        JsonNode day = post("/api/days", token, dayPayload("结婚", "ANNIVERSARY", "SOLAR",
+                plus7[0], plus7[1], "PRIVATE", null));
+        assertTrue(day.get("year").isNull());
+        assertTrue(day.get("anniversaryNumber").isNull());
+        assertTrue(day.get("anniversaryTitle").isNull());
+        assertTrue(day.get("anniversaryLabel").isNull());
+    }
+
+    @Test
+    void 生日带year仅存档_不输出任何年龄派生字段() {
+        String token = login();
+        int[] plus7 = monthDayAfter(7);
+        JsonNode day = post("/api/days", token, yearPayload("妈妈", "BIRTHDAY", plus7[0], plus7[1], 1950));
+
+        assertEquals(1950, day.get("year").asInt(), "year 原值回显");
+        assertTrue(day.get("anniversaryNumber").isNull());
+        assertTrue(day.get("anniversaryTitle").isNull());
+        assertTrue(day.get("anniversaryLabel").isNull());
+        // 隐私红线:响应中不得出现任何年龄类键
+        day.fieldNames().forEachRemaining(field -> assertTrue(
+                !field.toLowerCase().contains("age"), "出现年龄派生键: " + field));
+    }
+
+    @Test
+    void 在一起补year_togetherDays按补录年起算() {
+        String token = login();
+        int thisYear = LocalDate.now().getYear();
+        JsonNode day = post("/api/days", token, yearPayload("老伴", "TOGETHER", 6, 15, thisYear - 7));
+
+        long expected = java.time.temporal.ChronoUnit.DAYS.between(
+                LocalDate.of(thisYear - 7, 6, 15), LocalDate.now());
+        assertEquals(expected, day.get("togetherDays").asLong(), "起始日=year+month/day,早于 createdAt 以此为准");
+        assertTrue(day.get("togetherDays").asLong() > 1000, "不能用 createdAt 年起算");
+    }
+
+    @Test
+    void year越界被拒() {
+        String token = login();
+        int[] plus7 = monthDayAfter(7);
+        assertErrorCode(post("/api/days", token, yearPayload("妈妈", "BIRTHDAY",
+                plus7[0], plus7[1], 1899)), "40000");
+        assertErrorCode(post("/api/days", token, yearPayload("妈妈", "BIRTHDAY",
+                plus7[0], plus7[1], LocalDate.now().getYear() + 1)), "40000");
+    }
+
+    @Test
+    void PUT全量覆盖year_周年字段即时重算() {
+        String token = login();
+        int[] plus0 = monthDayAfter(0);
+        int thisYear = LocalDate.now().getYear();
+        long id = createDay(token, yearPayload("结婚", "ANNIVERSARY", plus0[0], plus0[1], thisYear - 40));
+        assertEquals(40, get("/api/days/" + id, token).get("anniversaryNumber").asInt());
+
+        // 改 year → 字段即时重算
+        JsonNode updated = put("/api/days/" + id, token,
+                yearPayload("结婚", "ANNIVERSARY", plus0[0], plus0[1], thisYear - 50));
+        assertEquals(50, updated.get("anniversaryNumber").asInt());
+        assertEquals("金婚", updated.get("anniversaryTitle").asText());
+
+        // PUT 不带 year → 全量覆盖清空,周年字段回 null
+        JsonNode cleared = put("/api/days/" + id, token, dayPayload("结婚", "ANNIVERSARY", "SOLAR",
+                plus0[0], plus0[1], "PRIVATE", null));
+        assertTrue(cleared.get("year").isNull());
+        assertTrue(cleared.get("anniversaryNumber").isNull());
+    }
+
+    @Test
+    void 在一起year配平年二月二十九被拒_闰年放行() {
+        String token = login();
+        assertErrorCode(post("/api/days", token, yearPayload("老伴", "TOGETHER", 2, 29, 2019)), "40000");
+        JsonNode leap = post("/api/days", token, yearPayload("老伴", "TOGETHER", 2, 29, 2024));
+        assertEquals(2024, leap.get("year").asInt());
+        long expected = java.time.temporal.ChronoUnit.DAYS.between(
+                LocalDate.of(2024, 2, 29), LocalDate.now());
+        assertEquals(expected, leap.get("togetherDays").asLong());
     }
 }

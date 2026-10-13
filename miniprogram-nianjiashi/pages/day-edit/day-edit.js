@@ -37,6 +37,10 @@ Page({
     // 换算预览
     conv: { kicker: '下一次这个日子', main: '正在算…', sub: '' },
     convLoading: false,
+    // 起始/纪念年份(仅纪念日与在一起显示;生日不收——隐私红线,后端仅存档不输出年龄)
+    yearRange: [],
+    yearIndex: 0,
+    year: null,
     // 可见性
     visibility: 'FAMILY',
     // 提醒(默认关)
@@ -53,7 +57,9 @@ Page({
     const now = new Date()
     const monthRange = []
     for (let i = 1; i <= 12; i++) monthRange.push(i + ' 月')
-    this.setData({ monthRange, monthIndex: now.getMonth() })
+    const yearRange = ['不记得 / 先不填']
+    for (let y = now.getFullYear(); y >= 1900; y--) yearRange.push(y + ' 年')
+    this.setData({ monthRange, monthIndex: now.getMonth(), yearRange })
     this.fillDays(now.getDate() - 1)
 
     if (options && options.id) {
@@ -81,6 +87,8 @@ Page({
           calendarType: r.kind === 'TOGETHER' ? 'SOLAR' : r.calendarType,
           visibility: r.visibility,
           monthIndex: (r.month || 1) - 1,
+          year: r.year || null,
+          yearIndex: r.year ? (new Date().getFullYear() - r.year + 1) : 0,
         })
         this.fillDays((r.day || 1) - 1)
       })
@@ -227,6 +235,12 @@ Page({
     this.setData({ visibility: e.currentTarget.dataset.vis })
   },
 
+  /* ===== 年份(纪念日/在一起:周年称谓与相伴天数依据;生日不展示,隐私红线) ===== */
+  onYearChange(e) {
+    const idx = Number(e.detail.value)
+    this.setData({ yearIndex: idx, year: idx > 0 ? new Date().getFullYear() - idx + 1 : null })
+  },
+
   /* ===== 保存 ===== */
   save() {
     if (this.data.saving) return
@@ -246,6 +260,13 @@ Page({
       kind,
       calendarType: kind === 'TOGETHER' ? 'SOLAR' : this.data.calendarType,
       visibility: this.data.visibility,
+    }
+    if (kind === 'ANNIVERSARY' || kind === 'TOGETHER') {
+      // 选了年份才有(纪念日→周年称谓;在一起→补录起始年)
+      if (this.data.yearIndex > 0) body.year = new Date().getFullYear() - this.data.yearIndex + 1
+    } else if (this.data.isEdit && this.data.year) {
+      // BIRTHDAY 编辑:后端 year 全量覆盖不传即清空——回填既有存档年,防误清(隐私:生日年份仅存档)
+      body.year = this.data.year
     }
     if (kind === 'TOGETHER') {
       if (!this.data.isEdit) {

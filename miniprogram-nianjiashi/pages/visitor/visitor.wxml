@@ -1,0 +1,76 @@
+<view class="page-visitor">
+  <!-- 空态:无 scene / 卡片走丢 -->
+  <view wx:if="{{empty}}" class="v-empty">
+    <view class="ve-art">{{emptyEmoji}}</view>
+    <view class="ve-title">{{emptyTitle}}</view>
+    <view class="ve-sub">{{emptySub}}</view>
+    <button class="btn-main ve-btn" bindtap="goTpl">去模板馆逛逛 →</button>
+  </view>
+
+  <block wx:else>
+    <!-- 顶部安心条 -->
+    <view class="scan-tip"><text class="chip">📷 来自朋友的分享 · 安心打开</text></view>
+
+    <!-- 渐变封面:公开部分(天数/信件标题/胶囊倒计时) -->
+    <view class="v-poster {{pv.bg}}">
+      <view class="vp-kicker">{{pv.kicker}}</view>
+      <view class="vp-emoji" wx:if="{{pv.emoji}}">{{pv.emoji}}</view>
+      <view class="vp-days num-font" wx:if="{{pv.big}}">{{pv.big}}<text class="vp-unit">{{pv.unit}}</text></view>
+      <view class="vp-title" wx:if="{{pv.title}}">{{pv.title}}</view>
+      <view class="vp-sub" wx:if="{{pv.sub}}">{{pv.sub}}</view>
+      <view class="vp-sub" wx:if="{{pv.sub2}}">{{pv.sub2}}</view>
+      <!-- BIRTHDAY_CARD:体面内容含收藏的瞬间照片(≤3) -->
+      <view class="vp-photos" wx:if="{{pv.photos.length}}">
+        <image
+          wx:for="{{pv.photos}}"
+          wx:key="index"
+          class="vp-photo"
+          src="{{item}}"
+          mode="aspectFill"
+        />
+      </view>
+    </view>
+
+    <!-- 3 颗心解锁 -->
+    <view class="locked">
+      <view class="lk-title">{{teaser}}</view>
+      <view class="lock-row">
+        <button
+          wx:for="{{hearts}}"
+          wx:key="index"
+          class="lk-heart {{item.on ? 'on' : ''}} {{popIdx === index + 1 ? 'pop' : ''}}"
+          bindtap="tapHeart"
+        >{{item.on ? '❤️' : '🤍'}}</button>
+      </view>
+      <view class="lk-sub">{{lockSub}}</view>
+    </view>
+
+    <!-- 隐藏内容区:打码渐隐 → 解锁揭示 -->
+    <view class="v-preview">
+      <view class="p-label">{{unlocked ? '—— TA 藏在卡片里的话 ——' : '—— 藏在卡片里的话 ——'}}</view>
+      <view class="v-reveal {{unlocked ? 'unlocked' : 'locked-content'}}">
+        <block wx:if="{{!unlocked}}">
+          <view class="v-para">{{teaser}}……</view>
+          <view class="v-hint">🔒 点亮 3 颗心解锁</view>
+        </block>
+        <block wx:else>
+          <view wx:for="{{hiddenParas}}" wx:key="index" class="v-para">{{item}}</view>
+          <view class="v-line" wx:if="{{hiddenBlessing}}">“{{hiddenBlessing}}”</view>
+          <view class="v-line" wx:if="{{hiddenLine}}">“{{hiddenLine}}”</view>
+          <view class="v-para" wx:if="{{hiddenText}}">{{hiddenText}}</view>
+          <image wx:if="{{hiddenPhoto}}" class="v-photo" src="{{hiddenPhoto}}" mode="widthFix" />
+          <view class="v-sign" wx:if="{{hiddenSign}}">{{hiddenSign}}</view>
+        </block>
+      </view>
+    </view>
+
+    <!-- 解锁后深色转化 CTA -->
+    <view class="v-bottom-cta {{unlocked ? 'show' : ''}}">
+      <view class="vbc-title">{{cta.title}}</view>
+      <view class="vbc-sub">{{cta.sub}}</view>
+      <button class="vbc-btn" bindtap="openApp">{{cta.buttonText}} →</button>
+    </view>
+
+    <view class="v-foot">念家时 · 把重要的日子，记在心上</view>
+  </block>
+</view>
