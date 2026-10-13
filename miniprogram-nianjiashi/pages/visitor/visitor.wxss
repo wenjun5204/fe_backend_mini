@@ -1,0 +1,305 @@
+/* 访客落地页,视觉对齐原型 .visitor-page/.locked/.v-reveal/.v-bottom-cta(暖白底) */
+
+/* 渐变封面三套(与模板馆同表) */
+.bg-night {
+  background: var(--grad-night);
+}
+.bg-sunset {
+  background: var(--grad-sunset);
+}
+.bg-mint {
+  background: var(--grad-teal);
+}
+
+.page-visitor {
+  padding-bottom: 60rpx;
+}
+
+/* ===== 空态 ===== */
+.v-empty {
+  margin: 120rpx 48rpx 0;
+  text-align: center;
+  padding: 68rpx 32rpx 56rpx;
+  background: var(--card);
+  border: 3rpx dashed #e3ddce;
+  border-radius: 52rpx;
+}
+.ve-art {
+  font-size: 128rpx;
+}
+.ve-title {
+  margin-top: 32rpx;
+  font-size: 40rpx;
+  font-weight: 900;
+  color: var(--ink);
+}
+.ve-sub {
+  margin-top: 16rpx;
+  font-size: 28rpx;
+  color: var(--ink-3);
+  line-height: 1.7;
+}
+.ve-btn {
+  margin-top: 48rpx;
+  width: 100%;
+}
+
+/* ===== 顶部安心条 ===== */
+.scan-tip {
+  text-align: center;
+  padding: 26rpx 40rpx 0;
+}
+.scan-tip .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  background: #eef7f5;
+  color: var(--teal);
+  border-radius: 999rpx;
+  padding: 10rpx 26rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+/* ===== 渐变封面(公开部分) ===== */
+.v-poster {
+  margin: 32rpx 40rpx 0;
+  border-radius: 48rpx;
+  padding: 60rpx 48rpx;
+  text-align: center;
+  color: #fff;
+}
+.vp-kicker {
+  font-size: 22rpx;
+  letter-spacing: 4rpx;
+  opacity: 0.8;
+  font-weight: 800;
+}
+.vp-emoji {
+  font-size: 112rpx;
+  margin-top: 24rpx;
+}
+.vp-days {
+  font-size: 112rpx;
+  font-weight: 900;
+  margin-top: 16rpx;
+}
+.vp-unit {
+  font-size: 34rpx;
+  font-weight: 800;
+}
+.vp-title {
+  font-size: 48rpx;
+  font-weight: 900;
+  margin-top: 24rpx;
+}
+.vp-sub {
+  font-size: 27rpx;
+  margin-top: 16rpx;
+  opacity: 0.9;
+  line-height: 1.6;
+}
+
+/* ===== 3 颗心解锁 ===== */
+.locked {
+  margin: -28rpx 40rpx 0;
+  background: var(--card);
+  border-radius: 36rpx;
+  padding: 32rpx 36rpx;
+  box-shadow: 0 16rpx 56rpx rgba(28, 28, 40, 0.14);
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+.lk-title {
+  font-size: 31rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+.lock-row {
+  display: flex;
+  gap: 28rpx;
+  justify-content: center;
+  margin-top: 24rpx;
+}
+.lk-heart {
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 34rpx;
+  border: 3rpx solid var(--line);
+  background: #faf8f4;
+  font-size: 46rpx;
+  color: #d8d5cc;
+  transition: all 0.18s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lk-heart.on {
+  border-color: var(--rose);
+  background: linear-gradient(135deg, #fff0ec, #ffe0e8);
+  color: var(--rose);
+  transform: scale(1.1);
+  box-shadow: 0 12rpx 28rpx rgba(255, 77, 109, 0.25);
+}
+.lk-heart.pop {
+  animation: hpop 0.3s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+@keyframes hpop {
+  50% {
+    transform: scale(1.28);
+  }
+}
+.lk-sub {
+  font-size: 24rpx;
+  color: var(--ink-3);
+  margin-top: 22rpx;
+  line-height: 1.6;
+}
+
+/* ===== 隐藏内容区:打码渐隐 → 解锁揭示 ===== */
+.v-preview {
+  margin: 36rpx 40rpx 0;
+}
+.p-label {
+  font-size: 24rpx;
+  font-weight: 800;
+  color: var(--ink-3);
+  letter-spacing: 2rpx;
+  text-align: center;
+}
+.v-reveal {
+  margin-top: 20rpx;
+  border-radius: 36rpx;
+  padding: 36rpx;
+  position: relative;
+  color: var(--ink);
+  font-size: 30rpx;
+  line-height: 2;
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: 0 8rpx 40rpx rgba(28, 28, 40, 0.07);
+  overflow: hidden;
+  transition: all 0.4s ease;
+  min-height: 240rpx;
+  box-sizing: border-box;
+}
+/* 打码态:暖沙底 + 字渐隐(text-shadow 抹开) */
+.v-reveal.locked-content {
+  background: linear-gradient(135deg, #f2efe8, #e9e5dc);
+  color: transparent;
+  text-shadow: 0 0 28rpx rgba(28, 28, 40, 0.5);
+}
+.v-reveal .v-hint {
+  position: absolute;
+  bottom: 24rpx;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 24rpx;
+  font-weight: 800;
+  color: var(--ink-3);
+  text-shadow: none;
+}
+/* 解锁态:pop 去打码 */
+.v-reveal.unlocked {
+  background: var(--card);
+  color: var(--ink);
+  text-shadow: none;
+  animation: vpop 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.v-reveal.unlocked .v-hint {
+  display: none;
+}
+@keyframes vpop {
+  from {
+    transform: scale(0.92);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.v-para {
+  margin-bottom: 12rpx;
+}
+.v-line {
+  font-size: 34rpx;
+  font-weight: 900;
+  color: var(--rose);
+  line-height: 1.7;
+}
+.v-sign {
+  display: block;
+  text-align: right;
+  color: var(--rose);
+  font-weight: 800;
+  margin-top: 16rpx;
+}
+.v-photo {
+  margin-top: 24rpx;
+  width: 100%;
+  border-radius: 24rpx;
+  display: block;
+}
+
+/* ===== 解锁后深色转化 CTA ===== */
+.v-bottom-cta {
+  display: none;
+  margin: 40rpx 40rpx 0;
+  border-radius: 36rpx;
+  padding: 36rpx;
+  background: var(--grad-night);
+  color: #fff;
+  text-align: center;
+}
+.v-bottom-cta.show {
+  display: block;
+  animation: vpop 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.vbc-title {
+  font-size: 32rpx;
+  font-weight: 900;
+}
+.vbc-sub {
+  font-size: 25rpx;
+  margin-top: 12rpx;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+}
+.vbc-btn {
+  margin-top: 28rpx;
+  min-height: 96rpx;
+  line-height: 96rpx;
+  border: none;
+  border-radius: 28rpx;
+  width: 100%;
+  background: var(--grad-sunset);
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 900;
+}
+
+/* ===== 页脚 ===== */
+.v-foot {
+  text-align: center;
+  padding: 48rpx 0 12rpx;
+  font-size: 24rpx;
+  color: var(--ink-3);
+}
+
+/* ===== BIRTHDAY_CARD:瞬间照片(体面内容,≤3 张横排) ===== */
+.vp-photos {
+  display: flex;
+  gap: 14rpx;
+  justify-content: center;
+  margin-top: 22rpx;
+}
+.vp-photo {
+  width: 152rpx;
+  height: 152rpx;
+  border-radius: 20rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.2);
+}

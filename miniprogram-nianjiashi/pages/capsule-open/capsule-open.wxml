@@ -1,0 +1,51 @@
+<view class="page-capsule-open">
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="co-state">
+    <view class="co-state-text">正在取出这枚胶囊…</view>
+  </view>
+
+  <!-- 加载失败可重试 -->
+  <view wx:elif="{{failed}}" class="co-state">
+    <view class="co-state-text">这枚胶囊暂时取不出来</view>
+    <button class="co-retry" bindtap="load">再试一次</button>
+  </view>
+
+  <!-- 封存态:摇晃胶囊 + 到期状态 -->
+  <view wx:elif="{{!opened}}" class="co-body">
+    <view class="co-kicker">SEALED ON {{sealedDot}}<block wx:if="{{sealedAgo > 0}}"> · {{sealedAgo}} DAYS AGO</block></view>
+
+    <view class="co-capsule {{shakeOn ? 'shake' : ''}} {{burstOn ? 'burst' : ''}}">⏳</view>
+
+    <view class="co-title">{{dueNow ? '到日子了' : '还没到'}}</view>
+    <view class="co-sub" wx:if="{{dueNow}}"><text>你埋下的胶囊</text><text>今天，可以打开了</text></view>
+    <view class="co-sub" wx:else><text>开箱日 {{openDot}}</text><text>还有 {{daysUntilOpen}} 天，先让它再躺一会儿</text></view>
+
+    <button
+      class="co-btn {{dueNow ? '' : 'off'}}"
+      bindtap="openBox"
+      disabled="{{!dueNow || opening}}"
+    >{{opening ? '开启中…' : (dueNow ? '开启胶囊' : '还有 ' + daysUntilOpen + ' 天开启')}}</button>
+  </view>
+
+  <!-- 揭示态:信件 + 照片位 + 双 CTA -->
+  <view wx:else class="co-body">
+    <view class="co-kicker">OPENED · {{fromLine}}</view>
+    <view class="co-msg">
+      <view class="m-emoji">{{photoUrl ? '🏔️' : '💌'}}</view>
+      <view class="m-text">{{contentText}}</view>
+      <view class="m-photo" wx:if="{{photoUrl}}">
+        <image class="m-img" src="{{photoUrl}}" mode="widthFix" />
+      </view>
+      <view class="m-photo-empty" wx:else>那年封存时没有放照片，话都在上面了</view>
+      <view class="m-from">{{fromLine}}</view>
+    </view>
+
+    <view class="co-cta-row">
+      <button class="co-cta" bindtap="goSeal">⏳ 我也埋一个</button>
+      <button class="co-cta primary" bindtap="shareOpen" disabled="{{sharing}}">📤 分享开箱</button>
+    </view>
+  </view>
+</view>
+
+<!-- 海报舞台(canvas 成品图 + 分享面板) -->
+<poster id="poster" bindsharecfg="onShareCfg" />

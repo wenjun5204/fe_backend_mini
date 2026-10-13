@@ -1,0 +1,97 @@
+<view class="page-edit">
+  <view class="form-block">
+    <view class="f-label">这位家人是您的… <text class="f-small">也可以自己填</text></view>
+    <view class="pick-chips">
+      <button
+        wx:for="{{relations}}"
+        wx:key="*this"
+        class="chip {{!isCustom && relation === item ? 'on' : ''}}"
+        data-rel="{{item}}"
+        bindtap="pickRelation"
+      >{{item}}</button>
+      <button class="chip {{isCustom ? 'on' : ''}}" bindtap="pickCustom">自定义 ＋</button>
+    </view>
+    <view wx:if="{{showCustom}}" class="custom-wrap">
+      <input
+        class="custom-input"
+        placeholder="填一个称呼，最多 12 个字"
+        placeholder-class="custom-ph"
+        maxlength="12"
+        value="{{customRelation}}"
+        bindinput="onCustomInput"
+      />
+    </view>
+
+    <view class="f-label">是什么日子？</view>
+    <view class="seg three">
+      <button
+        wx:for="{{kinds}}"
+        wx:key="key"
+        class="seg-btn {{kind === item.key ? 'on' : ''}}"
+        data-kind="{{item.key}}"
+        bindtap="pickKind"
+      >{{item.label}}</button>
+    </view>
+
+    <!-- 在一起:日期整块隐藏(起始日=创建当天,每天自动 +1) -->
+    <view wx:if="{{kind !== 'TOGETHER'}}">
+      <view class="f-label">按哪种日历</view>
+      <view class="seg">
+        <button
+          wx:for="{{cals}}"
+          wx:key="key"
+          class="seg-btn {{calendarType === item.key ? 'on' : ''}}"
+          data-cal="{{item.key}}"
+          bindtap="pickCal"
+        >{{item.label}}</button>
+      </view>
+
+      <view class="f-label">月和日</view>
+      <view class="date-pick">
+        <picker range="{{monthRange}}" value="{{monthIndex}}" bindchange="onMonthChange">
+          <view class="pick-box">{{monthRange[monthIndex]}}</view>
+        </picker>
+        <picker range="{{dayRange}}" value="{{dayIndex}}" bindchange="onDayChange">
+          <view class="pick-box">{{dayRange[dayIndex]}}</view>
+        </picker>
+      </view>
+
+      <view class="conv-card">
+        <view class="conv-kicker">{{conv.kicker}}</view>
+        <view class="conv-main">{{conv.main}}</view>
+        <view class="conv-sub">{{conv.sub}}</view>
+      </view>
+    </view>
+
+    <!-- 纪念日/在一起:起始年份(可选;纪念日→周年称谓,在一起→补录起始年);生日不收(隐私红线) -->
+    <view wx:if="{{kind !== 'BIRTHDAY'}}">
+      <view class="f-label">{{kind === 'ANNIVERSARY' ? '哪一年开始的？' : '在一起是哪一年？'}} <text class="f-small">记得才填,周年称谓靠它</text></view>
+      <picker range="{{yearRange}}" value="{{yearIndex}}" bindchange="onYearChange">
+        <view class="pick-box">{{yearRange[yearIndex]}}</view>
+      </picker>
+    </view>
+
+    <view class="f-label">提前提醒 <text class="f-small">默认关闭</text></view>
+    <view class="reminder-options">
+      <button
+        wx:for="{{reminderOptions}}"
+        wx:key="value"
+        class="reminder-option {{reminderOn[item.value] ? 'on' : ''}}"
+        data-value="{{item.value}}"
+        bindtap="toggleReminder"
+      >{{item.label}}</button>
+    </view>
+
+    <view class="f-label">谁可以看到？</view>
+    <view class="pick-chips">
+      <button class="chip {{visibility === 'FAMILY' ? 'on' : ''}}" data-vis="FAMILY" bindtap="pickVis">家人可见</button>
+      <button class="chip {{visibility === 'PRIVATE' ? 'on' : ''}}" data-vis="PRIVATE" bindtap="pickVis">只我可见</button>
+    </view>
+  </view>
+
+  <view class="save-row">
+    <button class="btn-main" loading="{{saving}}" bindtap="save">
+      {{isEdit ? '保存修改' : '保存这个日子'}}
+    </button>
+  </view>
+</view>

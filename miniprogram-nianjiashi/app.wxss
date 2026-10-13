@@ -1,0 +1,207 @@
+/**
+ * 念家时 · 视觉令牌与公共样式(PRD §5 v2 暖白墨字体系,替代旧红金适老配色)
+ * 主色霞橘渐变 #ff7a59→#ff4d6d;辅色雾紫 #6c5ce7 / 青金 #12b2a3
+ */
+page {
+  --bg: #fbfaf7;
+  --card: #ffffff;
+  --ink: #1c1c28;
+  --ink-2: #55555f;
+  --ink-3: #9a9aa4;
+  --line: #eceae4;
+  --coral: #ff7a59;
+  --rose: #ff4d6d;
+  --violet: #6c5ce7;
+  --teal: #12b2a3;
+  --grad-sunset: linear-gradient(135deg, #ff7a59, #ff4d6d);
+  --grad-violet: linear-gradient(135deg, #8e7cf0, #6c5ce7);
+  --grad-teal: linear-gradient(135deg, #2bc4b4, #0f9d8e);
+  --grad-night: linear-gradient(160deg, #23233a 0%, #12121f 100%);
+  --radius: 20rpx;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 34rpx;
+  font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+/* 倒计时等核心数字用衬线大字重 */
+.num-font {
+  font-family: Georgia, "Songti SC", "Times New Roman", serif;
+}
+
+/* 去掉原生按钮边框 */
+button::after {
+  border: none;
+}
+button {
+  padding: 0;
+  margin: 0;
+  background: transparent;
+}
+
+/* 区块标题 */
+.section-head {
+  padding: 44rpx 40rpx 24rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.section-title {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+.section-more {
+  font-size: 26rpx;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+/* 表单标签 */
+.f-label {
+  display: block;
+  margin: 32rpx 0 18rpx;
+  font-size: 28rpx;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: 1rpx;
+}
+.f-small {
+  font-weight: 500;
+  color: var(--ink-3);
+  font-size: 24rpx;
+}
+
+/* 点选标签(关系/可见性) */
+.pick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+.chip {
+  min-height: 84rpx;
+  padding: 0 32rpx;
+  border: 3rpx solid var(--line);
+  border-radius: 26rpx;
+  background: var(--card);
+  color: var(--ink-2);
+  font-size: 30rpx;
+  font-weight: 700;
+  line-height: 84rpx;
+}
+.chip.on {
+  border-color: var(--rose);
+  color: var(--rose);
+  background: #fff3f5;
+}
+
+/* 分段选择(类型/公农历/视图切换) */
+.seg {
+  display: flex;
+  padding: 8rpx;
+  background: #f1efe9;
+  border-radius: 28rpx;
+}
+.seg-btn {
+  flex: 1;
+  min-height: 84rpx;
+  line-height: 84rpx;
+  border: 0;
+  border-radius: 20rpx;
+  background: transparent;
+  color: var(--ink-3);
+  font-weight: 800;
+  font-size: 29rpx;
+}
+.seg-btn.on {
+  background: var(--ink);
+  color: #fff;
+}
+
+/* 主按钮(霞橘渐变,高≥88rpx,一屏仅一个) */
+.btn-main {
+  min-height: 96rpx;
+  line-height: 96rpx;
+  border: none;
+  border-radius: 34rpx;
+  background: var(--grad-sunset);
+  color: #fff;
+  font-size: 36rpx;
+  font-weight: 900;
+  letter-spacing: 2rpx;
+  box-shadow: 0 20rpx 48rpx rgba(255, 77, 109, 0.35);
+}
+
+/* 提醒三选 */
+.reminder-options {
+  display: flex;
+  gap: 16rpx;
+}
+.reminder-option {
+  flex: 1;
+  min-height: 92rpx;
+  line-height: 92rpx;
+  border: 3rpx solid var(--line);
+  border-radius: 24rpx;
+  color: var(--ink-2);
+  background: var(--card);
+  font-size: 28rpx;
+  font-weight: 800;
+}
+.reminder-option.on {
+  color: #fff;
+  border-color: var(--ink);
+  background: var(--ink);
+}
+
+/* 底部弹层(当日事件清单等) */
+.sheet-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  background: rgba(14, 14, 22, 0.45);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease;
+}
+.sheet-mask.show {
+  opacity: 1;
+  visibility: visible;
+}
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 61;
+  padding: 44rpx 40rpx 52rpx;
+  border-radius: 52rpx 52rpx 0 0;
+  background: #fff;
+  box-shadow: 0 -30rpx 70rpx rgba(14, 14, 22, 0.25);
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+.sheet.show {
+  transform: translateY(0);
+}
+.sheet-title {
+  color: var(--ink);
+  font-size: 38rpx;
+  font-weight: 800;
+  margin-bottom: 20rpx;
+}
+.sheet-cancel {
+  width: 100%;
+  margin-top: 24rpx;
+  min-height: 96rpx;
+  line-height: 96rpx;
+  border: 3rpx solid var(--line);
+  border-radius: 30rpx;
+  color: var(--ink-2);
+  background: #faf8f4;
+  font-size: 32rpx;
+  font-weight: 700;
+}

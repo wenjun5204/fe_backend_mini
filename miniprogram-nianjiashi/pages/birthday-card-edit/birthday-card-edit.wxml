@@ -1,0 +1,74 @@
+<view class="page-bce">
+  <!-- 暖橘渐变头部(对齐原型 .gen-head,福卡 WARM 令牌) -->
+  <view class="gen-head bg-warm">
+    <view class="g-kicker">🎂 HAPPY BIRTHDAY</view>
+    <view class="g-title">{{day.name}}</view>
+    <view class="g-sub">{{day.dateText}} · 选一张照片、写一句祝福，做成福卡发给家人</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="bce-loading">正在准备这个日子…</view>
+
+  <!-- 素材池为空:没有收藏瞬间,做不了福卡 -->
+  <view wx:elif="{{!pool.length}}" class="bce-empty">
+    <view class="es-art">📷</view>
+    <view class="es-title">还没人往这个日子收藏瞬间</view>
+    <view class="es-sub">生日福卡要用家人收藏进日子的照片来做</view>
+    <view class="es-sub">去「家人」页发一条，或把家人的瞬间收藏进来</view>
+    <button class="btn-main es-go" bindtap="goFamily">去家人页看看 →</button>
+  </view>
+
+  <block wx:else>
+    <view class="form-block">
+      <view class="f-label">祝福语 <text class="f-small">点一句，或自己写（1-40 字）</text></view>
+      <view class="pick-chips">
+        <view
+          wx:for="{{chips}}"
+          wx:key="*this"
+          class="chip {{blessing === item ? 'on' : ''}}"
+          bindtap="pickBlessing"
+          data-text="{{item}}"
+        >{{item}}</view>
+      </view>
+      <textarea
+        class="bless-input"
+        value="{{blessing}}"
+        maxlength="40"
+        placeholder="写一句想说的祝福…"
+        bindinput="onBlessInput"
+      ></textarea>
+      <view class="bless-count">{{blessLen}}/40</view>
+
+      <view class="f-label">照片 <text class="f-small">家人收藏进这个日子的瞬间，选 1-3 张</text></view>
+      <view class="photo-grid">
+        <view
+          wx:for="{{pool}}"
+          wx:key="id"
+          class="pg-cell {{item.on ? 'on' : ''}}"
+          bindtap="togglePhoto"
+          data-id="{{item.id}}"
+        >
+          <image class="pg-img" src="{{item.photo}}" mode="aspectFill" />
+          <view class="pg-check">{{item.on ? '✓' : ''}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 暖橘实时预览卡(生日快乐大字 + 关系 + 首图 + 祝福语) -->
+    <view class="bce-preview">
+      <view class="bp-kicker">HAPPY BIRTHDAY 🎂</view>
+      <view class="bp-title">生日快乐</view>
+      <view class="bp-sub">{{day.relation ? '祝' + day.relation : ''}}</view>
+      <image wx:if="{{previewPhoto}}" class="bp-photo" src="{{previewPhoto}}" mode="aspectFill" />
+      <view class="bp-text">{{blessing || '祝福语会写在这里'}}</view>
+    </view>
+
+    <view class="next-row">
+      <button class="btn-main" bindtap="make" disabled="{{submitting}}">
+        {{submitting ? '生成中…' : '🎂 生成生日福卡'}}
+      </button>
+    </view>
+  </block>
+</view>
+
+<!-- 海报舞台(canvas 成品图 + 分享面板) -->
+<poster id="poster" bindsharecfg="onShareCfg" />

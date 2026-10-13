@@ -1,0 +1,47 @@
+<view class="page-me">
+  <view class="me-hero">
+    <view class="mh-ava">{{initial}}</view>
+    <view class="mh-info">
+      <view class="mh-name">{{nickname}}</view>
+      <view class="mh-sub">微信登录 · 念家时</view>
+    </view>
+  </view>
+
+  <view class="me-stats">
+    <view class="ms-cell" bindtap="goMyCards">
+      <text class="ms-num num-font">{{cardCount}}</text>
+      <text class="ms-label">我的卡片</text>
+    </view>
+    <view class="ms-cell" bindtap="goCapsules">
+      <text class="ms-num num-font">{{capsuleDue}}</text>
+      <text class="ms-label">待开的胶囊</text>
+    </view>
+    <view class="ms-cell" bindtap="goMyCards">
+      <text class="ms-num num-font">{{heartsReceived}}</text>
+      <text class="ms-label">收到的心 ❤️</text>
+    </view>
+  </view>
+
+  <view class="me-rows">
+    <view class="mr" bindtap="goMyCards">
+      <view class="mr-left"><text class="ic">🖼️</text>我的卡片</view>
+      <view class="mr-right">{{cardCount}} 张 ›</view>
+    </view>
+    <view class="mr" bindtap="goCapsules">
+      <view class="mr-left"><text class="ic">⏳</text>我的时光胶囊</view>
+      <view class="mr-right"><block wx:if="{{capsuleDue > 0}}">{{capsuleDue}} 个待开 · </block>去看看 ›</view>
+    </view>
+    <view class="mr" bindtap="toastReminder">
+      <view class="mr-left"><text class="ic">🔔</text>提醒设置</view>
+      <view class="mr-right">3 条/天 ›</view>
+    </view>
+    <view class="mr" bindtap="toastPrivacy">
+      <view class="mr-left"><text class="ic">🔒</text>隐私设置</view>
+      <view class="mr-right">›</view>
+    </view>
+    <view class="mr" bindtap="toastAbout">
+      <view class="mr-left"><text class="ic">ℹ️</text>关于念家时</view>
+      <view class="mr-right">›</view>
+    </view>
+  </view>
+</view>

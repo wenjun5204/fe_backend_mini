@@ -1,0 +1,155 @@
+.page-detail {
+  padding-bottom: 64rpx;
+}
+
+/* 详情主卡 */
+.detail-card {
+  margin: 28rpx 32rpx 0;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 48rpx 40rpx;
+  box-shadow: 0 8rpx 40rpx rgba(28, 28, 40, 0.07);
+  border: 1px solid var(--line);
+  text-align: center;
+}
+.dt-ava {
+  width: 136rpx;
+  height: 136rpx;
+  border-radius: 44rpx;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 68rpx;
+  color: #fff;
+}
+.grad-hot { background: var(--grad-sunset); }
+.grad-teal { background: var(--grad-teal); }
+.grad-violet { background: var(--grad-violet); }
+
+.dt-title {
+  font-size: 42rpx;
+  font-weight: 900;
+  color: var(--ink);
+  margin-top: 24rpx;
+}
+.dt-date {
+  font-size: 26rpx;
+  color: var(--ink-3);
+  margin-top: 10rpx;
+}
+.dt-days {
+  margin-top: 32rpx;
+  color: var(--ink-3);
+  font-weight: 700;
+}
+.dt-num {
+  font-size: 92rpx;
+  font-weight: 900;
+  color: var(--rose);
+  line-height: 1.1;
+}
+.dt-today {
+  font-size: 60rpx;
+  font-weight: 900;
+  color: var(--teal);
+  line-height: 1.2;
+}
+.dt-unit {
+  font-size: 30rpx;
+  color: var(--ink-3);
+}
+.dt-tags {
+  display: flex;
+  gap: 16rpx;
+  justify-content: center;
+  margin-top: 28rpx;
+  flex-wrap: wrap;
+}
+.dt-tag {
+  font-size: 23rpx;
+  font-weight: 800;
+  padding: 10rpx 24rpx;
+  border-radius: 999rpx;
+  background: #f1efe9;
+  color: var(--ink-2);
+}
+.dt-tag.hot {
+  background: #ffe9ee;
+  color: var(--rose);
+}
+
+/* 操作按钮 */
+.dt-actions {
+  display: flex;
+  gap: 20rpx;
+  margin: 32rpx 32rpx 0;
+}
+.dt-btn {
+  flex: 1;
+  min-height: 104rpx;
+  line-height: 104rpx;
+  border-radius: 30rpx;
+  font-size: 31rpx;
+  font-weight: 800;
+  border: 3rpx solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 8rpx 40rpx rgba(28, 28, 40, 0.07);
+}
+.dt-btn.primary {
+  border: none;
+  background: var(--grad-sunset);
+  color: #fff;
+  box-shadow: 0 16rpx 40rpx rgba(255, 77, 109, 0.3);
+}
+
+/* 祝福语点选复制 */
+.dt-wishes {
+  padding: 0 32rpx;
+}
+.wish-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  min-height: 108rpx;
+  padding: 20rpx 28rpx;
+  margin-bottom: 18rpx;
+  color: var(--ink-2);
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 30rpx;
+  font-size: 30rpx;
+  line-height: 1.5;
+  box-shadow: 0 8rpx 40rpx rgba(28, 28, 40, 0.07);
+}
+.wish-idx {
+  color: var(--rose);
+  font-size: 30rpx;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.wish-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 提醒块 */
+.remind-block {
+  padding: 0 32rpx;
+}
+
+/* 删除 */
+.dt-danger {
+  display: block;
+  text-align: center;
+  padding: 36rpx;
+  margin-top: 8rpx;
+  font-size: 28rpx;
+  color: #c0564a;
+  font-weight: 700;
+  background: transparent;
+  width: 100%;
+}

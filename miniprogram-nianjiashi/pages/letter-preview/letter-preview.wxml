@@ -1,0 +1,39 @@
+<view class="page-letter-preview">
+  <!-- 信纸(深夜星河头部 + 白色信纸区) -->
+  <view class="letter-paper">
+    <view class="lp-kicker">一封家书</view>
+    <view class="lp-title">写给{{req.recipient}}的信</view>
+    <view class="lp-body">
+      <view wx:for="{{paragraphs}}" wx:key="id" wx:for-index="idx" class="lp-para">
+        <view class="lp-text">{{item.text}}</view>
+        <view class="lp-swap" bindtap="swapPara" data-idx="{{idx}}">换</view>
+      </view>
+      <view wx:if="{{signText}}" class="lp-sign">{{signText}}</view>
+    </view>
+    <view class="lp-hint">不满意哪句，点那句话旁边的「换」</view>
+  </view>
+
+  <!-- 空态:首刷失败可重试 -->
+  <view wx:if="{{failed}}" class="lp-failed">
+    <view class="lp-failed-text">这封信还没写出来</view>
+    <button class="lp-retry" bindtap="regen">再写一次</button>
+  </view>
+
+  <!-- 底部操作区 -->
+  <view class="lp-actions">
+    <button class="lp-regen" bindtap="regen">🔄 整体重写</button>
+    <button class="btn-main lp-go" bindtap="makePoster">✨ 生成信纸海报</button>
+  </view>
+
+  <!-- AI 生成中(旋转光球 + 文案轮换,≤2.5s 预算) -->
+  <view wx:if="{{aiLoading}}" class="ai-loading">
+    <view class="ai-orb"><view class="ai-orb-emoji">✍️</view></view>
+    <view class="ai-text">{{aiText}}</view>
+    <view class="ai-dots"><view class="ai-dot"></view><view class="ai-dot"></view><view class="ai-dot"></view></view>
+    <view class="ai-sub">把你选的故事，写成想说的话</view>
+    <button wx:if="{{aiSlow}}" class="ai-back" bindtap="loadingBack">还在写，先返回</button>
+  </view>
+</view>
+
+<!-- 海报舞台(canvas 成品图 + 分享面板) -->
+<poster id="poster" bindsharecfg="onShareCfg" />

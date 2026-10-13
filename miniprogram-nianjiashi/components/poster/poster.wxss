@@ -1,0 +1,132 @@
+/* 海报舞台(全屏遮罩 + 底部分享面板),视觉对齐原型 POSTERS 三套渐变 */
+.poster-stage {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.poster-stage.show {
+  visibility: visible;
+  opacity: 1;
+}
+.stage-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(14, 14, 22, 0.72);
+}
+.stage-scroll {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 460rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30rpx 60rpx;
+  overflow: hidden;
+}
+.stage-tip {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 26rpx;
+  font-weight: 700;
+  margin-bottom: 22rpx;
+  text-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.45);
+}
+/* 海报画布:750×1200 设计稿,宽 600rpx 等比缩放(高 960rpx) */
+.poster-canvas {
+  width: 600rpx;
+  height: 960rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 30rpx 80rpx rgba(0, 0, 0, 0.5);
+  background: #16162a;
+}
+.drawing-tip {
+  margin-top: 18rpx;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 24rpx;
+}
+
+/* 分享面板 */
+.share-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 92;
+  padding: 40rpx 40rpx calc(44rpx + env(safe-area-inset-bottom));
+  border-radius: 52rpx 52rpx 0 0;
+  background: #fff;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+.share-panel.show {
+  transform: translateY(0);
+}
+.sp-title {
+  font-size: 36rpx;
+  font-weight: 900;
+  color: var(--ink);
+  text-align: center;
+}
+.sp-hint {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: var(--ink-3);
+  text-align: center;
+}
+.sp-actions {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 36rpx;
+}
+.sp-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10rpx;
+  background: transparent;
+}
+.sp-item .ico {
+  width: 108rpx;
+  height: 108rpx;
+  line-height: 108rpx;
+  border-radius: 32rpx;
+  text-align: center;
+  font-size: 52rpx;
+}
+.ico-chat {
+  background: #e8f7e8;
+}
+.ico-save {
+  background: #fff3df;
+}
+.ico-face {
+  background: #eef0fc;
+}
+.sp-name {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.sp-cancel {
+  width: 100%;
+  margin-top: 36rpx;
+  min-height: 96rpx;
+  line-height: 96rpx;
+  border: 3rpx solid var(--line);
+  border-radius: 30rpx;
+  color: var(--ink-2);
+  background: #faf8f4;
+  font-size: 32rpx;
+  font-weight: 700;
+}

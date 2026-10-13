@@ -1,0 +1,224 @@
+.page-days {
+  padding-bottom: 48rpx;
+}
+
+/* 问候语 */
+.greeting {
+  padding: 8rpx 40rpx 8rpx;
+  font-size: 28rpx;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+.greet-name {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* 最近的日子 hero 卡 */
+.hero-day {
+  margin: 24rpx 32rpx 0;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 40rpx;
+  box-shadow: 0 8rpx 40rpx rgba(28, 28, 40, 0.07);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 32rpx;
+}
+.hd-ava {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 38rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60rpx;
+  flex-shrink: 0;
+  color: #fff;
+}
+.grad-hot { background: var(--grad-sunset); }
+.grad-teal { background: var(--grad-teal); }
+.grad-violet { background: var(--grad-violet); }
+
+.hd-info {
+  flex: 1;
+  min-width: 0;
+}
+.hd-kicker {
+  font-size: 24rpx;
+  color: var(--ink-3);
+  font-weight: 700;
+  letter-spacing: 2rpx;
+}
+.hd-title {
+  font-size: 40rpx;
+  font-weight: 800;
+  color: var(--ink);
+  margin-top: 6rpx;
+}
+.hd-date {
+  font-size: 26rpx;
+  color: var(--ink-2);
+  margin-top: 8rpx;
+}
+.hd-days {
+  text-align: center;
+  flex-shrink: 0;
+}
+.hd-num {
+  display: block;
+  font-size: 76rpx;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--rose);
+}
+.hd-unit {
+  font-size: 22rpx;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+/* 日子列表 */
+.day-feed {
+  padding: 0 32rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+.day-row {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 32rpx;
+  padding: 26rpx 30rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  box-shadow: 0 8rpx 40rpx rgba(28, 28, 40, 0.07);
+}
+.dr-ava {
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 46rpx;
+  flex-shrink: 0;
+  color: #fff;
+}
+.dr-info {
+  flex: 1;
+  min-width: 0;
+}
+.dr-name {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+.tag {
+  font-size: 22rpx;
+  font-weight: 700;
+  padding: 4rpx 16rpx;
+  border-radius: 14rpx;
+  margin-left: 12rpx;
+  vertical-align: 2rpx;
+}
+.tag-hot { background: #ffe9ee; color: var(--rose); }
+.tag-teal { background: #e6f7f4; color: var(--teal); }
+.tag-violet { background: #efeefc; color: var(--violet); }
+
+.dr-date {
+  font-size: 24rpx;
+  color: var(--ink-3);
+  margin-top: 6rpx;
+}
+.dr-right {
+  text-align: right;
+  flex-shrink: 0;
+}
+.dr-count {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+.dr-count.tog {
+  color: var(--rose);
+}
+.dr-count.today {
+  color: var(--teal);
+}
+.dr-unit {
+  font-size: 22rpx;
+  color: var(--ink-3);
+}
+
+/* 空状态引导卡 */
+.empty-state {
+  margin: 40rpx 48rpx 16rpx;
+  text-align: center;
+  padding: 68rpx 32rpx 60rpx;
+  background: var(--card);
+  border: 3rpx dashed #e3ddce;
+  border-radius: 52rpx;
+}
+.es-art {
+  font-size: 128rpx;
+  animation: bob 2.2s ease-in-out infinite;
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8rpx); }
+}
+.es-title {
+  margin-top: 32rpx;
+  font-size: 40rpx;
+  font-weight: 900;
+  color: var(--ink);
+}
+.es-sub {
+  margin-top: 16rpx;
+  font-size: 28rpx;
+  color: var(--ink-3);
+  line-height: 1.7;
+}
+.es-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+  margin-top: 40rpx;
+}
+.es-chip {
+  min-height: 104rpx;
+  line-height: 104rpx;
+  border: 3rpx solid var(--line);
+  border-radius: 30rpx;
+  background: var(--bg);
+  font-size: 32rpx;
+  font-weight: 800;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+}
+.es-chip.primary {
+  border: none;
+  background: var(--grad-sunset);
+  color: #fff;
+  box-shadow: 0 20rpx 44rpx rgba(255, 77, 109, 0.3);
+}
+.es-note {
+  margin-top: 28rpx;
+  font-size: 24rpx;
+  color: var(--ink-3);
+  line-height: 1.7;
+}
+
+/* 底部记日子按钮 */
+.add-fab-row {
+  padding: 12rpx 32rpx 48rpx;
+}
+.add-fab {
+  width: 100%;
+}
