@@ -56,10 +56,13 @@ function ensureLogin() {
   }
   const options = { method: 'POST', data: {} }
   if (!USE_CLOUD) {
+    // 本地通道固定测试身份:开发者工具「清除缓存」会清掉 wx storage,
+    // 随机 dev 身份会变成新用户导致预览数据"消失"(日子还在库里,归属旧身份)。
+    // 固定 dev-nianjiashi-local 让本地预览数据始终挂在同一身份下。
     const OPENID_KEY = 'njs_openid'
     let openid = wx.getStorageSync(OPENID_KEY)
     if (!openid) {
-      openid = 'dev-' + Math.random().toString(36).slice(2, 10)
+      openid = 'dev-nianjiashi-local'
       wx.setStorageSync(OPENID_KEY, openid)
     }
     options.data = { code: openid }
