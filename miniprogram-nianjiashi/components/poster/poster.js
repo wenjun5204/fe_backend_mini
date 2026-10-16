@@ -301,6 +301,12 @@ Component({
       ctx.fillStyle = 'rgba(255,255,255,0.65)'
       ctx.font = '24px sans-serif'
       ctx.fillText('把重要的日子，记在心上', 60, 1110)
+      // 感恩信:AI 辅助标识随成品图(深度合成合规,分享后仍可见)
+      if (this._card && this._card.templateKind === 'LETTER') {
+        ctx.fillStyle = 'rgba(255,255,255,0.4)'
+        ctx.font = '20px sans-serif'
+        ctx.fillText('信内容由 AI 辅助撰写', 60, 1148)
+      }
 
       this.paintQr(ctx)
     },

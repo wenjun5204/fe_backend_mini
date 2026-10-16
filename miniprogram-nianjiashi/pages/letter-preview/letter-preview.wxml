@@ -11,6 +11,8 @@
       <view wx:if="{{signText}}" class="lp-sign">{{signText}}</view>
     </view>
     <view class="lp-hint">不满意哪句，点那句话旁边的「换」</view>
+    <!-- 深度合成内容显著标识(合规):AI 辅助撰写说明 -->
+    <view class="lp-ai-note">本信由 AI 辅助撰写，经你逐句修改后定稿</view>
   </view>
 
   <!-- 空态:首刷失败可重试 -->
