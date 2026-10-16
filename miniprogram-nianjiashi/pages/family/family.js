@@ -85,6 +85,7 @@ Page({
     memberCount: 0,
     dayCount: 0,
     members: [],
+    inviteCode: '',
     // 瞬间时间线(cursor 分页)
     moments: [],
     nextCursor: 0,
@@ -107,6 +108,69 @@ Page({
     this.load()
   },
 
+  /** 转发邀请卡片:未满员时带 inviteCode 直达进家确认(share.js 的 posterShare 未用于本页) */
+  onShareAppMessage() {
+    const d = this.data
+    if (!d.notJoined && d.inviteCode && d.memberCount < 8) {
+      return {
+        title: '「' + d.familyName + '」喊你进家，一起记重要的日子',
+        path: '/pages/family/family?inviteCode=' + d.inviteCode,
+      }
+    }
+    return {
+      title: '念家时 · 把重要的日子，记在心上',
+      path: '/pages/days/days',
+    }
+  },
+
+  /** 落地参数识别:家人转发的邀请卡带 inviteCode 进来 → 未入家则先拉家名再弹确认 */
+  onLoad(options) {
+    const code = (options && options.inviteCode) || ''
+    if (code) {
+      this._pendingInviteCode = code
+    }
+  },
+
+  /** load() 完成后的落地参数消费:登录态就绪 + 未加入家族时才有意义 */
+  maybeAcceptInvite() {
+    const code = this._pendingInviteCode
+    if (!code || this.data.notJoined !== true) return
+    this._pendingInviteCode = ''
+    fam
+      .getInviteInfo(code)
+      .then((info) => {
+        const name = (info && info.familyName) || '家人的家'
+        wx.showModal({
+          title: '加入「' + name + '」',
+          content: '家人邀请你进这个家，进家后可以分享家人瞬间',
+          confirmText: '进家',
+          success: (res) => {
+            if (!res.confirm) return
+            fam
+              .joinFamily(code)
+              .then(() => {
+                wx.showToast({ title: '进家了', icon: 'success', duration: 1800 })
+                this.load()
+              })
+              .catch(() => {})
+          },
+        })
+      })
+      .catch(() => {
+        // 邀请码无效(40400)/已满员(40900)由网络层统一 toast;手动输入兜底仍在
+      })
+  },
+
+  /** 邀请码一键复制 */
+  copyInvite() {
+    const code = this.data.inviteCode
+    if (!code) return
+    wx.setClipboardData({
+      data: code,
+      success: () => wx.showToast({ title: '邀请码已复制', icon: 'none', duration: 1600 }),
+    })
+  },
+
   onPullDownRefresh() {
     this.load()
   },
@@ -124,6 +188,7 @@ Page({
         if (!family || family.notJoined) {
           this.setData({ notJoined: true, loading: false })
           wx.stopPullDownRefresh()
+          this.maybeAcceptInvite()
           return
         }
         const members = (family.members || []).map(memberViewOf)
@@ -132,6 +197,7 @@ Page({
           familyName: family.familyName || '我的家',
           memberCount: members.length,
           members,
+          inviteCode: family.inviteCode || '',
         })
         // 时间线 + 日子(横幅记的日子数 + 收藏 picker 的 BIRTHDAY 日子)并行
         return Promise.all([fam.listMoments(), listDays().catch(() => ({ items: [] }))]).then(
