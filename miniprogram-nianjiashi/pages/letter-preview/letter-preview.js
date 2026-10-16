@@ -17,7 +17,7 @@ const DRAFT_KEY = 'njs_letter_req'
 const MIN_LOADING = 900
 /** 2.5s 预算:超时后动画转「还在写,可返回」态(设计 §4 风险对策) */
 const SLOW_AT = 2500
-const LOADING_TEXTS = ['AI 正在替你写信…', '把你们的故事，写成想说的话…', '斟酌一下语气…']
+const LOADING_TEXTS = ['正在替你写信…', '把你们的故事，写成想说的话…', '斟酌一下语气…']
 
 Page(
   Object.assign(

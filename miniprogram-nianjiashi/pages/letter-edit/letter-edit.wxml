@@ -3,7 +3,7 @@
   <view class="gen-head bg-night">
     <view class="g-kicker">✉ 感恩信</view>
     <view class="g-title">写一封信，给{{recipient}}</view>
-    <view class="g-sub">AI 根据你的选择代笔，写成一封信，你只需要点头或改两个字</view>
+    <view class="g-sub">根据你选的故事替你代笔，你只需要点头或改两个字</view>
   </view>
 
   <view class="form-block">
@@ -52,6 +52,6 @@
   </view>
 
   <view class="next-row">
-    <button class="btn-main" bindtap="generate">✨ AI 帮我写这封信</button>
+    <button class="btn-main" bindtap="generate">✨ 帮我写这封信</button>
   </view>
 </view>
