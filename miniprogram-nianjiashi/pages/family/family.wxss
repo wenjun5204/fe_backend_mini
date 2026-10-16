@@ -338,3 +338,52 @@
   width: 100%;
   margin-top: 28rpx;
 }
+
+/* ===== 邀请卡:邀请码 + 复制 + 转发(成员未满时显示) ===== */
+.invite-card {
+  margin: 20rpx 32rpx 0;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 30rpx 36rpx;
+  border: 1px solid var(--line);
+  box-shadow: 0 8rpx 40rpx rgba(28, 28, 40, 0.07);
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+.iv-left {
+  flex: 1;
+  min-width: 0;
+}
+.iv-kicker {
+  font-size: 22rpx;
+  color: var(--ink-3);
+  font-weight: 700;
+  letter-spacing: 2rpx;
+}
+.iv-code {
+  margin-top: 8rpx;
+  font-size: 56rpx;
+  font-weight: 900;
+  letter-spacing: 8rpx;
+  color: var(--rose);
+  font-family: Georgia, serif;
+}
+.iv-sub {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: var(--ink-3);
+}
+.iv-share {
+  flex-shrink: 0;
+  min-height: 84rpx;
+  padding: 0 36rpx;
+  border: none;
+  border-radius: 26rpx;
+  background: var(--grad-sunset);
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+}

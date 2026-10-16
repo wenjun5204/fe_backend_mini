@@ -112,6 +112,11 @@ function joinFamily(inviteCode) {
   return request('/api/family/join', { method: 'POST', data: { inviteCode } })
 }
 
+/** GET /api/invite/info?inviteCode=xx → InviteInfo{familyName,...}(免登录,邀请落地确认弹层用) */
+function getInviteInfo(inviteCode) {
+  return request('/api/invite/info?inviteCode=' + encodeURIComponent(inviteCode))
+}
+
 module.exports = {
   reserveFestival,
   listMyReservations,
@@ -128,4 +133,5 @@ module.exports = {
   getMyFamily,
   createFamily,
   joinFamily,
+  getInviteInfo,
 }

@@ -17,7 +17,7 @@
       <button class="es-chip primary" bindtap="goCreateFamily">🏠 创建一个家</button>
       <button class="es-chip" bindtap="goJoinFamily">🔑 有邀请码，进家</button>
     </view>
-    <view class="es-note">💚 一个家最多 8 位家人</view>
+    <view class="es-note">💚 一个家最多 8 位家人 · 家人转发给你邀请卡，点一下就能进</view>
   </view>
 
   <block wx:else>
@@ -28,6 +28,16 @@
         <view class="fb-title">{{familyName}}</view>
         <view class="fb-sub">{{memberCount}} 位家人 · 记了 {{dayCount}} 个日子</view>
       </view>
+    </view>
+
+    <!-- 邀请卡:邀请码 + 复制 + 转发给家人(成员未满时显示) -->
+    <view wx:if="{{memberCount < 8}}" class="invite-card">
+      <view class="iv-left">
+        <view class="iv-kicker">邀请码</view>
+        <view class="iv-code" bindtap="copyInvite">{{inviteCode}}</view>
+        <view class="iv-sub" bindtap="copyInvite">点一下就复制，发微信告诉家人</view>
+      </view>
+      <button class="iv-share" open-type="share">邀家人</button>
     </view>
 
     <!-- 成员列表 -->
