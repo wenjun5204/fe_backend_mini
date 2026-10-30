@@ -1,7 +1,7 @@
 /**
  * 值班 Tab 样式(设计 v2.3 §2.2,视觉令牌沿用 app.wxss v2 暖白体系)
  * 班次配色对齐 PRD §5.1:早=玫红#ff4d6d 中=橙#e8943a 夜=藏蓝#3d4a5c 休=灰#c8cdd3
- * 适老化:正文≥34rpx,核心信息(状态卡/统计数字)≥44rpx,主按钮高≥88rpx
+ * 可读性基准:正文≥34rpx,核心信息(状态卡/统计数字)≥44rpx,主按钮高≥88rpx
  */
 .page {
   padding: 24rpx 32rpx 200rpx;
@@ -266,7 +266,7 @@
   bottom: 0;
   background: var(--card);
   border-radius: 32rpx 32rpx 0 0;
-  padding: 36rpx 36rpx 5rpx;
+  padding: 32rpx 36rpx 5rpx;
   z-index: 11;
   max-height: 70vh;              /* 半屏弹层:内容再多也不超过七成屏高 */
   display: flex;
@@ -342,19 +342,18 @@
   font-size: 26rpx;
   color: var(--ink-3);
 }
-.sheet-note {
-  margin-top: 28rpx;
-  font-size: 26rpx;
+/* 底部说明行:左提示右撤销链接,两端对齐轻量化 */
+.sheet-foot {
+  margin-top: 24rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 24rpx;
   color: var(--ink-3);
 }
-/* 批量撤销入口:弱化红色文字按钮,置于主按钮行下方(危险操作非主路径) */
 .range-clear {
-  margin-top: 20rpx;
-  text-align: center;
-  font-size: 26rpx;
   font-weight: 600;
   color: #c0564a;
-  padding: 12rpx 0;
 }
 .range-clear:active {
   opacity: 0.55;
@@ -369,17 +368,15 @@
 }
 .shift-option {
   width: calc(50% - 10rpx);
-  border-radius: 18rpx;
-  padding: 26rpx 0;
+  border-radius: 20rpx;
+  padding: 30rpx 0;
   text-align: center;
-  border: 4rpx solid var(--line);
+  border: 2rpx solid var(--line);
   box-sizing: border-box;
 }
 .shift-option.active {
-  border-color: var(--ink);
-}
-.shift-option.active .shift-name {
-  color: var(--ink);
+  border-color: var(--rose);
+  background: rgba(255, 77, 109, 0.05);
 }
 .shift-name {
   font-size: 36rpx;
@@ -397,23 +394,16 @@
 }
 
 /* ---------- 批量排班弹层 ---------- */
-.field {
-  margin-top: 22rpx;
-}
-.field-label {
-  font-size: 28rpx;
-  font-weight: 700;
-  color: var(--ink-2);
-  margin-bottom: 12rpx;
-}
 .picker-value {
   height: 88rpx;
-  line-height: 88rpx;
-  padding: 0 28rpx;
+  line-height: 84rpx;
+  padding: 0 24rpx;
   background: var(--bg);
+  border: 2rpx solid var(--line);
   border-radius: 16rpx;
-  font-size: 32rpx;
+  font-size: 30rpx;
   color: var(--ink);
+  box-sizing: border-box;
 }
 /* 一行式起止范围:开始日期 · 排到 · 截止日期 */
 .range-row {
@@ -435,63 +425,62 @@
   font-size: 26rpx;
   color: var(--ink-3);
   flex-shrink: 0;
+  font-weight: 600;
 }
 /* 时长快捷 chip:点选自动算截止日 */
-.span-chips {
+/* 时长快捷:文字链式一行,弱于日期行(主次分明) */
+.span-row {
   display: flex;
-  gap: 14rpx;
-  margin-top: 16rpx;
+  align-items: center;
+  gap: 26rpx;
+  margin-top: 20rpx;
+  padding-left: 8rpx;
 }
-.span-chip {
-  flex: 1;
-  height: 72rpx;
-  line-height: 68rpx;
-  text-align: center;
+.span-hint {
+  font-size: 24rpx;
+  color: var(--ink-3);
+}
+.span-link {
   font-size: 26rpx;
   font-weight: 600;
   color: var(--ink-2);
-  background: var(--bg);
-  border: 2rpx solid var(--line);
-  border-radius: 999rpx;
-  box-sizing: border-box;
+  padding: 6rpx 0;
 }
-.span-chip.active {
+.span-link.active {
   color: var(--rose);
-  border-color: var(--rose);
-  background: rgba(255, 77, 109, 0.07);
+  border-bottom: 4rpx solid var(--rose);
 }
 /* 规则单行选项:左侧名称+说明,右侧循环序列色块点预览(选中前即知排出来什么样) */
+/* 规则列表:细分隔线行,选中行浅玫瑰底+右端圆点标记(去卡片框,最轻) */
 .rule-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14rpx;
+  margin-top: 30rpx;
 }
 .rule-chip {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16rpx;
-  border-radius: 16rpx;
-  border: 4rpx solid var(--line);
-  padding: 18rpx 22rpx;
-  box-sizing: border-box;
+  padding: 26rpx 20rpx;
+  border-bottom: 2rpx solid var(--line);
+}
+.rule-chip:last-child {
+  border-bottom: none;
 }
 .rule-chip.active {
-  border-color: var(--rose);
-  background: rgba(255, 77, 109, 0.06);
-}
-.rule-info {
-  min-width: 0;
+  background: rgba(255, 77, 109, 0.05);
+  border-radius: 14rpx;
+  border-bottom-color: transparent;
+  margin: 0 -8rpx;
+  padding: 26rpx 28rpx;
 }
 .rule-name {
   font-size: 30rpx;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink);
 }
-.rule-desc {
-  font-size: 22rpx;
-  color: var(--ink-3);
-  margin-top: 4rpx;
+.rule-chip.active .rule-name {
+  color: var(--rose);
+  font-weight: 700;
 }
 /* 序列预览:色块点与月历标签同色系,一眼对应 */
 .rule-seq {
@@ -501,12 +490,12 @@
   flex-shrink: 0;
 }
 .seq-dot {
-  min-width: 40rpx;
-  height: 40rpx;
-  line-height: 40rpx;
-  padding: 0 6rpx;
-  border-radius: 10rpx;
-  font-size: 22rpx;
+  min-width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  padding: 0 4rpx;
+  border-radius: 9rpx;
+  font-size: 20rpx;
   font-weight: 700;
   color: #ffffff;
   text-align: center;
