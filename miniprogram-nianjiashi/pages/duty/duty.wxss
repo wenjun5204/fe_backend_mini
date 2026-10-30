@@ -253,24 +253,34 @@
   color: var(--ink-3);
   z-index: 9;
 }
-.sheet-mask {
+.duty-mask {
   position: fixed;
   inset: 0;
   background: rgba(28, 28, 40, 0.5);
   z-index: 10;
 }
-.sheet {
+.duty-sheet {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   background: var(--card);
   border-radius: 32rpx 32rpx 0 0;
-  padding: 40rpx 36rpx calc(36rpx + env(safe-area-inset-bottom));
+  padding: 36rpx 36rpx 5rpx;
   z-index: 11;
+  max-height: 70vh;              /* 半屏弹层:内容再多也不超过七成屏高 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-.sheet-title {
-  font-size: 40rpx;
+/* 弹层标题区固定,内容超长时仅中间滚动,主操作按钮始终可见 */
+.duty-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: calc(70vh - 240rpx); /* 70vh 减去标题+按钮区的估算高度 */
+}
+.duty-title {
+  font-size: 36rpx;
   font-weight: 800;
   color: var(--ink);
   text-align: center;
@@ -282,15 +292,49 @@
   margin-top: 10rpx;
 }
 .sheet-btn {
-  margin-top: 36rpx;
+  margin-top: 32rpx;
+  width: 100%;
+  box-shadow: 0 12rpx 32rpx rgba(255, 77, 109, 0.24);
+}
+.sheet-btn:active {
+  transform: scale(0.98);
 }
 .sheet-close {
-  margin-top: 20rpx;
-  height: 88rpx;
-  line-height: 88rpx;
-  font-size: 30rpx;
+  margin-top: 4rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  font-size: 28rpx;
+  font-weight: 500;
   color: var(--ink-3);
   text-align: center;
+}
+.sheet-close:active {
+  opacity: 0.55;
+}
+/* 底部按钮行:主按钮占大头,次按钮描边胶囊;与主按钮 96rpx 等高对齐 */
+.sheet-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 28rpx;
+  align-items: stretch;
+}
+.sheet-actions .sheet-btn {
+  margin-top: 0;
+  flex: 1.7;
+}
+.sheet-actions .sheet-close {
+  margin-top: 0;
+  flex: 1;
+  height: 96rpx;
+  line-height: 92rpx; /* 96 减上下 2rpx 边框 */
+  box-sizing: border-box;
+  background: var(--bg);
+  border: 2rpx solid var(--line);
+  border-radius: 999rpx;
+}
+/* 弹层只有一个动作时的整行关闭按钮(如未记班日的单日弹层) */
+.sheet-close.standalone {
+  margin-top: 24rpx;
 }
 .sheet-guide {
   margin-top: 28rpx;
@@ -303,13 +347,25 @@
   font-size: 26rpx;
   color: var(--ink-3);
 }
+/* 批量撤销入口:弱化红色文字按钮,置于主按钮行下方(危险操作非主路径) */
+.range-clear {
+  margin-top: 20rpx;
+  text-align: center;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #c0564a;
+  padding: 12rpx 0;
+}
+.range-clear:active {
+  opacity: 0.55;
+}
 
 /* ---------- 单日编辑弹层 ---------- */
 .shift-options {
   display: flex;
   flex-wrap: wrap;
   gap: 20rpx;
-  margin-top: 36rpx;
+  margin-top: 28rpx;
 }
 .shift-option {
   width: calc(50% - 10rpx);
@@ -339,21 +395,10 @@
   color: var(--ink-3);
   margin-top: 8rpx;
 }
-.clear-btn {
-  margin-top: 28rpx;
-  height: 88rpx;
-  line-height: 88rpx;
-  border-radius: 999rpx;
-  background: var(--bg);
-  border: 2rpx solid var(--line);
-  color: var(--ink-2);
-  font-size: 30rpx;
-  text-align: center;
-}
 
 /* ---------- 批量排班弹层 ---------- */
 .field {
-  margin-top: 28rpx;
+  margin-top: 22rpx;
 }
 .field-label {
   font-size: 28rpx;
@@ -370,22 +415,73 @@
   font-size: 32rpx;
   color: var(--ink);
 }
-.rule-chips {
+/* 一行式起止范围:开始日期 · 排到 · 截止日期 */
+.range-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
+  align-items: center;
+  gap: 14rpx;
+}
+.range-row picker {
+  flex: 1;
+  min-width: 0;
+}
+.range-row .picker-value {
+  padding: 0 16rpx;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.range-to {
+  font-size: 26rpx;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+/* 时长快捷 chip:点选自动算截止日 */
+.span-chips {
+  display: flex;
+  gap: 14rpx;
+  margin-top: 16rpx;
+}
+.span-chip {
+  flex: 1;
+  height: 72rpx;
+  line-height: 68rpx;
+  text-align: center;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: var(--bg);
+  border: 2rpx solid var(--line);
+  border-radius: 999rpx;
+  box-sizing: border-box;
+}
+.span-chip.active {
+  color: var(--rose);
+  border-color: var(--rose);
+  background: rgba(255, 77, 109, 0.07);
+}
+/* 规则单行选项:左侧名称+说明,右侧循环序列色块点预览(选中前即知排出来什么样) */
+.rule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
 }
 .rule-chip {
-  width: calc(50% - 8rpx);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
   border-radius: 16rpx;
   border: 4rpx solid var(--line);
-  padding: 20rpx 0;
-  text-align: center;
+  padding: 18rpx 22rpx;
   box-sizing: border-box;
 }
 .rule-chip.active {
   border-color: var(--rose);
   background: rgba(255, 77, 109, 0.06);
+}
+.rule-info {
+  min-width: 0;
 }
 .rule-name {
   font-size: 30rpx;
@@ -393,17 +489,44 @@
   color: var(--ink);
 }
 .rule-desc {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: var(--ink-3);
-  margin-top: 6rpx;
+  margin-top: 4rpx;
+}
+/* 序列预览:色块点与月历标签同色系,一眼对应 */
+.rule-seq {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  flex-shrink: 0;
+}
+.seq-dot {
+  min-width: 40rpx;
+  height: 40rpx;
+  line-height: 40rpx;
+  padding: 0 6rpx;
+  border-radius: 10rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+}
+.seq-dot.seq-early { background: #ff4d6d; }
+.seq-dot.seq-mid { background: #e8943a; }
+.seq-dot.seq-night { background: #3d4a5c; }
+.seq-dot.seq-rest { background: #c8cdd3; color: #55555f; }
+.seq-more {
+  font-size: 20rpx;
+  color: var(--ink-3);
+  margin-left: 2rpx;
 }
 
 /* ---------- 提醒设置弹层 ---------- */
 .timing-options {
-  margin-top: 32rpx;
+  margin-top: 24rpx;
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: 14rpx;
 }
 .timing-option {
   border-radius: 16rpx;

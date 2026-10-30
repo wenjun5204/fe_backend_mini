@@ -71,10 +71,11 @@
   <view class="page-mask" wx:if="{{loading}}"><text>正在加载您的值班日历…</text></view>
 
   <!-- ============ 单日编辑弹层 ============ -->
-  <view class="sheet-mask" wx:if="{{daySheet}}" bindtap="closeDaySheet"></view>
-  <view class="sheet" wx:if="{{daySheet}}">
-    <view class="sheet-title">{{daySheet.label}} · 记个班</view>
+  <view class="duty-mask" wx:if="{{daySheet}}" bindtap="closeDaySheet"></view>
+  <view class="duty-sheet" wx:if="{{daySheet}}">
+    <view class="duty-title">{{daySheet.label}} · 记个班</view>
     <view class="sheet-sub" wx:if="{{!daySheet.hasShift}}">这一天还没记班</view>
+    <view class="duty-scroll">
     <view class="shift-options">
       <view
         wx:for="{{daySheet.options}}"
@@ -87,31 +88,45 @@
         <view class="shift-range">{{item.range}}</view>
       </view>
     </view>
-    <button class="clear-btn" wx:if="{{daySheet.hasShift}}" bindtap="onClearDay">清除这一天</button>
+    </view>
     <view class="sheet-guide">要排一整月?点下方「批量排班」更省事</view>
-    <button class="sheet-close" bindtap="closeDaySheet">先不记了</button>
+    <view class="sheet-actions" wx:if="{{daySheet.hasShift}}">
+      <button class="primary-btn sheet-btn" bindtap="onClearDay">清除这一天</button>
+      <button class="sheet-close" bindtap="closeDaySheet">先不记了</button>
+    </view>
+    <button class="sheet-close standalone" wx:else bindtap="closeDaySheet">先不记了</button>
   </view>
 
   <!-- ============ 批量排班弹层 ============ -->
-  <view class="sheet-mask" wx:if="{{batchSheet}}" bindtap="closeBatchSheet"></view>
-  <view class="sheet" wx:if="{{batchSheet}}">
-    <view class="sheet-title">批量排班</view>
+  <view class="duty-mask" wx:if="{{batchSheet}}" bindtap="closeBatchSheet"></view>
+  <view class="duty-sheet" wx:if="{{batchSheet}}">
+    <view class="duty-title">批量排班</view>
     <view class="sheet-sub">选好日期和规则,一次排完一整段</view>
+    <view class="duty-scroll">
     <view class="field">
-      <view class="field-label">开始日期</view>
-      <picker mode="date" value="{{batchSheet.startDate}}" bindchange="onStartDateChange">
-        <view class="picker-value">{{batchSheet.startDate}}</view>
-      </picker>
+      <view class="field-label">从哪天开始排</view>
+      <view class="range-row">
+        <picker mode="date" value="{{batchSheet.startDate}}" bindchange="onStartDateChange">
+          <view class="picker-value">{{batchSheet.startDate}}</view>
+        </picker>
+        <text class="range-to">排到</text>
+        <picker mode="date" value="{{batchSheet.endDate}}" bindchange="onEndDateChange">
+          <view class="picker-value picker-end">{{batchSheet.endDate}}</view>
+        </picker>
+      </view>
+      <view class="span-chips">
+        <view
+          wx:for="{{spanChips}}"
+          wx:key="days"
+          class="span-chip {{batchSheet.pickedSpan === item.days ? 'active' : ''}}"
+          data-days="{{item.days}}"
+          bindtap="onSpanPick"
+        >{{item.label}}</view>
+      </view>
     </view>
     <view class="field">
-      <view class="field-label">截止日期</view>
-      <picker mode="date" value="{{batchSheet.endDate}}" bindchange="onEndDateChange">
-        <view class="picker-value">{{batchSheet.endDate}}</view>
-      </picker>
-    </view>
-    <view class="field">
-      <view class="field-label">排班规则</view>
-      <view class="rule-chips">
+      <view class="field-label">排班规则(看色点想象排出来什么样)</view>
+      <view class="rule-list">
         <view
           wx:for="{{rules}}"
           wx:key="type"
@@ -119,21 +134,38 @@
           data-type="{{item.type}}"
           bindtap="onRulePick"
         >
-          <view class="rule-name">{{item.name}}</view>
-          <view class="rule-desc">{{item.desc}}</view>
+          <view class="rule-info">
+            <view class="rule-name">{{item.name}}</view>
+            <view class="rule-desc">{{item.desc}}</view>
+          </view>
+          <view class="rule-seq" wx:if="{{item.seq.length}}">
+            <view
+              wx:for="{{item.seq}}"
+              wx:for-item="s"
+              wx:for-index="si"
+              wx:key="si"
+              class="seq-dot seq-{{s}}"
+            >{{shiftLabel[s]}}</view>
+            <view class="seq-more">…循环</view>
+          </view>
         </view>
       </view>
     </view>
+    </view>
     <view class="sheet-note">范围内已记过的班会被新规则替换</view>
-    <button class="primary-btn sheet-btn" bindtap="onApplyRule">按这个规则排班</button>
-    <button class="sheet-close" bindtap="closeBatchSheet">先不排了</button>
+    <view class="sheet-actions">
+      <button class="primary-btn sheet-btn" bindtap="onApplyRule">按这个规则排班</button>
+      <button class="sheet-close" bindtap="closeBatchSheet">先不排了</button>
+    </view>
+    <view class="range-clear" bindtap="onClearRange">清空这段日期的排班</view>
   </view>
 
   <!-- ============ 提醒设置弹层 ============ -->
-  <view class="sheet-mask" wx:if="{{remindSheet}}" bindtap="closeRemindSheet"></view>
-  <view class="sheet" wx:if="{{remindSheet}}">
-    <view class="sheet-title">值班提醒</view>
+  <view class="duty-mask" wx:if="{{remindSheet}}" bindtap="closeRemindSheet"></view>
+  <view class="duty-sheet" wx:if="{{remindSheet}}">
+    <view class="duty-title">值班提醒</view>
     <view class="sheet-sub">上班前提醒您,不忘带东西不迟到</view>
+    <view class="duty-scroll">
     <view class="timing-options">
       <view
         wx:for="{{timings}}"
@@ -151,8 +183,11 @@
       <text class="toggle-label">开启提醒</text>
       <switch checked="{{remindSheet.enabled}}" color="#ff4d6d" bindchange="onRemindToggle" />
     </view>
-    <button class="primary-btn sheet-btn" bindtap="onRemindSave">保存</button>
-    <button class="sheet-close" bindtap="closeRemindSheet">先不设了</button>
+    </view>
+    <view class="sheet-actions">
+      <button class="primary-btn sheet-btn" bindtap="onRemindSave">保存</button>
+      <button class="sheet-close" bindtap="closeRemindSheet">先不设了</button>
+    </view>
   </view>
 
 </view>

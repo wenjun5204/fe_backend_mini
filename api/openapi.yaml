@@ -1637,6 +1637,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [duty]
+      operationId: clearDutyShiftRange
+      summary: 范围清除(批量撤销):删除 from..to 日期段内本人全部排班(不论来源);幂等:段内无排班也返回 clearedDays=0;同样不触碰周期规则本体
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: 起始日期 yyyy-MM-dd(含)
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: 截止日期 yyyy-MM-dd(含);早于 from 40000;跨度超 366 天按上限截断(与规则应用对称)
+      responses:
+        '200':
+          description: 清除结果(clearedDays=实际删除行数,幂等语义下可为 0)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyShiftRangeClearResponse'
+        '400':
+          description: 参数错误(40000:from/to 非法或倒序)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/duty/shifts/{date}:
     delete:
       tags: [duty]
@@ -1669,6 +1707,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
   /api/duty/rule:
     get:
       tags: [duty]
@@ -3364,6 +3403,21 @@ components:
         cleared:
           type: boolean
           description: 恒 true(幂等:无排班再清除也成功)
+    DutyShiftRangeClearResponse:
+      type: object
+      required: [from, to, clearedDays]
+      properties:
+        from:
+          type: string
+          format: date
+          description: 回显起始日期(截断时为原值)
+        to:
+          type: string
+          format: date
+          description: 实际清除截止日(截断时=from+365 天)
+        clearedDays:
+          type: integer
+          description: 实际删除的排班行数(幂等语义下可为 0;周一值班的段内含非周五排班也一并清除)
     DutyCalendarResponse:
       type: object
       required: [month, shifts, stats]

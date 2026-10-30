@@ -42,6 +42,7 @@ import com.example.backend.dto.DutyDtos.DutyRuleApplyRequest;
 import com.example.backend.dto.DutyDtos.DutyRuleApplyResponse;
 import com.example.backend.dto.DutyDtos.DutyRuleView;
 import com.example.backend.dto.DutyDtos.DutyShiftClearResponse;
+import com.example.backend.dto.DutyDtos.DutyShiftRangeClearResponse;
 import com.example.backend.dto.DutyDtos.DutyShiftRequest;
 import com.example.backend.dto.DutyDtos.DutyShiftView;
 import com.example.backend.dto.DutyDtos.DutyTodayResponse;
@@ -554,6 +555,14 @@ public class ApiController {
     @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DutyShiftClearResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
     public DutyShiftClearResponse clearDutyShift(@PathVariable String date) {
         return dutyService.clearShift(date);
+    }
+
+    @DeleteMapping("/duty/shifts")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DutyShiftRangeClearResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public DutyShiftRangeClearResponse clearDutyShiftRange(@RequestParam(value = "from", required = false) String from,
+                                                           @RequestParam(value = "to", required = false) String to) {
+        // from/to 缺失走 service 层 parseDate 的 40000(避免 Spring 参数绑定直抛 50000)
+        return dutyService.clearShiftRange(from, to);
     }
 
     @GetMapping("/duty/rule")

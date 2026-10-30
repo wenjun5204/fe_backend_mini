@@ -16,12 +16,31 @@ const SHIFT_META = {
 }
 
 /** 5 预设规则 chip(批量排班弹层;说明文案对齐 PRD §5.4) */
+/**
+ * 5 预设规则(单行选项):name 主文案 + seq 循环序列可视化预览(色块点)。
+ * weekday 无循环序列,seq 为空走 desc 文案。
+ */
 const RULES = [
-  { type: 'daily', name: '每天早班', desc: '最简单的固定班' },
-  { type: 'on1off1', name: '做一休一', desc: '上一天休一天' },
-  { type: 'on2off2', name: '做二休二', desc: '上两天休两天' },
-  { type: 'emnr', name: '早→中→夜→休', desc: '四班三运转' },
-  { type: 'weekday', name: '每周五值班', desc: '每周固定一天' },
+  {
+    type: 'daily', name: '每天早班', seq: ['early'],
+    desc: '天天都是早班',
+  },
+  {
+    type: 'on1off1', name: '做一休一', seq: ['early', 'rest'],
+    desc: '上一天休一天',
+  },
+  {
+    type: 'on2off2', name: '做二休二', seq: ['early', 'early', 'rest', 'rest'],
+    desc: '上两天休两天',
+  },
+  {
+    type: 'emnr', name: '早中夜休轮着来', seq: ['early', 'mid', 'night', 'rest'],
+    desc: '四班三运转',
+  },
+  {
+    type: 'weekday', name: '每周五值班', seq: [],
+    desc: '每周固定一天早班',
+  },
 ]
 
 /** 提醒时机选项(默认 advance_1d) */
@@ -29,6 +48,14 @@ const TIMINGS = [
   { value: 'advance_1d', name: '提前 1 天', desc: '中午 12:00 提醒您' },
   { value: 'same_day_08', name: '当天 8 点', desc: '上班早上提醒您' },
   { value: 'advance_2h', name: '提前 2 小时', desc: '临上班前提醒您' },
+]
+
+/** 排班时长快捷 chip:点选后按开始日期自动算截止(整月=下月月末) */
+const SPAN_CHIPS = [
+  { days: 7, label: '排一周' },
+  { days: 14, label: '排两周' },
+  { days: 30, label: '排一个月' },
+  { days: 90, label: '排三个月' },
 ]
 
 const WEEK_HEADS = ['一', '二', '三', '四', '五', '六', '日']
@@ -125,13 +152,19 @@ Page({
     remindSheet: null, // {timings,timing,enabled}
     rules: RULES,
     timings: TIMINGS,
+    spanChips: SPAN_CHIPS,
+    shiftLabel: { early: '早', mid: '中', night: '夜', rest: '休' },
   },
 
   /** 月历缓存:{monthKey: {map:{date:shift}, stats}} */
   monthCache: {},
 
   onLoad() {
-    ensureLogin().then(() => this.refreshAll())
+    // 登录失败(后端未起/token 失效)也要收口 loading:refreshAll 内部各自 catch,
+    // 兜底文案呈现,绝不让全屏遮罩把页面点击永久挡死
+    ensureLogin()
+      .catch(() => null)
+      .then(() => this.refreshAll())
   },
 
   onShow() {
@@ -317,6 +350,7 @@ Page({
         startDate: bounds.start,
         endDate: bounds.end,
         pickedRule: 'on1off1',
+        pickedSpan: 0,
       },
     })
   },
@@ -326,11 +360,32 @@ Page({
   },
 
   onStartDateChange(e) {
-    this.setData({ 'batchSheet.startDate': e.detail.value })
+    // 手改开始日期:截止日跟着平移(保持原天数跨度),并取消快捷 chip 选中
+    const sheet = this.data.batchSheet
+    if (!sheet) return
+    const days = dateSpanDays(sheet.startDate, sheet.endDate)
+    const start = e.detail.value
+    const end = days > 0 ? addDays(start, days) : sheet.endDate
+    this.setData({
+      'batchSheet.startDate': start,
+      'batchSheet.endDate': end,
+      'batchSheet.pickedSpan': 0,
+    })
   },
 
   onEndDateChange(e) {
-    this.setData({ 'batchSheet.endDate': e.detail.value })
+    this.setData({ 'batchSheet.endDate': e.detail.value, 'batchSheet.pickedSpan': 0 })
+  },
+
+  /** 快捷时长 chip:按开始日期自动算截止(如 排一周=开始+6 天) */
+  onSpanPick(e) {
+    const sheet = this.data.batchSheet
+    const days = Number(e.currentTarget.dataset.days)
+    if (!sheet || !days) return
+    this.setData({
+      'batchSheet.pickedSpan': days,
+      'batchSheet.endDate': addDays(sheet.startDate, days - 1),
+    })
   },
 
   onRulePick(e) {
@@ -390,6 +445,33 @@ Page({
       this.invalidateMonthRange(sheet.startDate, r.endDate)
       this.loadMonth(this.data.month)
       this.loadToday()
+    })
+  },
+
+  /** 清空这段日期的排班(批量撤销):二次确认后调范围清除;规则本体不动,重新应用会回填 */
+  onClearRange() {
+    const sheet = this.data.batchSheet
+    if (!sheet) return
+    if (sheet.endDate < sheet.startDate) {
+      wx.showToast({ title: '截止日期不能早于开始日期', icon: 'none' })
+      return
+    }
+    wx.showModal({
+      title: '清空这段排班?',
+      content: '从 ' + sheet.startDate + ' 到 ' + sheet.endDate + ' 已记的班会全部清掉。',
+      confirmText: '清空',
+      confirmColor: '#c0564a',
+      cancelText: '再想想',
+      success: (res) => {
+        if (!res.confirm) return
+        dutyApi.clearDutyShiftRange(sheet.startDate, sheet.endDate).then((r) => {
+          wx.showToast({ title: '已清空 ' + r.clearedDays + ' 天', icon: 'none' })
+          this.closeBatchSheet()
+          this.invalidateMonthRange(sheet.startDate, r.to || sheet.endDate)
+          this.loadMonth(this.data.month)
+          this.loadToday()
+        })
+      },
     })
   },
 
@@ -470,4 +552,19 @@ function nextDate(date) {
   const parts = date.split('-').map(Number)
   const d = new Date(parts[0], parts[1] - 1, parts[2] + 1)
   return fmtDate(d)
+}
+
+/** '2026-11-01' + N 天(含当天 N 天跨度即 +N-1) */
+function addDays(date, n) {
+  const parts = date.split('-').map(Number)
+  const d = new Date(parts[0], parts[1] - 1, parts[2] + n)
+  return fmtDate(d)
+}
+
+/** '2026-11-01'~'2026-11-10' 的天数跨度(含首尾,共 10 天) */
+function dateSpanDays(start, end) {
+  const a = start.split('-').map(Number)
+  const b = end.split('-').map(Number)
+  const days = Math.round((new Date(b[0], b[1] - 1, b[2]) - new Date(a[0], a[1] - 1, a[2])) / 86400000) + 1
+  return days > 0 ? days : 0
 }

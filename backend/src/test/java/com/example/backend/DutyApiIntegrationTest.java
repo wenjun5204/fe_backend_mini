@@ -262,6 +262,63 @@ class DutyApiIntegrationTest {
         assertErrorCode(delete("/api/duty/shifts/not-a-date", token), "40000");
     }
 
+    // ---- DELETE /api/duty/shifts?from=&to=(范围清除/批量撤销) ----
+
+    @Test
+    void 范围清除_删除段内全部排班_返回实际行数() {
+        String token = login();
+        applyRule(token, "on1off1", "2026-11-01", "2026-11-10");  // 段内 10 行
+        setShift(token, "2026-11-20", "night");                   // 段外 1 行
+        JsonNode resp = delete("/api/duty/shifts?from=2026-11-01&to=2026-11-10", token);
+        assertEquals(10, resp.get("clearedDays").asInt());
+        assertEquals("2026-11-10", resp.get("to").asText());
+        JsonNode cal = calendar(token, NOV);
+        assertNull(shiftOf(cal, "2026-11-01"));
+        assertEquals("night", shiftOf(cal, "2026-11-20"));  // 段外不动
+        assertEquals(1, cal.get("shifts").size());
+    }
+
+    @Test
+    void 范围清除幂等_段内无排班返回0() {
+        String token = login();
+        JsonNode resp = delete("/api/duty/shifts?from=2026-12-01&to=2026-12-31", token);
+        assertEquals(0, resp.get("clearedDays").asInt());
+        assertEquals("2026-12-01", resp.get("from").asText());
+    }
+
+    @Test
+    void 范围清除不触碰规则本体_重新应用回填() {
+        String token = login();
+        applyRule(token, "daily", "2026-11-01", "2026-11-05");
+        delete("/api/duty/shifts?from=2026-11-01&to=2026-11-05", token);
+        // 规则行仍在
+        JsonNode rule = get("/api/duty/rule", token);
+        assertTrue(rule.get("active").asBoolean());
+        assertEquals("daily", rule.get("ruleType").asText());
+        // 重新应用回填
+        applyRule(token, "daily", "2026-11-01", "2026-11-05");
+        assertEquals(5, calendar(token, NOV).get("shifts").size());
+    }
+
+    @Test
+    void 范围清除参数错误_倒序_非法日期_缺参_未登录() {
+        String token = login();
+        assertErrorCode(delete("/api/duty/shifts?from=2026-11-10&to=2026-11-01", token), "40000");
+        assertErrorCode(delete("/api/duty/shifts?from=Nov-1&to=2026-11-10", token), "40000");
+        assertErrorCode(delete("/api/duty/shifts?from=2026-11-01", token), "40000");
+        assertErrorCode(delete("/api/duty/shifts?from=2026-11-01&to=2026-11-10", null), "40100");
+    }
+
+    @Test
+    void 范围清除用户隔离() {
+        String tokenA = login();
+        String tokenB = login();
+        applyRule(tokenA, "daily", "2026-11-01", "2026-11-05");
+        // B 清同样范围,A 的排班不受影响
+        delete("/api/duty/shifts?from=2026-11-01&to=2026-11-05", tokenB);
+        assertEquals(5, calendar(tokenA, NOV).get("shifts").size());
+    }
+
     // ---- GET /api/duty/rule ----
 
     @Test

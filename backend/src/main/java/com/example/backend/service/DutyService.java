@@ -11,6 +11,7 @@ import com.example.backend.dto.DutyDtos.DutyRuleApplyRequest;
 import com.example.backend.dto.DutyDtos.DutyRuleApplyResponse;
 import com.example.backend.dto.DutyDtos.DutyRuleView;
 import com.example.backend.dto.DutyDtos.DutyShiftClearResponse;
+import com.example.backend.dto.DutyDtos.DutyShiftRangeClearResponse;
 import com.example.backend.dto.DutyDtos.DutyShiftRequest;
 import com.example.backend.dto.DutyDtos.DutyShiftView;
 import com.example.backend.dto.DutyDtos.DutyTodayResponse;
@@ -175,6 +176,31 @@ public class DutyService {
         DutyShiftClearResponse response = new DutyShiftClearResponse();
         response.setDate(target.toString());
         response.setCleared(true);
+        return response;
+    }
+
+    /**
+     * 范围清除(批量撤销):删除 from..to 段内本人全部排班(不论来源);幂等(段内无排班 clearedDays=0);
+     * 跨度超 366 天截断至 366 天(与规则应用 MAX_SPAN_DAYS 对称);不触碰周期规则本体。
+     */
+    @Transactional
+    public DutyShiftRangeClearResponse clearShiftRange(String from, String to) {
+        Long userId = CurrentUser.get();
+        LocalDate start = parseDate(from);
+        LocalDate end = parseDate(to);
+        if (end.isBefore(start)) {
+            throw ApiException.param("截止日期不能早于开始日期");
+        }
+        if (ChronoUnit.DAYS.between(start, end) + 1 > MAX_SPAN_DAYS + 1) {
+            end = start.plusDays(MAX_SPAN_DAYS);
+        }
+        List<DutyShiftEntity> rows = shiftRepository
+                .findByUserIdAndDutyDateBetweenOrderByDutyDateAsc(userId, start, end);
+        shiftRepository.deleteAllInBatch(rows);
+        DutyShiftRangeClearResponse response = new DutyShiftRangeClearResponse();
+        response.setFrom(start.toString());
+        response.setTo(end.toString());
+        response.setClearedDays(rows.size());
         return response;
     }
 

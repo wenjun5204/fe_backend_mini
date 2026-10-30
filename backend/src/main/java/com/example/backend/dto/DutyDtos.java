@@ -67,6 +67,19 @@ public final class DutyDtos {
         public void setCleared(boolean cleared) { this.cleared = cleared; }
     }
 
+    public static class DutyShiftRangeClearResponse {
+        private String from;
+        private String to;
+        private int clearedDays;
+
+        public String getFrom() { return from; }
+        public void setFrom(String from) { this.from = from; }
+        public String getTo() { return to; }
+        public void setTo(String to) { this.to = to; }
+        public int getClearedDays() { return clearedDays; }
+        public void setClearedDays(int clearedDays) { this.clearedDays = clearedDays; }
+    }
+
     // ---- 月历 ----
 
     public static class DutyMonthStats {

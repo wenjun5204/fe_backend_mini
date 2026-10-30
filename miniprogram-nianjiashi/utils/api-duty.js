@@ -37,6 +37,16 @@ function clearDutyShift(date) {
   return request('/api/duty/shifts/' + encodeURIComponent(date), { method: 'DELETE' })
 }
 
+/**
+ * DELETE /api/duty/shifts?from=&to= → DutyShiftRangeClearResponse{from,to,clearedDays}(幂等;段内全清,不论来源)
+ * 范围清除=批量撤销:重新排前清掉旧排班用
+ */
+function clearDutyShiftRange(from, to) {
+  return request('/api/duty/shifts?from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to), {
+    method: 'DELETE',
+  })
+}
+
 /** GET /api/duty/rule → DutyRuleView{ruleType?,startDate?,endDate?,active,appliedDays}(无规则空壳) */
 function getDutyRule() {
   return request('/api/duty/rule')
@@ -63,6 +73,7 @@ module.exports = {
   getDutyToday,
   setDutyShift,
   clearDutyShift,
+  clearDutyShiftRange,
   getDutyRule,
   applyDutyRule,
   updateDutyRemindConfig,
