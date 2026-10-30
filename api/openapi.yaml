@@ -1,13 +1,14 @@
 openapi: 3.0.3
 info:
   title: 全家福·接福气 API
-  version: 1.8.0
+  version: 1.9.0
   description: |
     中老年家庭祈福互动小程序「全家福·接福气」接口契约(唯一事实源)。
     v1.5.0 增量:八卦集福阵(只读进度)/转罗盘卦位(仅卡面主题)/解忧册文案下发(幂等)/订阅消息授权登记。
     v1.6.0 增量(念家时 v2.0 日子管家):日子记录(生日/纪念日/在一起)CRUD、按人提醒配置、到期计算;复用既有 /api/calendar/convert 与 /api/notify/*。
     v1.7.0 增量(念家时 v2.1 模板馆引擎):模板馆清单(服务端配置驱动)、感恩信 AI 生成(逐句备选)、三类卡片定稿存档/详情/删除/分享场景码、时光胶囊封存/开箱、免鉴权访客落地/点亮心/解锁内容(/api/visitor/* 不要求登录 token)。
     v1.8.0 增量(念家时 v2.2 家人空间):节日/上线预约登记与到期清单(/api/festivals/*)、照片上传与免鉴权回显(base64 JSON 解码后 ≤500KB,/api/photos/*)、家人瞬间时间线与真好/收藏互动(/api/moments/* 与 /api/days/{id}/moments 素材池);既有授权扩展:CardKind +BIRTHDAY_CARD(生日福卡,随时可生成,生日当天由提醒自然触达)、DayRecord +year 与周年称谓计算字段、时光胶囊 +photoId、访客端 BIRTHDAY_CARD 体面内容形态。
+    v1.9.0 增量(念家时 v2.3 值班日历):个人视角值班记录与提醒(/api/duty/*)——月历班次查询、今日状态卡(今日班次+60 天下次值班扫描)、单日设置/清除、周期规则批量排班(5 预设,>365 天截断,覆盖已有排班)、提醒时机配置(advance_1d/same_day_08/advance_2h);提醒只存配置+订阅授权登记(复用既有 /api/notify/subscribe),真实推送下发属部署联调阶段。
     合规约束:文案禁用迷信词(见 .agents/docs/conventions.md,含 v1.5 追加:卦象/卦运/宜忌/生门/吉位/凶位/能成/不行/会有/注定/天意/预示/破财/有灾),错误 message 面向用户须过合规词表。
 tags:
   - name: days
@@ -24,6 +25,8 @@ tags:
     description: 念家时 v2.2 照片管道(/api/photos/*)——base64 JSON 上传(解码后 ≤500KB,每日每人 ≤20 张)与免鉴权回显(photoId 高熵 capability URL,<image> 直挂;不要求登录 token)
   - name: moments
     description: 念家时 v2.2 家人瞬间(/api/moments/*)——照片+一句话家族时间线、真好(点赞,限 1 次)、收藏进日子(生日福卡素材池,含 /api/days/{id}/moments)
+  - name: duty
+    description: 念家时 v2.3 值班日历(/api/duty/*)——个人视角值班记录与提醒:月历班次、今日状态卡(下次值班 60 天扫描)、单日设置/清除、周期规则批量排班、提醒时机配置(真实推送下发属部署联调阶段,本组仅数据与配置)
 paths:
   /api/auth/login:
     post:
@@ -1536,6 +1539,210 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: 日子不存在或对本人不可见(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/duty/calendar:
+    get:
+      tags: [duty]
+      operationId: getDutyCalendar
+      summary: 值班月历数据(指定月份每天的排班+当月统计);前端首屏拉当月 ±1 月共 3 次并本地缓存,翻月按需拉取;仅返回有排班的日期
+      parameters:
+        - name: month
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}$'
+          description: 目标月份 yyyy-MM;缺省=当月;非法格式 40000
+      responses:
+        '200':
+          description: 月历数据(shifts 按 date 升序;stats 为当月各班次天数)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyCalendarResponse'
+        '400':
+          description: 参数错误(40000:month 非法)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/duty/today:
+    get:
+      tags: [duty]
+      operationId: getDutyToday
+      summary: 今日状态卡一次调用:今日班次 + 下次值班(从明天起 60 天内最近非休班次日,今天不参与倒计时)+ 提醒配置;date 参数供集成测试注入时钟
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: yyyy-MM-dd,缺省=当天
+      responses:
+        '200':
+          description: 状态卡数据(todayShift=null 今日无排班;nextDuty=null 近期暂无值班安排;remind 无配置时 timing=advance_1d 且 enabled=false)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyTodayResponse'
+        '400':
+          description: 参数错误(40000:date 非法)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/duty/shifts:
+    post:
+      tags: [duty]
+      operationId: setDutyShift
+      summary: 单日设置(月历点日期后四班次点选即保存):upsert 该日排班,source=manual;已有同日记录直接覆盖
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DutyShiftRequest'
+      responses:
+        '200':
+          description: 设置结果(source 恒 manual)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyShiftView'
+        '400':
+          description: 参数错误(40000:date 非法或 shift 越值域)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/duty/shifts/{date}:
+    delete:
+      tags: [duty]
+      operationId: clearDutyShift
+      summary: 清除这一天(幂等:无排班也返回 cleared=true);仅删该日记录,不触碰周期规则本体(重新应用规则会回填)
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: 目标日期 yyyy-MM-dd
+      responses:
+        '200':
+          description: 清除结果(恒 cleared=true,幂等)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyShiftClearResponse'
+        '400':
+          description: 参数错误(40000:date 非法)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/duty/rule:
+    get:
+      tags: [duty]
+      operationId: getDutyRule
+      summary: 当前生效周期规则(批量排班弹层回显);无规则返回 active=false 且规则字段为 null
+      responses:
+        '200':
+          description: 当前规则(单条生效,uk 物理保证)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyRuleView'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/duty/rules/apply:
+    post:
+      tags: [duty]
+      operationId: applyDutyRule
+      summary: 批量排班:从 startDate 按序列循环填充至 endDate(weekday 类只填命中星期五的日期);范围内已有排班直接覆盖;跨度 >365 天截断至 365 天并 truncated=true;同时 upsert 单条生效规则行;覆盖确认由前端二次弹窗承担
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DutyRuleApplyRequest'
+      responses:
+        '200':
+          description: 应用结果(weekday 类 appliedDays 只数命中日;truncated=true 时前端 Toast「已按一年上限排 N 天」)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyRuleApplyResponse'
+        '400':
+          description: 参数错误(40000:ruleType 越值域/date 非法/endDate 早于 startDate)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/duty/remind-config:
+    put:
+      tags: [duty]
+      operationId: updateDutyRemindConfig
+      summary: 提醒设置保存(时机三选一+意愿开关);保存后前端另行调既有 POST /api/notify/subscribe 登记订阅授权(额度走 NotifyService 账本,本端点不触碰);真实下发属部署联调阶段
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DutyRemindConfigRequest'
+      responses:
+        '200':
+          description: 保存结果(回显)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyRemindConfig'
+        '400':
+          description: 参数错误(40000:timing 越值域/请求体缺失)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录或身份失效(40100)
           content:
             application/json:
               schema:
@@ -3119,3 +3326,190 @@ components:
         total:
           type: integer
           description: 素材条数
+    DutyShiftKind:
+      type: string
+      enum: [early, mid, night, rest]
+      description: 班次:early 早班(08:00-17:00)/mid 中班(12:00-24:00)/night 夜班(20:00-次日08:00)/rest 休;日历内单字标签(早/中/夜/休)+配色(早=玫红#ff4d6d/中=橙#e8943a/夜=藏蓝#3d4a5c/休=灰#c8cdd3)
+    DutyShiftView:
+      type: object
+      required: [date, shift, source]
+      properties:
+        date:
+          type: string
+          format: date
+          description: 业务日期 yyyy-MM-dd
+        shift:
+          $ref: '#/components/schemas/DutyShiftKind'
+        source:
+          type: string
+          description: 来源:manual 单日编辑 / rule:daily / rule:on1off1 / rule:on2off2 / rule:emnr / rule:weekday(批量排班写入;MVP 仅存档,撤销语义未开放)
+    DutyShiftRequest:
+      type: object
+      required: [date, shift]
+      properties:
+        date:
+          type: string
+          format: date
+          description: 目标日期 yyyy-MM-dd
+        shift:
+          $ref: '#/components/schemas/DutyShiftKind'
+    DutyShiftClearResponse:
+      type: object
+      required: [date, cleared]
+      properties:
+        date:
+          type: string
+          format: date
+          description: 回显目标日期
+        cleared:
+          type: boolean
+          description: 恒 true(幂等:无排班再清除也成功)
+    DutyCalendarResponse:
+      type: object
+      required: [month, shifts, stats]
+      properties:
+        month:
+          type: string
+          pattern: '^\d{4}-\d{2}$'
+          description: 回显目标月份 yyyy-MM
+        shifts:
+          type: array
+          description: 该月有排班的日期列表(按 date 升序;空数组=整月无排班,日历空白引导批量排班)
+          items:
+            $ref: '#/components/schemas/DutyShiftView'
+        stats:
+          $ref: '#/components/schemas/DutyMonthStats'
+    DutyMonthStats:
+      type: object
+      required: [early, mid, night, rest]
+      properties:
+        early:
+          type: integer
+          description: 当月早班天数
+        mid:
+          type: integer
+          description: 当月中班天数
+        night:
+          type: integer
+          description: 当月夜班天数
+        rest:
+          type: integer
+          description: 当月休班天数
+    DutyNextDuty:
+      type: object
+      required: [date, shift, daysUntil]
+      properties:
+        date:
+          type: string
+          format: date
+          description: 下次值班日期 yyyy-MM-dd(从明天起 60 天内最近非休班次日)
+        shift:
+          $ref: '#/components/schemas/DutyShiftKind'
+        daysUntil:
+          type: integer
+          minimum: 1
+          description: 距今天数(≥1;今天不参与倒计时)
+    DutyRemindConfig:
+      type: object
+      required: [timing, enabled]
+      properties:
+        timing:
+          $ref: '#/components/schemas/DutyRemindTiming'
+        enabled:
+          type: boolean
+          description: 提醒意愿开关;关闭后状态卡显示「提醒未开启」弱引导
+    DutyRemindTiming:
+      type: string
+      enum: [advance_1d, same_day_08, advance_2h]
+      description: 提醒时机:advance_1d 提前 1 天 12:00(默认)/same_day_08 当天 08:00/advance_2h 提前 2 小时;夜班场景建议 advance_2h(前端在设置夜班时引导切换)
+    DutyRemindConfigRequest:
+      type: object
+      required: [timing, enabled]
+      properties:
+        timing:
+          $ref: '#/components/schemas/DutyRemindTiming'
+        enabled:
+          type: boolean
+    DutyTodayResponse:
+      type: object
+      required: [date, todayShift, nextDuty, remind]
+      properties:
+        date:
+          type: string
+          format: date
+          description: 今天 yyyy-MM-dd
+        todayShift:
+          allOf:
+            - $ref: '#/components/schemas/DutyShiftKind'
+          nullable: true
+          description: 今日班次;null=今日无排班(状态卡「今日无排班」+主按钮引导批量排班)
+        nextDuty:
+          allOf:
+            - $ref: '#/components/schemas/DutyNextDuty'
+          nullable: true
+          description: 下次值班;null=60 天内无值班安排(状态卡「近期暂无值班安排」)
+        remind:
+          $ref: '#/components/schemas/DutyRemindConfig'
+    DutyRuleType:
+      type: string
+      enum: [daily, on1off1, on2off2, emnr, weekday]
+      description: 周期规则预设:daily 每天早班[早]/on1off1 做一休一[早,休]/on2off2 做二休二[早,早,休,休]/emnr 早→中→夜→休四班三运转近似[早,中,夜,休]/weekday 每周五值班(星期五→早班,其余日不动)
+    DutyRuleView:
+      type: object
+      required: [active, appliedDays]
+      properties:
+        ruleType:
+          allOf:
+            - $ref: '#/components/schemas/DutyRuleType'
+          nullable: true
+          description: 当前规则类型;无规则为 null
+        startDate:
+          type: string
+          format: date
+          nullable: true
+          description: 应用开始日;无规则为 null
+        endDate:
+          type: string
+          format: date
+          nullable: true
+          description: 实际应用截止日(截断后);无规则为 null
+        active:
+          type: boolean
+          description: 有规则恒 true;无规则 false(弹层引导「从批量排班开始」)
+        appliedDays:
+          type: integer
+          description: 最近一次应用填充天数存档(0=从未应用)
+    DutyRuleApplyRequest:
+      type: object
+      required: [ruleType, startDate, endDate]
+      properties:
+        ruleType:
+          $ref: '#/components/schemas/DutyRuleType'
+        startDate:
+          type: string
+          format: date
+          description: 应用开始日 yyyy-MM-dd(默认下月 1 号,前端默认值)
+        endDate:
+          type: string
+          format: date
+          description: 应用截止日 yyyy-MM-dd(默认下月月末);早于 startDate 40000;跨度 >365 天服务端截断至 startDate+364 天
+    DutyRuleApplyResponse:
+      type: object
+      required: [ruleType, startDate, endDate, appliedDays, truncated]
+      properties:
+        ruleType:
+          $ref: '#/components/schemas/DutyRuleType'
+        startDate:
+          type: string
+          format: date
+          description: 回显开始日(截断时为原值)
+        endDate:
+          type: string
+          format: date
+          description: 实际应用截止日(截断时=startDate+364 天)
+        appliedDays:
+          type: integer
+          description: 实际填充天数(weekday 类只数命中星期五的日期)
+        truncated:
+          type: boolean
+          description: true=原跨度超 365 天已截断,前端 Toast 提示

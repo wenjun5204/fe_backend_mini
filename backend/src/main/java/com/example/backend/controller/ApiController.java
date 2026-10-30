@@ -35,6 +35,16 @@ import com.example.backend.dto.DayDtos.DayReminderDueResponse;
 import com.example.backend.dto.DayDtos.DayReminderRequest;
 import com.example.backend.dto.DayDtos.DayUpsertRequest;
 import com.example.backend.dto.DayDtos.DeleteDayResponse;
+import com.example.backend.dto.DutyDtos.DutyCalendarResponse;
+import com.example.backend.dto.DutyDtos.DutyRemindConfig;
+import com.example.backend.dto.DutyDtos.DutyRemindConfigRequest;
+import com.example.backend.dto.DutyDtos.DutyRuleApplyRequest;
+import com.example.backend.dto.DutyDtos.DutyRuleApplyResponse;
+import com.example.backend.dto.DutyDtos.DutyRuleView;
+import com.example.backend.dto.DutyDtos.DutyShiftClearResponse;
+import com.example.backend.dto.DutyDtos.DutyShiftRequest;
+import com.example.backend.dto.DutyDtos.DutyShiftView;
+import com.example.backend.dto.DutyDtos.DutyTodayResponse;
 import com.example.backend.dto.ErrorDtos;
 import com.example.backend.dto.FamilyDtos.CreateFamilyRequest;
 import com.example.backend.dto.MomentDtos.DayCollectedMomentsResponse;
@@ -81,6 +91,7 @@ import com.example.backend.service.BirthdayService;
 import com.example.backend.service.CardService;
 import com.example.backend.service.CapsuleService;
 import com.example.backend.service.DayService;
+import com.example.backend.service.DutyService;
 import com.example.backend.service.FamilyService;
 import com.example.backend.service.FestivalService;
 import com.example.backend.service.FortuneService;
@@ -116,6 +127,7 @@ public class ApiController {
     private final CardService cardService;
     private final CapsuleService capsuleService;
     private final DayService dayService;
+    private final DutyService dutyService;
     private final FamilyService familyService;
     private final FestivalService festivalService;
     private final FortuneService fortuneService;
@@ -134,6 +146,7 @@ public class ApiController {
                          CardService cardService,
                          CapsuleService capsuleService,
                          DayService dayService,
+                         DutyService dutyService,
                          FamilyService familyService,
                          FestivalService festivalService,
                          FortuneService fortuneService,
@@ -151,6 +164,7 @@ public class ApiController {
         this.cardService = cardService;
         this.capsuleService = capsuleService;
         this.dayService = dayService;
+        this.dutyService = dutyService;
         this.familyService = familyService;
         this.festivalService = festivalService;
         this.fortuneService = fortuneService;
@@ -514,6 +528,50 @@ public class ApiController {
     @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = FestivalDueResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
     public FestivalDueResponse getFestivalDue(@RequestParam(value = "date", required = false) String date) {
         return festivalService.due(date);
+    }
+
+    // ---- 念家时·值班日历(契约 v1.9.0,tag=duty) ----
+
+    @GetMapping("/duty/calendar")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DutyCalendarResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public DutyCalendarResponse getDutyCalendar(@RequestParam(value = "month", required = false) String month) {
+        return dutyService.getCalendar(month);
+    }
+
+    @GetMapping("/duty/today")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DutyTodayResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public DutyTodayResponse getDutyToday(@RequestParam(value = "date", required = false) String date) {
+        return dutyService.getToday(date);
+    }
+
+    @PostMapping("/duty/shifts")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DutyShiftView.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public DutyShiftView setDutyShift(@RequestBody DutyShiftRequest request) {
+        return dutyService.setShift(request);
+    }
+
+    @DeleteMapping("/duty/shifts/{date}")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DutyShiftClearResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public DutyShiftClearResponse clearDutyShift(@PathVariable String date) {
+        return dutyService.clearShift(date);
+    }
+
+    @GetMapping("/duty/rule")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DutyRuleView.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public DutyRuleView getDutyRule() {
+        return dutyService.getRule();
+    }
+
+    @PostMapping("/duty/rules/apply")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DutyRuleApplyResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public DutyRuleApplyResponse applyDutyRule(@RequestBody DutyRuleApplyRequest request) {
+        return dutyService.applyRule(request);
+    }
+
+    @PutMapping("/duty/remind-config")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DutyRemindConfig.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public DutyRemindConfig updateDutyRemindConfig(@RequestBody DutyRemindConfigRequest request) {
+        return dutyService.updateRemindConfig(request);
     }
 
     // ---- 免鉴权访客组(/api/visitor/**,AuthInterceptor 排除,永不 40100) ----

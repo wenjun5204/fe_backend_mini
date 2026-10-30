@@ -1,0 +1,617 @@
+{
+  "schema_version": "1.0",
+  "status": "approved",
+  "change_id": "念家时-v2.3-值班日历",
+  "scope": {
+    "complexity": "M",
+    "subsystems": [
+      "miniprogram-nianjiashi 前端(新增值班 Tab 页 pages/duty/duty+utils/api-duty.js;app.json tabBar 4→5 项)",
+      "backend 服务(Spring Boot 原地演进,新增 duty_shift/duty_rule/duty_remind 三表+DutyService;ApiController 新增 duty 路由)",
+      "OpenAPI 契约层(v1.8.0 → v1.9.0 增量,新增 duty 一组 7 端点)"
+    ],
+    "cross_team_dependencies": [],
+    "split_required": false,
+    "split_decision": "coupled",
+    "in_scope_frs": [
+      "FR-D1 班次体系(固定四班次,无自定义)",
+      "FR-D2 今日状态卡(今日班次+下次值班倒计时+提醒入口)",
+      "FR-D3 月历视图(翻月+单日编辑弹层+按月懒加载)",
+      "FR-D4 批量排班周期规则(5 预设,覆盖二次确认,>365 天截断)",
+      "FR-D5 本月统计条(早/中/夜/休次数)",
+      "FR-D6 值班提醒(时机配置+订阅授权登记,不真实发送)"
+    ],
+    "exclusions": [
+      {
+        "item": "真实 subscribeMessage.send 推送下发",
+        "destination": "部署联调阶段(Stage 9);本 change 交付提醒时机配置+授权登记数据作为下发链路输入"
+      },
+      {
+        "item": "分享只读视图与分享卡(PRD §5.7 P1)",
+        "destination": "P1 快速跟进"
+      },
+      {
+        "item": "OCR/文本粘贴导入(PRD §5.8 P2)",
+        "destination": "P2 视数据决定"
+      },
+      {
+        "item": "自定义班次(P2)、自定义循环序列与每周几多选(P1)、工时估算与夜班连续警示(P1)",
+        "destination": "PRD 明确排期"
+      },
+      {
+        "item": "埋点 duty_page_view/duty_day_edit/duty_rule_apply/duty_remind_enable",
+        "destination": "本期不做(用户拍板 2026-10-30,小程序无埋点基建)"
+      },
+      {
+        "item": "值班页分包 subpackages/duty",
+        "destination": "作废:微信 tab 页必须在主包(D3);主包 516K 体积无忧"
+      },
+      {
+        "item": "家人互看值班(PRD 开放问题 2)",
+        "destination": "V2 评估(涉及家人模块联动与家庭空间能力升级)"
+      }
+    ]
+  },
+  "clarification": {
+    "round": 1,
+    "max_rounds": 3,
+    "note": "输入为已定稿 PRD(docs/prototype/PRD-值班排班.md v1.0,2026-10-30)§5.1-5.6 P0;启动前一轮两个口径问题均已用户拍板(提醒不真实发送/本期无埋点);PRD 开放问题 1(Tab 方案)由用户指令「新增加一个 tab」拍板为第 5 Tab;开放问题 2(家人互看)排 V2;开放问题 3(极简记录模式)不采纳入 MVP。",
+    "questions": [
+      "值班提醒(5.6)的推送落地口径?",
+      "PRD 里程碑含「埋点」但小程序无埋点体系,本期怎么处理?"
+    ],
+    "answers": [
+      "沿用现状:只存配置+登记授权(推荐项,与现有 NotifyService 额度账本口径一致)",
+      "本期不做埋点(推荐项)"
+    ],
+    "confirmed_facts": [
+      {
+        "fact": "产品定位:个人视角值班记录与提醒工具(不做团队排班/换班/薪资);值班 Tab 为念家时第 5 Tab 验证需求,4 周后按拆分信号评估独立小程序(PRD §1.3)",
+        "source": "user_document"
+      },
+      {
+        "fact": "班次与配色规格:早(08:00-17:00,玫红#ff4d6d)/中(12:00-24:00,橙#e8943a)/夜(20:00-次日08:00,藏蓝#3d4a5c)/休(灰#c8cdd3);日历内单字标签",
+        "source": "user_document"
+      },
+      {
+        "fact": "5 预设规则序列:每天早班[早]/做一休一[早,休]/做二休二[早,早,休,休]/早中夜休[早,中,夜,休]/每周五值班[周五→早]",
+        "source": "user_document"
+      },
+      {
+        "fact": "提醒不真实发送,只存时机配置+订阅授权登记",
+        "source": "user_decision"
+      },
+      {
+        "fact": "本期不做埋点",
+        "source": "user_decision"
+      },
+      {
+        "fact": "新增第 5 个 Tab「值班」(用户指令);PRD 写的分包路径与 tab 页互斥,裁定主包 pages/duty/duty",
+        "source": "user_decision"
+      }
+    ],
+    "decisions": [
+      "D1 提醒不真实发送(部署联调阶段演进)",
+      "D2 本期无埋点",
+      "D3 值班 Tab 页放主包 pages/duty/duty(微信 tab 页禁分包)",
+      "D4 TabBar 4→5 项,值班插第 3 位(日子/家人/值班/模板馆/我的),纯文字无 icon",
+      "D5 duty_shift uk(user_id,duty_date) 用户×日期一条,source 记来源",
+      "D6 duty_rule uk(user_id) 单条生效,重新应用整行覆盖;删单日不触碰规则本体",
+      "D7 序列规则填充范围内每一天,weekday 规则只填命中日;已有排班直接覆盖;>365 天截断+truncated 标记",
+      "D8 下次值班=从明天起 60 天内最近非休日,今天不参与倒计时",
+      "D9 提醒时机枚举 advance_1d(默认)/same_day_08/advance_2h;enabled 意愿开关与授权额度解耦",
+      "D10 月历按月懒加载(month 参数),首屏当月±1 月共 3 次"
+    ],
+    "assumptions": [
+      "规则应用批量写入量级:单用户单次 ≤365 行 upsert,H2/MySQL 均秒级完成,MVP 不做异步",
+      "月历无长列表渲染风险(≤42 格),月历渲染性能目标由原生 wxml grid 天然满足",
+      "订阅消息模板类目:值班提醒文案形态(『明天(10/31)早班 08:00 上班,别忘了~』)与既有提醒模板兼容;如需新增类目模板属部署联调阶段运营动作"
+    ],
+    "unresolved_questions": [],
+    "coverage": {
+      "goal_value": "covered",
+      "users_permissions": "covered",
+      "scope": "covered",
+      "main_flow": "covered",
+      "state": "covered",
+      "data": "covered",
+      "exceptions": "covered",
+      "interaction": "covered",
+      "dependencies": "covered",
+      "non_functional": "covered",
+      "acceptance": "covered"
+    }
+  },
+  "contract_readiness": {
+    "api_draft": [
+      {
+        "path": "/api/duty/calendar",
+        "method": "GET",
+        "operationId": "getDutyCalendar",
+        "summary": "月历视图数据:指定月份每天的排班(date→shift)+当月统计;前端首屏拉当月±1 月共 3 次并本地缓存",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "month",
+            "type": "string(query)",
+            "required": false,
+            "bounds": "yyyy-MM;缺省=当月;非法格式 40000"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "month",
+            "type": "string",
+            "required": true,
+            "bounds": "回显 yyyy-MM"
+          },
+          {
+            "name": "shifts",
+            "type": "array<object>",
+            "required": true,
+            "bounds": "每项 {date(yyyy-MM-dd), shift(early|mid|night|rest), source};仅含有排班的日期,按 date 升序"
+          },
+          {
+            "name": "stats",
+            "type": "object",
+            "required": true,
+            "bounds": "{early, mid, night, rest} 当月各班次天数"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40000"
+        ]
+      },
+      {
+        "path": "/api/duty/today",
+        "method": "GET",
+        "operationId": "getDutyToday",
+        "summary": "今日状态卡:今日班次+下次值班(从明天起 60 天内最近非休日)+提醒配置;一次调用撑起状态卡全部内容",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "date",
+            "type": "string(query)",
+            "required": false,
+            "bounds": "yyyy-MM-dd,缺省=当天;供集成测试注入时钟"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "date",
+            "type": "string",
+            "required": true,
+            "bounds": "今天 yyyy-MM-dd"
+          },
+          {
+            "name": "todayShift",
+            "type": "string",
+            "required": false,
+            "bounds": "early|mid|night|rest;null=今日无排班"
+          },
+          {
+            "name": "nextDuty",
+            "type": "object",
+            "required": false,
+            "bounds": "{date, shift, daysUntil(≥1)};null=60 天内无值班安排"
+          },
+          {
+            "name": "remind",
+            "type": "object",
+            "required": true,
+            "bounds": "{timing(advance_1d|same_day_08|advance_2h), enabled};无配置时 timing=advance_1d, enabled=false"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40000"
+        ]
+      },
+      {
+        "path": "/api/duty/shifts",
+        "method": "POST",
+        "operationId": "setDutyShift",
+        "summary": "单日编辑(月历点日期后四班次点选即保存):upsert 该日排班,source=manual",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "date",
+            "type": "string",
+            "required": true,
+            "bounds": "yyyy-MM-dd;非法 40000"
+          },
+          {
+            "name": "shift",
+            "type": "string",
+            "required": true,
+            "bounds": "early|mid|night|rest;越值域 40000"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "date",
+            "type": "string",
+            "required": true,
+            "bounds": "回显"
+          },
+          {
+            "name": "shift",
+            "type": "string",
+            "required": true,
+            "bounds": "回显"
+          },
+          {
+            "name": "source",
+            "type": "string",
+            "required": true,
+            "bounds": "恒 manual(单日编辑)"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40000"
+        ]
+      },
+      {
+        "path": "/api/duty/shifts/{date}",
+        "method": "DELETE",
+        "operationId": "clearDutyShift",
+        "summary": "清除这一天(幂等:无排班也返回 cleared=true);仅删该日 duty_shift 行,不触碰周期规则本体(重新应用规则会回填)",
+        "auth": "登录(40100)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "date",
+            "type": "string",
+            "required": true,
+            "bounds": "回显"
+          },
+          {
+            "name": "cleared",
+            "type": "boolean",
+            "required": true,
+            "bounds": "恒 true(幂等)"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40000"
+        ]
+      },
+      {
+        "path": "/api/duty/rule",
+        "method": "GET",
+        "operationId": "getDutyRule",
+        "summary": "当前生效周期规则(批量排班弹层回显/引导文案);无规则返回 active=false 的空壳",
+        "auth": "登录(40100)",
+        "request": [],
+        "response_fields": [
+          {
+            "name": "ruleType",
+            "type": "string",
+            "required": false,
+            "bounds": "daily|on1off1|on2off2|emnr|weekday;无规则 null"
+          },
+          {
+            "name": "startDate",
+            "type": "string",
+            "required": false,
+            "bounds": "yyyy-MM-dd;无规则 null"
+          },
+          {
+            "name": "endDate",
+            "type": "string",
+            "required": false,
+            "bounds": "yyyy-MM-dd;无规则 null"
+          },
+          {
+            "name": "active",
+            "type": "boolean",
+            "required": true,
+            "bounds": "有规则恒 true;无规则 false"
+          },
+          {
+            "name": "appliedDays",
+            "type": "integer",
+            "required": true,
+            "bounds": "最近一次应用填充天数(回显存档)"
+          }
+        ],
+        "error_codes": [
+          "40100"
+        ]
+      },
+      {
+        "path": "/api/duty/rules/apply",
+        "method": "POST",
+        "operationId": "applyDutyRule",
+        "summary": "批量排班:从 startDate 按序列循环填充至 endDate(weekday 类只填命中星期五的日期);范围内已有排班直接覆盖;跨度>365 天截断并 truncated=true;同时 upsert duty_rule 单条生效行",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "ruleType",
+            "type": "string",
+            "required": true,
+            "bounds": "daily|on1off1|on2off2|emnr|weekday;越值域 40000"
+          },
+          {
+            "name": "startDate",
+            "type": "string",
+            "required": true,
+            "bounds": "yyyy-MM-dd;非法 40000"
+          },
+          {
+            "name": "endDate",
+            "type": "string",
+            "required": true,
+            "bounds": "yyyy-MM-dd;早于 startDate 40000;跨度>365 天服务端截断至 365 天"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "ruleType",
+            "type": "string",
+            "required": true,
+            "bounds": "回显"
+          },
+          {
+            "name": "startDate",
+            "type": "string",
+            "required": true,
+            "bounds": "回显(截断时为原值)"
+          },
+          {
+            "name": "endDate",
+            "type": "string",
+            "required": true,
+            "bounds": "实际应用截止日(截断时=startDate+364 天)"
+          },
+          {
+            "name": "appliedDays",
+            "type": "integer",
+            "required": true,
+            "bounds": "实际填充天数(weekday 类只数命中日)"
+          },
+          {
+            "name": "truncated",
+            "type": "boolean",
+            "required": true,
+            "bounds": "true=跨度超 365 天已截断,前端 Toast 提示"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40000"
+        ]
+      },
+      {
+        "path": "/api/duty/remind-config",
+        "method": "PUT",
+        "operationId": "updateDutyRemindConfig",
+        "summary": "提醒设置(弹层保存):时机三选一+开关;保存后前端另行调既有 POST /api/notify/subscribe 登记授权(授权额度走 NotifyService 账本,本端点不触碰)",
+        "auth": "登录(40100)",
+        "request": [
+          {
+            "name": "timing",
+            "type": "string",
+            "required": true,
+            "bounds": "advance_1d|same_day_08|advance_2h;越值域 40000"
+          },
+          {
+            "name": "enabled",
+            "type": "boolean",
+            "required": true,
+            "bounds": "意愿开关"
+          }
+        ],
+        "response_fields": [
+          {
+            "name": "timing",
+            "type": "string",
+            "required": true,
+            "bounds": "回显"
+          },
+          {
+            "name": "enabled",
+            "type": "boolean",
+            "required": true,
+            "bounds": "回显"
+          }
+        ],
+        "error_codes": [
+          "40100",
+          "40000"
+        ]
+      }
+    ],
+    "modified_endpoints": [],
+    "reused_endpoints": [
+      "POST /api/notify/subscribe(值班提醒授权登记,模板维度)",
+      "GET /api/notify/status(授权状态与剩余额度,状态卡弱引导判断)"
+    ],
+    "entities": [
+      {
+        "name": "DutyShift",
+        "table": "duty_shift",
+        "fields": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "bounds": "自增主键"
+          },
+          {
+            "name": "userId",
+            "type": "integer",
+            "required": true,
+            "bounds": "归属用户"
+          },
+          {
+            "name": "dutyDate",
+            "type": "string(yyyy-MM-dd)",
+            "required": true,
+            "bounds": "业务日期"
+          },
+          {
+            "name": "shift",
+            "type": "string",
+            "required": true,
+            "bounds": "early|mid|night|rest"
+          },
+          {
+            "name": "source",
+            "type": "string",
+            "required": true,
+            "bounds": "manual 或 rule:<ruleType>"
+          },
+          {
+            "name": "updatedAt",
+            "type": "string(ISO)",
+            "required": true,
+            "bounds": "最后编辑时间"
+          }
+        ],
+        "states": [
+          "uk(user_id,duty_date) 用户×日期一条"
+        ]
+      },
+      {
+        "name": "DutyRule",
+        "table": "duty_rule",
+        "fields": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "bounds": "自增主键"
+          },
+          {
+            "name": "userId",
+            "type": "integer",
+            "required": true,
+            "bounds": "归属用户"
+          },
+          {
+            "name": "ruleType",
+            "type": "string",
+            "required": true,
+            "bounds": "daily|on1off1|on2off2|emnr|weekday"
+          },
+          {
+            "name": "startDate",
+            "type": "string(yyyy-MM-dd)",
+            "required": true,
+            "bounds": "应用开始日"
+          },
+          {
+            "name": "endDate",
+            "type": "string(yyyy-MM-dd)",
+            "required": true,
+            "bounds": "实际应用截止日(截断后)"
+          },
+          {
+            "name": "active",
+            "type": "boolean",
+            "required": true,
+            "bounds": "有规则恒 true"
+          },
+          {
+            "name": "appliedDays",
+            "type": "integer",
+            "required": true,
+            "bounds": "最近一次应用填充天数存档"
+          },
+          {
+            "name": "updatedAt",
+            "type": "string(ISO)",
+            "required": true,
+            "bounds": "最后编辑时间"
+          }
+        ],
+        "states": [
+          "uk(user_id) 单条生效,重新应用整行覆盖"
+        ]
+      },
+      {
+        "name": "DutyRemind",
+        "table": "duty_remind",
+        "fields": [
+          {
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "bounds": "自增主键"
+          },
+          {
+            "name": "userId",
+            "type": "integer",
+            "required": true,
+            "bounds": "归属用户"
+          },
+          {
+            "name": "timing",
+            "type": "string",
+            "required": true,
+            "bounds": "advance_1d|same_day_08|advance_2h"
+          },
+          {
+            "name": "enabled",
+            "type": "boolean",
+            "required": true,
+            "bounds": "意愿开关"
+          },
+          {
+            "name": "updatedAt",
+            "type": "string(ISO)",
+            "required": true,
+            "bounds": "最后编辑时间"
+          }
+        ],
+        "states": [
+          "uk(user_id)"
+        ]
+      }
+    ],
+    "error_codes": [
+      {
+        "code": "40000",
+        "meaning": "参数错误(date/shift/ruleType/timing 非法或越值域)"
+      },
+      {
+        "code": "40100",
+        "meaning": "未登录或身份失效"
+      }
+    ]
+  },
+  "document": {
+    "approved": true,
+    "quality_gate": "passed",
+    "quality_gate_detail": "PRD P0 全覆盖(§5.1-5.6 六 FR 一一对应);排除项全部显式带去向;实体/端点/错误码草案齐备,无开放阻塞项;两轮用户拍板落档(D1/D2)",
+    "frs": [
+      "FR-D1",
+      "FR-D2",
+      "FR-D3",
+      "FR-D4",
+      "FR-D5",
+      "FR-D6"
+    ],
+    "pages": [
+      {
+        "path": "pages/duty/duty",
+        "tab": "值班(新增第 5 Tab,插第 3 位)",
+        "scope": "新增:①今日状态卡(今日班次/下次值班倒计时/🔔提醒入口)②班次图例(早中夜休)③月历视图(周一首日/翻月/班次色块/今日描边/单日编辑弹层)④本月统计条 ⑤主按钮批量排班(弹层:日期范围+5 预设规则 chip+覆盖二次确认+结果 Toast)"
+      },
+      {
+        "path": "app.json",
+        "tab": "—",
+        "scope": "增量:tabBar 4→5 项(日子/家人/值班/模板馆/我的);pages 增 pages/duty/duty"
+      }
+    ],
+    "non_functional": [
+      "月历无长列表(≤42 格),原生 wxml grid 满足渲染性能",
+      "值班数据仅本人可见(V2 评估家人互看)",
+      "无新增用户采集能力,微信隐私保护指引无需更新",
+      "合规:值班文案零迷信词/零医疗暗示,口语化用「您」"
+    ]
+  }
+}
