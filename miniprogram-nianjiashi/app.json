@@ -34,16 +34,8 @@
         "text": "日子"
       },
       {
-        "pagePath": "pages/family/family",
-        "text": "家人"
-      },
-      {
         "pagePath": "pages/duty/duty",
         "text": "值班"
-      },
-      {
-        "pagePath": "pages/tpl/tpl",
-        "text": "模板馆"
       },
       {
         "pagePath": "pages/me/me",

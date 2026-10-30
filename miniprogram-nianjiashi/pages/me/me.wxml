@@ -23,6 +23,10 @@
   </view>
 
   <view class="me-rows">
+    <view class="mr" bindtap="goTpl">
+      <view class="mr-left"><text class="ic">✨</text>模板馆</view>
+      <view class="mr-right">做张卡片送给家人 ›</view>
+    </view>
     <view class="mr" bindtap="goMyCards">
       <view class="mr-left"><text class="ic">🖼️</text>我的卡片</view>
       <view class="mr-right">{{cardCount}} 张 ›</view>

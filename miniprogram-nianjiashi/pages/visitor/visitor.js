@@ -243,7 +243,7 @@ Page({
 
   /** 空态 → 模板馆 */
   goTpl() {
-    wx.switchTab({ url: '/pages/tpl/tpl' })
+    wx.navigateTo({ url: '/pages/tpl/tpl' })
   },
 
   /**

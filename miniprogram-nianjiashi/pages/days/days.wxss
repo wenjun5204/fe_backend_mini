@@ -15,6 +15,75 @@
 }
 
 /* 最近的日子 hero 卡 */
+
+/* 家人们入口(家人页降级二级页):头像排+摘要+箭头,卡片态与 hero-day 同族 */
+.family-entry {
+  margin: 16rpx 32rpx 0;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 24rpx 28rpx;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  box-shadow: 0 6rpx 30rpx rgba(28, 28, 40, 0.05);
+}
+.family-entry:active {
+  opacity: 0.85;
+}
+.fe-avatars {
+  display: flex;
+  flex-shrink: 0;
+}
+.fe-ava {
+  width: 64rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  border-radius: 50%;
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--grad-sunset);
+  border: 4rpx solid var(--card);
+  box-sizing: border-box;
+  margin-left: -14rpx;
+}
+.fe-ava:first-child {
+  margin-left: 0;
+}
+/* 头像底色轮换,与家人页 member GRADS 同族 */
+.fe-ava:nth-child(2) { background: var(--grad-teal); }
+.fe-ava:nth-child(3) { background: var(--grad-violet); }
+.fe-ava:nth-child(4) { background: var(--grad-sunset); }
+.fe-ava:nth-child(5) { background: var(--grad-teal); }
+.fe-ava-empty {
+  background: var(--bg);
+  color: var(--ink-3);
+  border: 2rpx dashed var(--ink-3);
+}
+.fe-info {
+  flex: 1;
+  min-width: 0;
+}
+.fe-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+.fe-sub {
+  font-size: 24rpx;
+  color: var(--ink-3);
+  margin-top: 4rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fe-arrow {
+  font-size: 40rpx;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+
 .hero-day {
   margin: 24rpx 32rpx 0;
   background: var(--card);

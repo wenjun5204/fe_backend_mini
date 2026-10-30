@@ -1,6 +1,19 @@
 <view class="page-days">
   <view class="greeting">{{greeting}}，<text class="greet-name">{{nickname}}</text> · 再过几天，就有值得庆祝的事</view>
 
+  <!-- 家人们入口(家人页降级二级页后的顶部横幅) -->
+  <view class="family-entry" bindtap="goFamily">
+    <view class="fe-avatars">
+      <view wx:for="{{familyAvatars}}" wx:key="*this" class="fe-ava">{{item}}</view>
+      <view wx:if="{{!familyJoined}}" class="fe-ava fe-ava-empty">＋</view>
+    </view>
+    <view class="fe-info">
+      <view class="fe-title">{{familyJoined ? '家人们' : '邀请家人一起记'}}</view>
+      <view class="fe-sub">{{familyJoined ? familySummary : '家人之间互相看得见重要的日子'}}</view>
+    </view>
+    <view class="fe-arrow">›</view>
+  </view>
+
   <!-- 最近的日子 -->
   <view wx:if="{{hero}}" class="hero-day" bindtap="openDetail" data-id="{{hero.id}}">
     <view class="hd-ava {{hero.gradClass}}">{{hero.emoji}}</view>

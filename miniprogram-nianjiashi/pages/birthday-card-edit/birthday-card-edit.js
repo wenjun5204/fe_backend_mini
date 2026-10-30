@@ -161,7 +161,7 @@ Page(
 
       /* 空态引导:去家人 Tab 发/收藏瞬间 */
       goFamily() {
-        wx.switchTab({ url: '/pages/family/family' })
+        wx.navigateTo({ url: '/pages/family/family' })
       },
 
       backHome() {
