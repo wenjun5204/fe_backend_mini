@@ -1,6 +1,7 @@
 {
   "pages": [
     "pages/days/days",
+    "pages/duty/duty",
     "pages/tpl/tpl",
     "pages/me/me",
     "pages/day-edit/day-edit",
@@ -35,6 +36,10 @@
       {
         "pagePath": "pages/family/family",
         "text": "家人"
+      },
+      {
+        "pagePath": "pages/duty/duty",
+        "text": "值班"
       },
       {
         "pagePath": "pages/tpl/tpl",

@@ -1,0 +1,448 @@
+/**
+ * 值班 Tab 样式(设计 v2.3 §2.2,视觉令牌沿用 app.wxss v2 暖白体系)
+ * 班次配色对齐 PRD §5.1:早=玫红#ff4d6d 中=橙#e8943a 夜=藏蓝#3d4a5c 休=灰#c8cdd3
+ * 适老化:正文≥34rpx,核心信息(状态卡/统计数字)≥44rpx,主按钮高≥88rpx
+ */
+.page {
+  padding: 24rpx 32rpx 200rpx;
+}
+
+/* ---------- ① 今日状态卡 ---------- */
+.today-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 40rpx 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 6rpx 30rpx rgba(28, 28, 40, 0.05);
+}
+.today-date {
+  font-size: 44rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+.today-sub {
+  font-size: 30rpx;
+  color: var(--ink-2);
+  margin-top: 10rpx;
+}
+.next-duty {
+  margin-top: 22rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--rose);
+  background: rgba(255, 77, 109, 0.08);
+  border-radius: 14rpx;
+  padding: 12rpx 20rpx;
+  display: inline-block;
+}
+.remind-entry {
+  text-align: center;
+  flex-shrink: 0;
+  margin-left: 24rpx;
+}
+.remind-bell {
+  font-size: 56rpx;
+}
+.remind-bell.off {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+.remind-text {
+  font-size: 24rpx;
+  color: var(--ink-3);
+  margin-top: 6rpx;
+  font-weight: 600;
+}
+
+/* ---------- ② 班次图例 ---------- */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx 28rpx;
+  padding: 28rpx 12rpx 8rpx;
+}
+.legend-item {
+  font-size: 26rpx;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+.dot {
+  width: 22rpx;
+  height: 22rpx;
+  border-radius: 8rpx;
+}
+.dot-early { background: #ff4d6d; }
+.dot-mid { background: #e8943a; }
+.dot-night { background: #3d4a5c; }
+.dot-rest { background: #c8cdd3; }
+
+/* ---------- ③ 月历视图 ---------- */
+.calendar-card {
+  margin-top: 24rpx;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 28rpx 24rpx 32rpx;
+  box-shadow: 0 6rpx 30rpx rgba(28, 28, 40, 0.05);
+}
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12rpx 20rpx;
+}
+.cal-title {
+  font-size: 38rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+.cal-arrow {
+  width: 88rpx;
+  height: 88rpx;
+  line-height: 84rpx;
+  text-align: center;
+  font-size: 52rpx;
+  color: var(--ink-2);
+  border-radius: 50%;
+}
+.cal-arrow:active {
+  background: var(--line);
+}
+.week-row {
+  display: flex;
+  padding-bottom: 12rpx;
+  border-bottom: 2rpx solid var(--line);
+}
+.week-cell {
+  flex: 1;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--ink-3);
+  font-weight: 700;
+}
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+.cell {
+  width: 14.28%;
+  height: 128rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  box-sizing: border-box;
+  border-radius: 12rpx;
+}
+.cell:active {
+  background: var(--bg);
+}
+.cell-dim {
+  opacity: 0.28;
+}
+.cell-day {
+  font-size: 30rpx;
+  color: var(--ink);
+  font-weight: 600;
+}
+.cell-today {
+  border: 4rpx solid var(--rose);
+  box-sizing: border-box;
+}
+.cell-today .cell-day {
+  color: var(--rose);
+  font-weight: 800;
+}
+/* 班次色块标签:横向单字,颜色即语义 */
+.cell-tag {
+  min-width: 44rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+}
+.tag-early { background: #ff4d6d; }
+.tag-mid { background: #e8943a; }
+.tag-night { background: #3d4a5c; }
+.tag-rest { background: #c8cdd3; color: #55555f; }
+
+.month-loading {
+  padding: 48rpx 0 24rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: var(--ink-3);
+}
+.retry-btn {
+  margin-top: 20rpx;
+  display: inline-block;
+  padding: 10rpx 40rpx;
+  font-size: 28rpx;
+  color: var(--rose);
+  border: 2rpx solid var(--rose);
+  border-radius: 999rpx;
+  line-height: 1.6;
+}
+
+/* ---------- ④ 本月统计条 ---------- */
+.stats-bar {
+  margin-top: 24rpx;
+  background: var(--card);
+  border-radius: var(--radius);
+  display: flex;
+  padding: 28rpx 0;
+  box-shadow: 0 6rpx 30rpx rgba(28, 28, 40, 0.05);
+}
+.stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+.stat + .stat {
+  border-left: 2rpx solid var(--line);
+}
+.stat-num {
+  font-size: 48rpx;
+  font-weight: 800;
+}
+.stat-label {
+  font-size: 26rpx;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+/* ---------- ⑤ 主按钮 ---------- */
+.bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 70%, rgba(251, 250, 247, 0));
+}
+.primary-btn {
+  height: 96rpx;
+  line-height: 96rpx;
+  border-radius: 999rpx;
+  background: var(--grad-sunset);
+  color: #ffffff;
+  font-size: 34rpx;
+  font-weight: 800;
+  text-align: center;
+}
+.primary-btn:active {
+  opacity: 0.88;
+}
+
+/* ---------- 弹层通用 ---------- */
+.page-mask {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  color: var(--ink-3);
+  z-index: 9;
+}
+.sheet-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 28, 40, 0.5);
+  z-index: 10;
+}
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--card);
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 40rpx 36rpx calc(36rpx + env(safe-area-inset-bottom));
+  z-index: 11;
+}
+.sheet-title {
+  font-size: 40rpx;
+  font-weight: 800;
+  color: var(--ink);
+  text-align: center;
+}
+.sheet-sub {
+  font-size: 28rpx;
+  color: var(--ink-3);
+  text-align: center;
+  margin-top: 10rpx;
+}
+.sheet-btn {
+  margin-top: 36rpx;
+}
+.sheet-close {
+  margin-top: 20rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  font-size: 30rpx;
+  color: var(--ink-3);
+  text-align: center;
+}
+.sheet-guide {
+  margin-top: 28rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--ink-3);
+}
+.sheet-note {
+  margin-top: 28rpx;
+  font-size: 26rpx;
+  color: var(--ink-3);
+}
+
+/* ---------- 单日编辑弹层 ---------- */
+.shift-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-top: 36rpx;
+}
+.shift-option {
+  width: calc(50% - 10rpx);
+  border-radius: 18rpx;
+  padding: 26rpx 0;
+  text-align: center;
+  border: 4rpx solid var(--line);
+  box-sizing: border-box;
+}
+.shift-option.active {
+  border-color: var(--ink);
+}
+.shift-option.active .shift-name {
+  color: var(--ink);
+}
+.shift-name {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: var(--ink-2);
+}
+.shift-option.tag-early .shift-name { color: #ff4d6d; }
+.shift-option.tag-mid .shift-name { color: #e8943a; }
+.shift-option.tag-night .shift-name { color: #3d4a5c; }
+.shift-option.tag-rest .shift-name { color: #9a9aa4; }
+.shift-range {
+  font-size: 24rpx;
+  color: var(--ink-3);
+  margin-top: 8rpx;
+}
+.clear-btn {
+  margin-top: 28rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: 999rpx;
+  background: var(--bg);
+  border: 2rpx solid var(--line);
+  color: var(--ink-2);
+  font-size: 30rpx;
+  text-align: center;
+}
+
+/* ---------- 批量排班弹层 ---------- */
+.field {
+  margin-top: 28rpx;
+}
+.field-label {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--ink-2);
+  margin-bottom: 12rpx;
+}
+.picker-value {
+  height: 88rpx;
+  line-height: 88rpx;
+  padding: 0 28rpx;
+  background: var(--bg);
+  border-radius: 16rpx;
+  font-size: 32rpx;
+  color: var(--ink);
+}
+.rule-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+.rule-chip {
+  width: calc(50% - 8rpx);
+  border-radius: 16rpx;
+  border: 4rpx solid var(--line);
+  padding: 20rpx 0;
+  text-align: center;
+  box-sizing: border-box;
+}
+.rule-chip.active {
+  border-color: var(--rose);
+  background: rgba(255, 77, 109, 0.06);
+}
+.rule-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+.rule-desc {
+  font-size: 24rpx;
+  color: var(--ink-3);
+  margin-top: 6rpx;
+}
+
+/* ---------- 提醒设置弹层 ---------- */
+.timing-options {
+  margin-top: 32rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+.timing-option {
+  border-radius: 16rpx;
+  border: 4rpx solid var(--line);
+  padding: 22rpx 28rpx;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+.timing-option.active {
+  border-color: var(--rose);
+  background: rgba(255, 77, 109, 0.06);
+}
+.timing-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+.timing-desc {
+  font-size: 26rpx;
+  color: var(--ink-3);
+}
+.night-hint {
+  margin-top: 24rpx;
+  background: rgba(232, 148, 58, 0.1);
+  color: #b06a20;
+  border-radius: 14rpx;
+  padding: 18rpx 24rpx;
+  font-size: 26rpx;
+}
+.remind-toggle {
+  margin-top: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.toggle-label {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--ink);
+}

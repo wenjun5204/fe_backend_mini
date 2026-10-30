@@ -1,0 +1,158 @@
+<!--
+  值班 Tab(第 5 个 Tab,设计 v2.3 §2.2)
+  ①今日状态卡 ②班次图例 ③月历视图 ④本月统计条 ⑤主按钮批量排班
+  + 单日编辑/批量排班/提醒设置三个弹层(页面内条件渲染,零跳转)
+-->
+<view class="page">
+
+  <!-- ① 今日状态卡 -->
+  <view class="today-card">
+    <view class="today-main">
+      <view class="today-date">{{todayText}}</view>
+      <view class="today-sub">{{todaySub}}</view>
+      <view class="next-duty">{{nextDutyText}}</view>
+    </view>
+    <view class="remind-entry" bindtap="openRemindSheet">
+      <view class="remind-bell {{remindOn ? 'on' : 'off'}}">{{remindOn ? '🔔' : '🔕'}}</view>
+      <view class="remind-text">{{remindOn ? '提醒中' : '提醒未开启'}}</view>
+    </view>
+  </view>
+
+  <!-- ② 班次图例 -->
+  <view class="legend">
+    <view class="legend-item"><view class="dot dot-early"></view>早班 08:00-17:00</view>
+    <view class="legend-item"><view class="dot dot-mid"></view>中班 12:00-24:00</view>
+    <view class="legend-item"><view class="dot dot-night"></view>夜班 20:00-次日08:00</view>
+    <view class="legend-item"><view class="dot dot-rest"></view>休</view>
+  </view>
+
+  <!-- ③ 月历视图 -->
+  <view class="calendar-card">
+    <view class="cal-head">
+      <view class="cal-arrow" bindtap="prevMonth">‹</view>
+      <view class="cal-title">{{monthTitle}}</view>
+      <view class="cal-arrow" bindtap="nextMonth">›</view>
+    </view>
+    <view class="week-row">
+      <view class="week-cell" wx:for="{{weekHeads}}" wx:key="*this">{{item}}</view>
+    </view>
+    <view class="grid" wx:if="{{cells.length}}">
+      <view
+        wx:for="{{cells}}"
+        wx:key="date"
+        class="cell {{item.inMonth ? '' : 'cell-dim'}} {{item.isToday ? 'cell-today' : ''}}"
+        data-cell="{{item}}"
+        bindtap="onCellTap"
+      >
+        <view class="cell-day">{{item.day}}</view>
+        <view wx:if="{{item.tagLabel}}" class="cell-tag {{item.tagClass}}">{{item.tagLabel}}</view>
+      </view>
+    </view>
+    <view class="month-loading" wx:if="{{monthLoading}}">
+      <text>日历加载中…</text>
+      <button class="retry-btn" bindtap="retryMonth">重新加载</button>
+    </view>
+  </view>
+
+  <!-- ④ 本月统计条 -->
+  <view class="stats-bar">
+    <view class="stat"><text class="stat-num num-font" style="color:#ff4d6d">{{stats.early}}</text><text class="stat-label">早班</text></view>
+    <view class="stat"><text class="stat-num num-font" style="color:#e8943a">{{stats.mid}}</text><text class="stat-label">中班</text></view>
+    <view class="stat"><text class="stat-num num-font" style="color:#3d4a5c">{{stats.night}}</text><text class="stat-label">夜班</text></view>
+    <view class="stat"><text class="stat-num num-font" style="color:#9a9aa4">{{stats.rest}}</text><text class="stat-label">休班</text></view>
+  </view>
+
+  <!-- ⑤ 主按钮 -->
+  <view class="bottom-bar">
+    <button class="primary-btn" bindtap="openBatchSheet">{{hasAnyShift ? '批量排班' : '从批量排班开始'}}</button>
+  </view>
+
+  <!-- 首屏 loading -->
+  <view class="page-mask" wx:if="{{loading}}"><text>正在加载您的值班日历…</text></view>
+
+  <!-- ============ 单日编辑弹层 ============ -->
+  <view class="sheet-mask" wx:if="{{daySheet}}" bindtap="closeDaySheet"></view>
+  <view class="sheet" wx:if="{{daySheet}}">
+    <view class="sheet-title">{{daySheet.label}} · 记个班</view>
+    <view class="sheet-sub" wx:if="{{!daySheet.hasShift}}">这一天还没记班</view>
+    <view class="shift-options">
+      <view
+        wx:for="{{daySheet.options}}"
+        wx:key="key"
+        class="shift-option {{item.tagClass}} {{item.active ? 'active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onShiftPick"
+      >
+        <view class="shift-name">{{item.name}}</view>
+        <view class="shift-range">{{item.range}}</view>
+      </view>
+    </view>
+    <button class="clear-btn" wx:if="{{daySheet.hasShift}}" bindtap="onClearDay">清除这一天</button>
+    <view class="sheet-guide">要排一整月?点下方「批量排班」更省事</view>
+    <button class="sheet-close" bindtap="closeDaySheet">先不记了</button>
+  </view>
+
+  <!-- ============ 批量排班弹层 ============ -->
+  <view class="sheet-mask" wx:if="{{batchSheet}}" bindtap="closeBatchSheet"></view>
+  <view class="sheet" wx:if="{{batchSheet}}">
+    <view class="sheet-title">批量排班</view>
+    <view class="sheet-sub">选好日期和规则,一次排完一整段</view>
+    <view class="field">
+      <view class="field-label">开始日期</view>
+      <picker mode="date" value="{{batchSheet.startDate}}" bindchange="onStartDateChange">
+        <view class="picker-value">{{batchSheet.startDate}}</view>
+      </picker>
+    </view>
+    <view class="field">
+      <view class="field-label">截止日期</view>
+      <picker mode="date" value="{{batchSheet.endDate}}" bindchange="onEndDateChange">
+        <view class="picker-value">{{batchSheet.endDate}}</view>
+      </picker>
+    </view>
+    <view class="field">
+      <view class="field-label">排班规则</view>
+      <view class="rule-chips">
+        <view
+          wx:for="{{rules}}"
+          wx:key="type"
+          class="rule-chip {{batchSheet.pickedRule === item.type ? 'active' : ''}}"
+          data-type="{{item.type}}"
+          bindtap="onRulePick"
+        >
+          <view class="rule-name">{{item.name}}</view>
+          <view class="rule-desc">{{item.desc}}</view>
+        </view>
+      </view>
+    </view>
+    <view class="sheet-note">范围内已记过的班会被新规则替换</view>
+    <button class="primary-btn sheet-btn" bindtap="onApplyRule">按这个规则排班</button>
+    <button class="sheet-close" bindtap="closeBatchSheet">先不排了</button>
+  </view>
+
+  <!-- ============ 提醒设置弹层 ============ -->
+  <view class="sheet-mask" wx:if="{{remindSheet}}" bindtap="closeRemindSheet"></view>
+  <view class="sheet" wx:if="{{remindSheet}}">
+    <view class="sheet-title">值班提醒</view>
+    <view class="sheet-sub">上班前提醒您,不忘带东西不迟到</view>
+    <view class="timing-options">
+      <view
+        wx:for="{{timings}}"
+        wx:key="value"
+        class="timing-option {{remindSheet.timing === item.value ? 'active' : ''}}"
+        data-value="{{item.value}}"
+        bindtap="onTimingPick"
+      >
+        <view class="timing-name">{{item.name}}</view>
+        <view class="timing-desc">{{item.desc}}</view>
+      </view>
+    </view>
+    <view class="night-hint" wx:if="{{remindSheet.nightHint}}">您有夜班,建议选「提前 2 小时」,睡醒不会错过</view>
+    <view class="remind-toggle">
+      <text class="toggle-label">开启提醒</text>
+      <switch checked="{{remindSheet.enabled}}" color="#ff4d6d" bindchange="onRemindToggle" />
+    </view>
+    <button class="primary-btn sheet-btn" bindtap="onRemindSave">保存</button>
+    <button class="sheet-close" bindtap="closeRemindSheet">先不设了</button>
+  </view>
+
+</view>
