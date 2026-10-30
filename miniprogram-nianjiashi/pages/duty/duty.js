@@ -141,20 +141,20 @@ Page({
     }
   },
 
-  /** 首屏:状态卡 + 当月/前月/后月 3 并发 */
+  /** 首屏:状态卡 + 当月/前月/后月 3 并发;任一失败不卡死 loading(遮罩会挡住整页点击) */
   refreshAll() {
     const now = new Date()
     const month = fmtMonth(now)
     this.setData({ loading: true, month, monthTitle: monthTitle(month) })
     Promise.all([
-      this.loadToday(),
-      this.loadMonth(month),
-      this.loadMonth(shiftMonth(month, -1)),
-      this.loadMonth(shiftMonth(month, 1)),
+      this.loadToday().catch(() => null),
+      this.loadMonth(month).catch(() => null),
+      this.loadMonth(shiftMonth(month, -1)).catch(() => null),
+      this.loadMonth(shiftMonth(month, 1)).catch(() => null),
     ]).then(() => this.setData({ loading: false }))
   },
 
-  /** 状态卡:今日班次 + 下次值班 + 提醒状态 */
+  /** 状态卡:今日班次 + 下次值班 + 提醒状态;失败给兜底文案(具体报错 toast 由 request 层统一弹) */
   loadToday() {
     return dutyApi.getDutyToday().then((t) => {
       const meta = t.todayShift ? SHIFT_META[t.todayShift] : null
@@ -175,6 +175,13 @@ Page({
         todaySub,
         nextDutyText,
         remindOn: !!(t.remind && t.remind.enabled),
+      })
+    }).catch(() => {
+      // 兜底:状态卡拿不到数据时也给可用的界面,不把整页 loading 卡死
+      this.setData({
+        todayText: '今日班次没读到',
+        todaySub: '稍后再进值班页试试',
+        nextDutyText: '',
       })
     })
   },
