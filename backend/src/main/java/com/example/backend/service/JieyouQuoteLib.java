@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 解忧册宽心话文案库:促成(推一把)/缓行(等一等)/放下(松一松)×40,共 120 条。
- * 全部指向具体行动、口语化、面向中老年,每条 ≤16 字;纯随机下发,不接收不存储任何问题内容。
+ * 全部指向具体行动、口语化、面向大众用户,每条 ≤16 字;纯随机下发,不接收不存储任何问题内容。
  * ⚠️ 合规红线:全量文案启动时过违禁词表断言(JieyouService 启动调用 validate(),测试期另有
  * JieyouQuoteLibTest 扫描),词表见 .agents/docs/conventions.md 含 v1.5 追加词。
  */

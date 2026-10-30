@@ -70,7 +70,7 @@ Page({
       return
     }
     wx.showToast({ title: '这类日子的卡片在模板馆，先去逛逛', icon: 'none', duration: 2200 })
-    setTimeout(() => wx.switchTab({ url: '/pages/tpl/tpl' }), 900)
+    setTimeout(() => wx.navigateTo({ url: '/pages/tpl/tpl' }), 900)
   },
 
   /* 编辑 */

@@ -151,7 +151,7 @@ Page({
 
   /** 空态 → 模板馆 */
   goTpl() {
-    wx.switchTab({ url: '/pages/tpl/tpl' })
+    wx.navigateTo({ url: '/pages/tpl/tpl' })
   },
 
   /** poster 组件 sharecfg 事件:app 级 ensureShareCfg + 页面 data 双落,转发立即可用 */

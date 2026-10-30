@@ -43,6 +43,10 @@ Page({
   },
 
   /** 我的卡片 → 卡片墙 */
+  goTpl() {
+    wx.navigateTo({ url: '/pages/tpl/tpl' })
+  },
+
   goMyCards() {
     wx.navigateTo({ url: '/pages/mycards/mycards' })
   },

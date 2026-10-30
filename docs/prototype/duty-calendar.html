@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>值班 Tab 原型 · 念家时小程序</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+    background: #e8e8e8;
+    display: flex; justify-content: center; align-items: flex-start;
+    min-height: 100vh; padding: 20px 0;
+  }
+  .phone {
+    width: 390px; max-width: 100vw; background: #fbfaf7;
+    min-height: 780px; border-radius: 24px; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,.18); position: relative;
+    display: flex; flex-direction: column;
+  }
+  /* ===== 顶部状态卡 ===== */
+  .hero {
+    background: linear-gradient(135deg, #ff8fa3, #ff4d6d);
+    color: #fff; padding: 28px 20px 24px;
+  }
+  .hero .date { font-size: 13px; opacity: .85; }
+  .hero .today-shift { font-size: 26px; font-weight: 700; margin-top: 6px; letter-spacing: 1px; }
+  .hero .next-shift { margin-top: 10px; font-size: 13px; opacity: .92; display: flex; align-items: center; gap: 6px; }
+  .hero .next-shift .tag { background: rgba(255,255,255,.22); border-radius: 6px; padding: 2px 8px; font-size: 12px; }
+  .hero .btn-remind {
+    position: absolute; top: 24px; right: 18px;
+    background: rgba(255,255,255,.2); border: none; color: #fff;
+    padding: 7px 12px; border-radius: 16px; font-size: 12px; cursor: pointer;
+  }
+  /* ===== 图例 ===== */
+  .legend { display: flex; gap: 10px; padding: 12px 20px 4px; font-size: 11px; color: #888; }
+  .legend span { display: inline-flex; align-items: center; gap: 4px; }
+  .dot { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+  /* ===== 日历 ===== */
+  .card { background: #fff; margin: 10px 12px; border-radius: 14px; padding: 14px 12px; }
+  .cal-head { display: flex; justify-content: space-between; align-items: center; padding: 0 4px 10px; }
+  .cal-head .month { font-size: 15px; font-weight: 600; }
+  .cal-head button { border: none; background: #f2f3f5; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; color: #555; font-size: 14px; }
+  .weekday { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; color: #999; padding-bottom: 6px; }
+  .grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 6px; }
+  .cell { text-align: center; padding: 4px 0; border-radius: 10px; cursor: pointer; position: relative; }
+  .cell:hover { background: #fff0f3; }
+  .cell .num { font-size: 15px; font-weight: 600; color: #333; }
+  .cell.dim .num { color: #ccc; font-weight: 400; }
+  .cell.today { outline: 1.5px solid #ff4d6d; }
+  .cell.today .num { color: #ff4d6d; }
+  .cell .s-tag {
+    margin: 2px auto 0; width: 26px; height: 15px; line-height: 15px;
+    border-radius: 4px; font-size: 10px; color: #fff;
+  }
+  /* 班次配色 */
+  .s-early { background: #ff4d6d; }
+  .s-mid   { background: #e8943a; }
+  .s-night { background: #3d4a5c; }
+  .s-rest  { background: #c8cdd3; color: #fff; }
+  /* ===== 统计条 ===== */
+  .stats { display: flex; gap: 10px; margin: 0 12px; }
+  .stat { flex: 1; background: #fff; border-radius: 12px; padding: 12px; text-align: center; }
+  .stat b { font-size: 18px; color: #ff4d6d; }
+  .stat i { font-style: normal; font-size: 11px; color: #999; display: block; margin-top: 3px; }
+  /* ===== 底部按钮 ===== */
+  .bottom-bar { padding: 12px 12px 20px; margin-top: auto; }
+  .btn-main {
+    width: 100%; border: none; background: #ff4d6d; color: #fff;
+    font-size: 16px; font-weight: 600; padding: 14px; border-radius: 14px; cursor: pointer;
+  }
+  .btn-main:active { opacity: .85; }
+  /* ===== 底部弹层 ===== */
+  .mask { position: absolute; inset: 0; background: rgba(0,0,0,.4); display: none; z-index: 10; }
+  .mask.show { display: block; }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; background: #fff;
+    border-radius: 18px 18px 0 0; padding: 18px 18px 26px; z-index: 11;
+    display: none; animation: up .22s ease;
+  }
+  .sheet.show { display: block; }
+  @keyframes up { from { transform: translateY(40px); opacity: .4; } to { transform: none; opacity: 1; } }
+  .sheet h3 { font-size: 15px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .sheet h3 .close { color: #999; font-weight: 400; cursor: pointer; font-size: 13px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .chip {
+    border: 1px solid #dfe3e6; background: #fff; color: #444;
+    padding: 8px 14px; border-radius: 10px; font-size: 13px; cursor: pointer;
+  }
+  .chip.active { background: #ffe9ee; border-color: #ff4d6d; color: #ff4d6d; font-weight: 600; }
+  .sheet .row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 13px; color: #666; }
+  .sheet input[type="date"], .sheet select {
+    flex: 1; border: 1px solid #dfe3e6; border-radius: 8px; padding: 8px; font-size: 13px; color: #333;
+  }
+  .btn-block { width: 100%; border: none; background: #ff4d6d; color: #fff; font-size: 15px; padding: 12px; border-radius: 12px; cursor: pointer; margin-top: 4px; }
+  .btn-ghost { width: 100%; border: none; background: #f2f3f5; color: #e05656; font-size: 14px; padding: 11px; border-radius: 12px; cursor: pointer; margin-top: 8px; }
+  .tip { font-size: 11px; color: #b0b6bb; margin-top: 10px; line-height: 1.6; }
+  /* ===== Toast ===== */
+  .toast {
+    position: absolute; top: 46%; left: 50%; transform: translate(-50%,-50%);
+    background: rgba(0,0,0,.75); color: #fff; padding: 10px 18px;
+    border-radius: 10px; font-size: 13px; z-index: 20; display: none; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+<div class="phone">
+  <!-- 顶部 -->
+  <div class="hero" style="position:relative">
+    <div class="date" id="heroDate">2026年10月30日 · 周五</div>
+    <div class="today-shift" id="heroShift">今日休班</div>
+    <div class="next-shift" id="heroNext"></div>
+    <button class="btn-remind" onclick="openSheet('remindSheet')">🔔 提醒</button>
+  </div>
+
+  <!-- 图例 -->
+  <div class="legend">
+    <span><i class="dot s-early"></i>早班</span>
+    <span><i class="dot s-mid"></i>中班</span>
+    <span><i class="dot s-night"></i>夜班</span>
+    <span><i class="dot s-rest"></i>休</span>
+    <span style="margin-left:auto;color:#bbb">点击日期可编辑</span>
+  </div>
+
+  <!-- 日历 -->
+  <div class="card">
+    <div class="cal-head">
+      <button onclick="moveMonth(-1)">‹</button>
+      <div class="month" id="monthLabel">2026年10月</div>
+      <button onclick="moveMonth(1)">›</button>
+    </div>
+    <div class="weekday"><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div><div>日</div></div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <!-- 统计 -->
+  <div class="stats">
+    <div class="stat"><b id="statEarly">0</b><i>本月早班</i></div>
+    <div class="stat"><b id="statNight">0</b><i>本月夜班</i></div>
+    <div class="stat"><b id="statRest">0</b><i>本月休班</i></div>
+  </div>
+
+  <div class="bottom-bar"><button class="btn-main" onclick="openBatch()">📅 批量排班 / 周期规则</button></div>
+
+  <!-- 单日编辑 -->
+  <div class="mask" id="mask" onclick="closeAll()"></div>
+  <div class="sheet" id="daySheet">
+    <h3><span id="daySheetTitle">设置班次</span><span class="close" onclick="closeAll()">关闭 ✕</span></h3>
+    <div class="chips" id="dayChips">
+      <div class="chip" data-s="early">☀️ 早班 08:00-17:00</div>
+      <div class="chip" data-s="mid">🌤 中班 12:00-00:00</div>
+      <div class="chip" data-s="night">🌙 夜班 20:00-08:00</div>
+      <div class="chip" data-s="rest">🏠 休</div>
+    </div>
+    <button class="btn-ghost" onclick="clearDay()">清除这一天</button>
+    <div class="tip">想从这天开始循环排班？用底部「批量排班 / 周期规则」。</div>
+  </div>
+
+  <!-- 批量排班 -->
+  <div class="sheet" id="batchSheet">
+    <h3><span>批量排班 · 周期规则</span><span class="close" onclick="closeAll()">关闭 ✕</span></h3>
+    <div class="row"><span>开始日期</span><input type="date" id="batchStart"></div>
+    <div class="row"><span>截止日期</span><input type="date" id="batchEnd"></div>
+    <div class="chips" id="ruleChips">
+      <div class="chip active" data-r="daily">每天早班</div>
+      <div class="chip" data-r="on1off1">做一休一</div>
+      <div class="chip" data-r="on2off2">做二休二</div>
+      <div class="chip" data-r="emnr">早→中→夜→休</div>
+      <div class="chip" data-r="fri">每周五值班</div>
+    </div>
+    <button class="btn-block" onclick="applyRule()">应用到日历</button>
+    <div class="tip">规则会从开始日期循环填充到截止日期，已有的排班会被覆盖。原型演示：数据仅存于当前页面。</div>
+  </div>
+
+  <!-- 提醒设置 -->
+  <div class="sheet" id="remindSheet">
+    <h3><span>值班提醒</span><span class="close" onclick="closeAll()">关闭 ✕</span></h3>
+    <div class="chips" id="remindChips">
+      <div class="chip active">提前1天 12:00</div>
+      <div class="chip">当天 08:00</div>
+      <div class="chip">提前2小时</div>
+    </div>
+    <button class="btn-block" onclick="closeAll();toast('提醒已保存 ✓')">保存</button>
+    <div class="tip">上线后通过微信订阅消息推送，夜班建议用「提前2小时」。</div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const SHIFTS = {
+  early: { short: '早', full: '早班', cls: 's-early' },
+  mid:   { short: '中', full: '中班', cls: 's-mid' },
+  night: { short: '夜', full: '夜班', cls: 's-night' },
+  rest:  { short: '休', full: '休',   cls: 's-rest' },
+};
+const RULES = {
+  daily:  { label: '每天早班', seq: ['early'] },
+  on1off1:{ label: '做一休一', seq: ['early','rest'] },
+  on2off2:{ label: '做二休二', seq: ['early','early','rest','rest'] },
+  emnr:   { label: '早中夜休', seq: ['early','mid','night','rest'] },
+  fri:    { label: '每周五值班', weekday: 5, shift: 'early' },
+};
+// 演示预置数据：做一休一
+const state = { shifts: {}, month: new Date(2026, 9, 1), rule: 'daily', pickDate: null };
+(function seed() {
+  const d = new Date(2026, 9, 1);
+  for (let i = 0; i < 31; i++) {
+    const k = fmt(d);
+    state.shifts[k] = (i % 2 === 0) ? 'early' : 'rest';
+    d.setDate(d.getDate() + 1);
+  }
+})();
+function fmt(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+
+function render() {
+  const y = state.month.getFullYear(), m = state.month.getMonth();
+  document.getElementById('monthLabel').textContent = y + '年' + (m+1) + '月';
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  const first = new Date(y, m, 1);
+  let offset = (first.getDay() + 6) % 7; // 周一开头
+  const days = new Date(y, m+1, 0).getDate();
+  const todayKey = '2026-10-30';
+  for (let i = 0; i < offset; i++) grid.insertAdjacentHTML('beforeend', '<div class="cell dim"></div>');
+  let cEarly = 0, cNight = 0, cRest = 0;
+  for (let d = 1; d <= days; d++) {
+    const key = fmt(new Date(y, m, d));
+    const s = state.shifts[key];
+    if (s === 'early') cEarly++; if (s === 'night') cNight++; if (s === 'rest') cRest++;
+    const tag = s ? '<div class="s-tag ' + SHIFTS[s].cls + '">' + SHIFTS[s].short + '</div>' : '<div style="height:15px"></div>';
+    grid.insertAdjacentHTML('beforeend',
+      '<div class="cell' + (key === todayKey ? ' today' : '') + '" onclick="openDay(\'' + key + '\')">' +
+      '<div class="num">' + d + '</div>' + tag + '</div>');
+  }
+  document.getElementById('statEarly').textContent = cEarly;
+  document.getElementById('statNight').textContent = cNight;
+  document.getElementById('statRest').textContent = cRest;
+  renderHero();
+}
+function renderHero() {
+  const todayKey = '2026-10-30';
+  const t = state.shifts[todayKey];
+  document.getElementById('heroShift').textContent = t ? '今日' + (t === 'rest' ? '休班 😴' : SHIFTS[t].full) : '今日无排班';
+  document.getElementById('heroDate').textContent = '2026年10月30日 · 周五';
+  // 下次值班倒计时
+  let next = null;
+  for (let i = 1; i <= 60; i++) {
+    const d = new Date(2026, 9, 30 + i);
+    const s = state.shifts[fmt(d)];
+    if (s && s !== 'rest') { next = { d, s }; break; }
+  }
+  document.getElementById('heroNext').innerHTML = next
+    ? '距下次值班还有 <span class="tag">' + Math.round((next.d - new Date(2026,9,30))/864e5) + ' 天</span> ' + fmt(next.d) + ' ' + SHIFTS[next.s].full
+    : '近期暂无值班安排';
+}
+function moveMonth(n) { state.month.setMonth(state.month.getMonth() + n); render(); }
+
+/* ---- 弹层 ---- */
+function show(id) {
+  document.getElementById('mask').classList.add('show');
+  document.getElementById(id).classList.add('show');
+}
+function closeAll() {
+  document.getElementById('mask').classList.remove('show');
+  document.querySelectorAll('.sheet').forEach(s => s.classList.remove('show'));
+}
+function openDay(key) {
+  state.pickDate = key;
+  document.getElementById('daySheetTitle').textContent = key + ' · 设置班次';
+  document.querySelectorAll('#dayChips .chip').forEach(c => {
+    c.classList.toggle('active', state.shifts[key] === c.dataset.s);
+    c.onclick = () => {
+      state.shifts[key] = c.dataset.s; closeAll(); render();
+      toast(key + ' 已设为 ' + SHIFTS[c.dataset.s].full);
+    };
+  });
+  show('daySheet');
+}
+function clearDay() { delete state.shifts[state.pickDate]; closeAll(); render(); toast('已清除'); }
+
+function openBatch() {
+  document.getElementById('batchStart').value = '2026-11-01';
+  document.getElementById('batchEnd').value = '2026-11-30';
+  show('batchSheet');
+}
+document.querySelectorAll('#ruleChips .chip').forEach(c => c.onclick = () => {
+  document.querySelectorAll('#ruleChips .chip').forEach(x => x.classList.remove('active'));
+  c.classList.add('active'); state.rule = c.dataset.r;
+});
+function applyRule() {
+  const rule = RULES[state.rule];
+  const start = new Date(document.getElementById('batchStart').value + 'T00:00:00');
+  const end = new Date(document.getElementById('batchEnd').value + 'T00:00:00');
+  if (isNaN(start) || isNaN(end) || start > end) { toast('请检查日期范围'); return; }
+  let i = 0, count = 0;
+  for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    let s = null;
+    if (rule.weekday !== undefined) { if (d.getDay() === rule.weekday) s = rule.shift; }
+    else { s = rule.seq[i % rule.seq.length]; i++; }
+    if (s) { state.shifts[fmt(d)] = s; count++; }
+  }
+  closeAll(); render();
+  toast('已按「' + rule.label + '」排 ' + count + ' 天 ✓');
+}
+document.querySelectorAll('#remindChips .chip').forEach(c => c.onclick = () => {
+  document.querySelectorAll('#remindChips .chip').forEach(x => x.classList.remove('active'));
+  c.classList.add('active');
+});
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 1600);
+}
+render();
+</script>
+</body>
+</html>

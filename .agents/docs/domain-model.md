@@ -1,95 +1,116 @@
 # 领域模型
 
-## 核心实体
+> 对齐契约 v1.9.0 与 27 个实体（2026-10-30）。双引擎：日子管家 × 值班日历。
+> v1「福签/福值」体系仍在库中（旧前端归档），新迭代不得扩展该体系。
 
-### Family（家族）
+## 一、日子引擎（v2.0+，主引擎之一）
 
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| id | Long | 主键 |
-| name | String(10) | 家族名，默认生成如「王家庄」，可改 |
-| inviteCode | String | 邀请码，分享卡片携带，进家凭证 |
-| ownerUserId | Long | 户主（创建者） |
-| totalBless | Long | 家族福池累计值（只增不减） |
-| plateLevel | Enum | 门牌等级：NONE/BRONZE(勤俭之家)/SILVER(和睦之家)/GOLD(满门福气)/JADE(福泽满堂) |
-| memberLimit | Integer | 上限 8 人 |
-
-规则：MVP 每人限加入 1 个家族；无踢人。家族名默认「{昵称前两字}家」。
-（退出/转让/解散属破坏性操作，当前未实现，UI 入口已隐藏——见「家庭关系操作」）
-
-### FamilyMember（家族成员）
+### DayRecord（日子记录）
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | id | Long | 主键 |
-| familyId | Long | 所属家族 |
-| userId | Long | 关联用户 |
-| role | Enum | 户主 / 成员（家庭称谓标签存 remark：儿子/孙子等，用户自选，不做强校验） |
-| personalBless | Long | 个人福值累计 |
-| joinedAt | DateTime | 入家时间 |
+| userId | Long | 归属（可见性 SELF/FAMILY） |
+| name | String | 日子名（如「妈妈的生日」） |
+| kind | Enum | BIRTHDAY / ANNIVERSARY / TOGETHER |
+| calendarType | Enum | SOLAR / LUNAR（农历生日经 `/api/calendar/convert` 算公历落点） |
+| month / day | Integer | 月日 |
+| year | Integer | 可空；TOGETHER 起始年、ANNIVERSARY 周年计算基数 |
+| relationText | String | 自由关系文本（「妈妈」「我们俩」） |
+| emoji | String | 展示图标 |
+| visibility | Enum | SELF 仅自己 / FAMILY 家人可见 |
 
-### User（用户）
+规则：BIRTHDAY 不输出年龄（隐私）；ANNIVERSARY 输出周年称谓（1 纸婚…40 红宝石…60 钻石，
+静态库按 year 差计算）；TOGETHER 输出在一起天数。
 
-微信登录：openid 由云托管平台从 `X-WX-OPENID` 头静默注入（不弹窗、无高敏授权）；
-存 openid、昵称、头像、pendant（头像挂件，见下）；昵称为系统随机生成（福友XXXX），头像字段预留未启用——
-产品名已定为「别点这个签」。
+### DayReminder（按人提醒配置）
 
-### 挂件与奖状（v1.5.1，达标解锁制）
+DayRecord × 提醒天数偏移（默认提前 3 天）；到期清单 `/api/days/reminder-due`。
 
-- 挂件 6 款：竹叶 BAMBOO(新人礼,默认解锁) / 火焰 FLAME(连续接福≥7天) / 灯笼 LANTERN(个人福值≥200) /
-  锦鲤 KOI(个人福值≥1000) / 八卦 BAGUA(点亮≥4卦) / 福包 FUBAO(八卦圆满)。
-- **不消耗福值**（与「福值只涨不跌」一致），佩戴持久化于 UserEntity.pendant，成员列表透传（家人可见）。
-- 解锁校验在服务端（POST /api/me/pendant），客户端预推导仅作展示；未达标返回 40900。
-- 奖状墙 11 张（身份/火焰/福值/门牌/卦数）纯前端推导，无服务端存储。
+## 二、值班引擎（v2.3，主引擎之二）
 
-### 家庭关系操作（入口已隐藏）
-
-退出家庭 / 转让户主 / 解散家庭为破坏性不可逆操作，后端无对应接口；
-设置弹层中入口已隐藏（功能上线前不做占位假按钮）。
-
-### DailyFortuneCard（每日福签，按家族生成）
+### DutyShift（排班记录，用户 × 日期一条）
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | id | Long | 主键 |
-| familyId | Long | 所属家族 |
-| date | Date | 日期（一个家族一天一条 → 全家同签） |
-| level | Enum | 平安(70%) / 如意(25%) / 鸿福(5%)，纯稀有度玩法 |
-| yiItems | String(JSON) | 「今日宜」条目 2-3 项，从生活化任务库抽取（散步/多喝水/早睡/给家人打电话/泡脚） |
-| blessText | String | 祝福语，从文案库抽取 |
+| userId | Long | 归属（仅本人可见） |
+| dutyDate | LocalDate | 业务日期；uk(user_id, duty_date) |
+| shift | String | early 早 / mid 中 / night 夜 / rest 休（服务层校验值域） |
+| source | String | manual 或 rule:<ruleType>（存档用） |
 
-规则：等级不影响福值倍率；「宜」条目永不出现「忌」类内容。
+### DutyRule（周期规则，用户级单条生效）
 
-### BlessEvent（福值事件，唯一福值变更路径）
+ruleType：daily[早] / on1off1[早,休] / on2off2[早,早,休,休] / emnr[早,中,夜,休] / weekday(周五→早)。
+uk(user_id)；重新应用整行覆盖；序列规则填充范围内每一天（含休班），weekday 只填命中日；
+跨度 >365 天截断；删除单日/范围清除均不触碰规则本体（重新应用回填）。
 
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| id | Long | 主键 |
-| userId / familyId | Long | 归属 |
-| type | Enum | DRAW_CARD(+5, 1次/天) / SHARE_CARD(+10) / TASK_DONE(+15) / TIAN_FU(+8, 每人每天对每位家人1次) / INVITE_JOIN(+30) / FAMILY_STREAK_7D(+50) |
-| amount | Integer | 正整数，只增不减 |
-| createdAt | DateTime | 审计用 |
+### DutyRemind（提醒配置，用户级一条）
 
-### FortuneDrawRecord（抽签记录）
+timing：advance_1d(提前1天12:00,默认) / same_day_08(当天08:00) / advance_2h(提前2小时)；
+enabled 意愿开关。真实 subscribeMessage.send 不做——授权额度走 NotifyGrant 账本（部署联调演进项）。
 
-用户 × 日期 × 家族，唯一约束；记录当日是否已抽、是否已分享、任务是否已完成（各一次性）。
+**下次值班口径**：从明天起 60 天内最近非「休」班次日（今天不参与倒计时）。
 
-## 关键状态流转
+## 三、家族与家人（v1 基座 + v2.2 家人空间）
 
-```
-用户当日状态: 未抽签 → 已抽签 → (已分享? 已完成任务?)
-                └─ 催福提醒只能发给「未抽签」成员
-门牌: NONE → 500 BRONZE → 2000 SILVER → 5000 GOLD → 20000 JADE（只升不降）
-```
+### Family / FamilyMember
+
+每人限 1 家族，上限 8 人；inviteCode 进家凭证；户主/成员两角色。
+退出/转让/解散未实现（破坏性操作，入口隐藏）。
+福池 totalBless 与门牌等级为 v1 遗产字段，随旧前端归档不再演进。
+
+### FamilyMoment（家人瞬间）+ MomentLike / MomentCollect
+
+照片+一句话时间线；真好（每人对每条限 1 次，uk）；收藏进日子（仅 BIRTHDAY 日子，
+形成生日福卡素材池，全家人收藏共享可见）；删除仅本人（隐私红线），照片联动失效。
+
+### PhotoAsset（照片管道）
+
+photoId（16-20 位 base62 高熵串=capability URL）/scene(MOMENT|CAPSULE)/BLOB 存储
+（解码后 ≤500KB，每日 ≤20 张）/status(ORPHAN→ACTIVE→DELETED，>48h GC)。
+
+## 四、表达层（模板馆引擎 v2.1）
+
+### MadeCard（定稿卡片）
+
+templateKind：LETTER 感恩信 / DAYS_CARD 相伴天数卡 / CAPSULE 时光胶囊 / BIRTHDAY_CARD 生日福卡；
+status ACTIVE/SOFT_DELETED；shareScene 场景码幂等签发；访客 3 心解锁链路。
+生日福卡**无当天门控**（随时可生成，用户裁定）。
+
+### TimeCapsule（时光胶囊）
+
+封存（可附 photoId）→ 到期开箱（幂等，40900 未到期）。
+
+### LetterGenerateQuota（感恩信 AI 额度）
+
+每日每人 ≤5 次（AI 与降级路径统一计数）；AI 关闭时全走 FALLBACK 文案库。
+
+## 五、节日与通知
+
+### FestivalReservation（节日/上线预约）
+
+uk(user_id, template_key) 幂等登记；0-7 天到期清单（模板馆横滑数据源）；
+真实推送下发排除（同 NotifyService 口径）。
+
+### NotifyGrant / NotifySend（订阅消息额度账本）
+
+remainingQuotaToday = 累计接受授权数 − 当日已发送数，下限 0；每日上限 4 条。
+**只记账不发消息**——真实发送是部署联调阶段演进项（duty 提醒同口径）。
+
+### VisitorUnlock（访客解锁）
+
+免鉴权组 `/api/visitor/*`；3 心解锁隐藏内容；点亮心软频控 42900（单设备单卡 >3 次/分钟）。
+
+## 六、v1 遗产（已停止演进，仅维护）
+
+Family 福池/门牌、DailyFortuneCard 每日福签（全家同签，平安70/如意25/鸿福5）、
+BlessEvent 福值事件（唯一福值变更路径，只增不减）、FortuneDrawRecord 抽签记录、
+Bagua 八卦进度（只读推导）、Jieyou 解忧册（宽心话纯随机）、挂件/奖状。
+**红线延续**：福值永不惩罚用户；迷信词禁用表继续对全部用户可见文案生效。
 
 ## 频控规则（service 层强制）
 
-- 抽签：1 次/人/天
-- 催福：3 次/人/对人/天
-- 添福：1 次/人/对人/天
-- 订阅消息：≤ 4 条/人/天（聚合推送）
-
-## 排行榜口径
-
-- 家内榜：本周（周一 0 点起）成员 BlessEvent 汇总
-- 好友家族榜：好友关系内家族 totalBless 对比（微信好友关系，MVP 可用双方互关家族模拟）
+- 抽签：1 次/人/天（v1）；催福：3 次/人/对人/天（v1）
+- 瞬间发布：10 条/人/天；照片上传：20 张/人/天；感恩信生成：5 次/人/天
+- 订阅消息：≤4 条/人/天（聚合推送）；访客点亮心：单设备单卡 >3 次/分钟 → 42900

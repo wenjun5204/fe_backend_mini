@@ -1,0 +1,560 @@
+/**
+ * 值班 Tab 样式(设计 v2.3 §2.2,视觉令牌沿用 app.wxss v2 暖白体系)
+ * 班次配色对齐 PRD §5.1:早=玫红#ff4d6d 中=橙#e8943a 夜=藏蓝#3d4a5c 休=灰#c8cdd3
+ * 可读性基准:正文≥34rpx,核心信息(状态卡/统计数字)≥44rpx,主按钮高≥88rpx
+ */
+.page {
+  padding: 24rpx 32rpx 200rpx;
+}
+
+/* ---------- ① 今日状态卡 ---------- */
+.today-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 40rpx 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 6rpx 30rpx rgba(28, 28, 40, 0.05);
+}
+.today-date {
+  font-size: 44rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+.today-sub {
+  font-size: 30rpx;
+  color: var(--ink-2);
+  margin-top: 10rpx;
+}
+.next-duty {
+  margin-top: 22rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--rose);
+  background: rgba(255, 77, 109, 0.08);
+  border-radius: 14rpx;
+  padding: 12rpx 20rpx;
+  display: inline-block;
+}
+.remind-entry {
+  text-align: center;
+  flex-shrink: 0;
+  margin-left: 24rpx;
+}
+.remind-bell {
+  font-size: 56rpx;
+}
+.remind-bell.off {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+.remind-text {
+  font-size: 24rpx;
+  color: var(--ink-3);
+  margin-top: 6rpx;
+  font-weight: 600;
+}
+
+/* ---------- ② 班次图例 ---------- */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx 28rpx;
+  padding: 28rpx 12rpx 8rpx;
+}
+.legend-item {
+  font-size: 26rpx;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+.dot {
+  width: 22rpx;
+  height: 22rpx;
+  border-radius: 8rpx;
+}
+.dot-early { background: #ff4d6d; }
+.dot-mid { background: #e8943a; }
+.dot-night { background: #3d4a5c; }
+.dot-rest { background: #c8cdd3; }
+
+/* ---------- ③ 月历视图 ---------- */
+.calendar-card {
+  margin-top: 24rpx;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 28rpx 24rpx 32rpx;
+  box-shadow: 0 6rpx 30rpx rgba(28, 28, 40, 0.05);
+}
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12rpx 20rpx;
+}
+.cal-title {
+  font-size: 38rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+.cal-arrow {
+  width: 88rpx;
+  height: 88rpx;
+  line-height: 84rpx;
+  text-align: center;
+  font-size: 52rpx;
+  color: var(--ink-2);
+  border-radius: 50%;
+}
+.cal-arrow:active {
+  background: var(--line);
+}
+.week-row {
+  display: flex;
+  padding-bottom: 12rpx;
+  border-bottom: 2rpx solid var(--line);
+}
+.week-cell {
+  flex: 1;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--ink-3);
+  font-weight: 700;
+}
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+.cell {
+  width: 14.28%;
+  height: 128rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  box-sizing: border-box;
+  border-radius: 12rpx;
+}
+.cell:active {
+  background: var(--bg);
+}
+.cell-dim {
+  opacity: 0.28;
+}
+.cell-day {
+  font-size: 30rpx;
+  color: var(--ink);
+  font-weight: 600;
+}
+.cell-today {
+  border: 4rpx solid var(--rose);
+  box-sizing: border-box;
+}
+.cell-today .cell-day {
+  color: var(--rose);
+  font-weight: 800;
+}
+/* 班次色块标签:横向单字,颜色即语义 */
+.cell-tag {
+  min-width: 44rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+}
+.tag-early { background: #ff4d6d; }
+.tag-mid { background: #e8943a; }
+.tag-night { background: #3d4a5c; }
+.tag-rest { background: #c8cdd3; color: #55555f; }
+
+.month-loading {
+  padding: 48rpx 0 24rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: var(--ink-3);
+}
+.retry-btn {
+  margin-top: 20rpx;
+  display: inline-block;
+  padding: 10rpx 40rpx;
+  font-size: 28rpx;
+  color: var(--rose);
+  border: 2rpx solid var(--rose);
+  border-radius: 999rpx;
+  line-height: 1.6;
+}
+
+/* ---------- ④ 本月统计条 ---------- */
+.stats-bar {
+  margin-top: 24rpx;
+  background: var(--card);
+  border-radius: var(--radius);
+  display: flex;
+  padding: 28rpx 0;
+  box-shadow: 0 6rpx 30rpx rgba(28, 28, 40, 0.05);
+}
+.stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+.stat + .stat {
+  border-left: 2rpx solid var(--line);
+}
+.stat-num {
+  font-size: 48rpx;
+  font-weight: 800;
+}
+.stat-label {
+  font-size: 26rpx;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+/* ---------- ⑤ 主按钮 ---------- */
+.bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 70%, rgba(251, 250, 247, 0));
+}
+.primary-btn {
+  height: 96rpx;
+  line-height: 96rpx;
+  border-radius: 999rpx;
+  background: var(--grad-sunset);
+  color: #ffffff;
+  font-size: 34rpx;
+  font-weight: 800;
+  text-align: center;
+}
+.primary-btn:active {
+  opacity: 0.88;
+}
+
+/* ---------- 弹层通用 ---------- */
+.page-mask {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  color: var(--ink-3);
+  z-index: 9;
+}
+.duty-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 28, 40, 0.5);
+  z-index: 10;
+}
+.duty-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--card);
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 32rpx 36rpx 5rpx;
+  z-index: 11;
+  max-height: 70vh;              /* 半屏弹层:内容再多也不超过七成屏高 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* 弹层标题区固定,内容超长时仅中间滚动,主操作按钮始终可见 */
+.duty-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: calc(70vh - 240rpx); /* 70vh 减去标题+按钮区的估算高度 */
+}
+.duty-title {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: var(--ink);
+  text-align: center;
+}
+.sheet-sub {
+  font-size: 28rpx;
+  color: var(--ink-3);
+  text-align: center;
+  margin-top: 10rpx;
+}
+.sheet-btn {
+  margin-top: 32rpx;
+  width: 100%;
+  box-shadow: 0 12rpx 32rpx rgba(255, 77, 109, 0.24);
+}
+.sheet-btn:active {
+  transform: scale(0.98);
+}
+.sheet-close {
+  margin-top: 4rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: var(--ink-3);
+  text-align: center;
+}
+.sheet-close:active {
+  opacity: 0.55;
+}
+/* 底部按钮行:主按钮占大头,次按钮描边胶囊;与主按钮 96rpx 等高对齐 */
+.sheet-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 28rpx;
+  align-items: stretch;
+}
+.sheet-actions .sheet-btn {
+  margin-top: 0;
+  flex: 1.7;
+}
+.sheet-actions .sheet-close {
+  margin-top: 0;
+  flex: 1;
+  height: 96rpx;
+  line-height: 92rpx; /* 96 减上下 2rpx 边框 */
+  box-sizing: border-box;
+  background: var(--bg);
+  border: 2rpx solid var(--line);
+  border-radius: 999rpx;
+}
+/* 弹层只有一个动作时的整行关闭按钮(如未记班日的单日弹层) */
+.sheet-close.standalone {
+  margin-top: 24rpx;
+}
+.sheet-guide {
+  margin-top: 28rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--ink-3);
+}
+/* 底部说明行:左提示右撤销链接,两端对齐轻量化 */
+.sheet-foot {
+  margin-top: 24rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 24rpx;
+  color: var(--ink-3);
+}
+.range-clear {
+  font-weight: 600;
+  color: #c0564a;
+}
+.range-clear:active {
+  opacity: 0.55;
+}
+
+/* ---------- 单日编辑弹层 ---------- */
+.shift-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-top: 28rpx;
+}
+.shift-option {
+  width: calc(50% - 10rpx);
+  border-radius: 20rpx;
+  padding: 30rpx 0;
+  text-align: center;
+  border: 2rpx solid var(--line);
+  box-sizing: border-box;
+}
+.shift-option.active {
+  border-color: var(--rose);
+  background: rgba(255, 77, 109, 0.05);
+}
+.shift-name {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: var(--ink-2);
+}
+.shift-option.tag-early .shift-name { color: #ff4d6d; }
+.shift-option.tag-mid .shift-name { color: #e8943a; }
+.shift-option.tag-night .shift-name { color: #3d4a5c; }
+.shift-option.tag-rest .shift-name { color: #9a9aa4; }
+.shift-range {
+  font-size: 24rpx;
+  color: var(--ink-3);
+  margin-top: 8rpx;
+}
+
+/* ---------- 批量排班弹层 ---------- */
+.picker-value {
+  height: 88rpx;
+  line-height: 84rpx;
+  padding: 0 24rpx;
+  background: var(--bg);
+  border: 2rpx solid var(--line);
+  border-radius: 16rpx;
+  font-size: 30rpx;
+  color: var(--ink);
+  box-sizing: border-box;
+}
+/* 一行式起止范围:开始日期 · 排到 · 截止日期 */
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+.range-row picker {
+  flex: 1;
+  min-width: 0;
+}
+.range-row .picker-value {
+  padding: 0 16rpx;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.range-to {
+  font-size: 26rpx;
+  color: var(--ink-3);
+  flex-shrink: 0;
+  font-weight: 600;
+}
+/* 时长快捷 chip:点选自动算截止日 */
+/* 时长快捷:文字链式一行,弱于日期行(主次分明) */
+.span-row {
+  display: flex;
+  align-items: center;
+  gap: 26rpx;
+  margin-top: 20rpx;
+  padding-left: 8rpx;
+}
+.span-hint {
+  font-size: 24rpx;
+  color: var(--ink-3);
+}
+.span-link {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--ink-2);
+  padding: 6rpx 0;
+}
+.span-link.active {
+  color: var(--rose);
+  border-bottom: 4rpx solid var(--rose);
+}
+/* 规则单行选项:左侧名称+说明,右侧循环序列色块点预览(选中前即知排出来什么样) */
+/* 规则列表:细分隔线行,选中行浅玫瑰底+右端圆点标记(去卡片框,最轻) */
+.rule-list {
+  margin-top: 30rpx;
+}
+.rule-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 26rpx 20rpx;
+  border-bottom: 2rpx solid var(--line);
+}
+.rule-chip:last-child {
+  border-bottom: none;
+}
+.rule-chip.active {
+  background: rgba(255, 77, 109, 0.05);
+  border-radius: 14rpx;
+  border-bottom-color: transparent;
+  margin: 0 -8rpx;
+  padding: 26rpx 28rpx;
+}
+.rule-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+.rule-chip.active .rule-name {
+  color: var(--rose);
+  font-weight: 700;
+}
+/* 序列预览:色块点与月历标签同色系,一眼对应 */
+.rule-seq {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  flex-shrink: 0;
+}
+.seq-dot {
+  min-width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  padding: 0 4rpx;
+  border-radius: 9rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+}
+.seq-dot.seq-early { background: #ff4d6d; }
+.seq-dot.seq-mid { background: #e8943a; }
+.seq-dot.seq-night { background: #3d4a5c; }
+.seq-dot.seq-rest { background: #c8cdd3; color: #55555f; }
+.seq-more {
+  font-size: 20rpx;
+  color: var(--ink-3);
+  margin-left: 2rpx;
+}
+
+/* ---------- 提醒设置弹层 ---------- */
+.timing-options {
+  margin-top: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+.timing-option {
+  border-radius: 16rpx;
+  border: 4rpx solid var(--line);
+  padding: 22rpx 28rpx;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+.timing-option.active {
+  border-color: var(--rose);
+  background: rgba(255, 77, 109, 0.06);
+}
+.timing-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+.timing-desc {
+  font-size: 26rpx;
+  color: var(--ink-3);
+}
+.night-hint {
+  margin-top: 24rpx;
+  background: rgba(232, 148, 58, 0.1);
+  color: #b06a20;
+  border-radius: 14rpx;
+  padding: 18rpx 24rpx;
+  font-size: 26rpx;
+}
+.remind-toggle {
+  margin-top: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.toggle-label {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--ink);
+}

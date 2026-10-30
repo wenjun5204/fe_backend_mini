@@ -53,7 +53,7 @@
 1. **真机自验**（用户）：微信开发者工具导入 miniprogram-nianjiashi/（AppID 沿用），按 docs/qa/testcases-v2.0-days.md P0 15 条过主路径。
 2. **部署**：自验通过后云托管发布（需用户控制台），部署后 `contract cli live` 复检 + /api/ping 探活，回填 Stage 9。
 3. **Change 2（模板馆引擎）**：感恩信 AI 代笔、相伴天数卡、海报生成、访客 3 心解锁、我的卡片存档——契约增量 → 同流水线再走一轮。
-4. **收尾 change**：解忧册删除（前后端+契约）+ 旧 miniprogram 归档 + 小程序改名「念家时·家人生日提醒」提审。
+4. **收尾 change**：解忧册删除（前后端+契约）+ 旧 miniprogram 归档 + 小程序改名「念家时·排班纪念日」提审。
 
 ## 6. 验收状态
 
