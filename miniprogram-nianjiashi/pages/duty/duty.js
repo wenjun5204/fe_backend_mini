@@ -143,6 +143,7 @@ Page({
     weekHeads: WEEK_HEADS,
     cells: [],
     stats: { early: 0, mid: 0, night: 0, rest: 0 },
+    monthHours: 0,
     monthLoading: false,
     // —— 单日编辑弹层 ——
     daySheet: null, // {date, label, shift, options:[{key,name,range,tagClass,active}]}
@@ -272,6 +273,9 @@ Page({
       cells: buildGrid(month, cached.map),
       stats,
       hasAnyShift: stats.early + stats.mid + stats.night + stats.rest > 0,
+      // 工时估算(PRD 5.5 P1 极简版):按班次时段累计——早 9h(08-17)/中 12h(12-24)/夜 12h(20-次日08)
+      // 措辞只说「约」「小时」,不出现工时核算/薪资字眼(合规红线:不做工时核算)
+      monthHours: estimateHours(stats),
       monthLoading: false,
     })
   },
@@ -591,4 +595,9 @@ function dateSpanDays(start, end) {
   const b = end.split('-').map(Number)
   const days = Math.round((new Date(b[0], b[1] - 1, b[2]) - new Date(a[0], a[1] - 1, a[2])) / 86400000) + 1
   return days > 0 ? days : 0
+}
+
+/** 月工时估算(PRD 5.5 P1 极简版):早 9h(08-17)/中 12h(12-24)/夜 12h(20-次日08),休不计 */
+function estimateHours(stats) {
+  return stats.early * 9 + stats.mid * 12 + stats.night * 12
 }

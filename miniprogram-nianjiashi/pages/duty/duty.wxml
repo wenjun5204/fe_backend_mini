@@ -64,6 +64,11 @@
     <view class="stat"><text class="stat-num num-font" style="color:#e8943a">{{stats.mid}}</text><text class="stat-label">中班</text></view>
     <view class="stat"><text class="stat-num num-font" style="color:#3d4a5c">{{stats.night}}</text><text class="stat-label">夜班</text></view>
     <view class="stat"><text class="stat-num num-font" style="color:#9a9aa4">{{stats.rest}}</text><text class="stat-label">休班</text></view>
+    <!-- 工时估算极简版(PRD 5.5 P1):只说「约」,不碰核算/薪资(合规红线) -->
+    <view class="stat" wx:if="{{monthHours > 0}}">
+      <text class="stat-num num-font" style="color:#6c5ce7">{{monthHours}}</text>
+      <text class="stat-label">约小时</text>
+    </view>
   </view>
 
   <!-- ⑤ 主按钮 -->

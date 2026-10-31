@@ -8,7 +8,7 @@ Page({
     groups: [],
     // 日历视图
     calTitle: '',
-    weekLabels: ['日', '一', '二', '三', '四', '五', '六'],
+    weekLabels: ['一', '二', '三', '四', '五', '六', '日'],
     cells: [],
     calSummary: '',
     // 当日事件弹层
@@ -91,7 +91,8 @@ Page({
         ;(byDate[r.nextDate] = byDate[r.nextDate] || []).push({ record: r, own })
       }
     })
-    const startWeek = new Date(y, m, 1).getDay()
+    // 周一首(与 duty 值班日历统一口径):周日 getDay()=0 归上格区,偏移=(day+6)%7
+    const startWeek = (new Date(y, m, 1).getDay() + 6) % 7
     const daysInMonth = new Date(y, m + 1, 0).getDate()
     const cells = []
     let idx = 0
@@ -120,7 +121,7 @@ Page({
       ? '本月有 ' + eventDays + ' 天值得记住' + (todayHas ? ' · 今天有日子 🎉' : '')
       : '这个月暂无日子 · 可以前后翻翻，或去记一个'
     this.setData({
-      calTitle: m + 1 + '月 ' + y,
+      calTitle: y + ' 年 ' + (m + 1) + ' 月',
       cells,
       calSummary: summary,
     })

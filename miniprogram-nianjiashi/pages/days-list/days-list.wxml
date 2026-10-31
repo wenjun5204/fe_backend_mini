@@ -38,8 +38,8 @@
     </view>
   </view>
 
-  <!-- 日历视图 -->
-  <view wx:if="{{view === 'calendar'}}">
+  <!-- 日历视图(视觉对齐 duty 值班日历的白卡容器) -->
+  <view wx:if="{{view === 'calendar'}}" class="cal-card">
     <view class="cal-nav">
       <button class="cbtn" data-delta="-1" bindtap="calMove">‹</button>
       <view class="cm num-font">{{calTitle}}</view>

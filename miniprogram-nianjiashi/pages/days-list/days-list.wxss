@@ -115,49 +115,61 @@
 }
 
 /* 日历视图 */
+/* 白卡容器(对齐 duty 日历 .calendar-card) */
+.cal-card {
+  margin: 24rpx 32rpx 0;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 28rpx 24rpx 32rpx;
+  box-shadow: 0 6rpx 30rpx rgba(28, 28, 40, 0.05);
+}
+/* 日历视图(视觉对齐 duty 值班日历:白卡容器/裸箭头/玫红细线今日态,与全局视觉规范一致) */
 .cal-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 28rpx 40rpx 20rpx;
+  padding: 0 12rpx 20rpx;
 }
 .cm {
   font-size: 38rpx;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--ink);
 }
 .cbtn {
-  width: 72rpx;
-  height: 72rpx;
-  line-height: 72rpx;
+  width: 88rpx;
+  height: 88rpx;
+  line-height: 84rpx;
   border: none;
-  border-radius: 24rpx;
-  background: #f1efe9;
-  color: var(--ink);
-  font-size: 34rpx;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 52rpx;
   text-align: center;
+}
+.cbtn:active {
+  background: var(--line);
 }
 .cal-week {
   display: flex;
-  padding: 0 20rpx 12rpx;
+  padding-bottom: 12rpx;
+  border-bottom: 2rpx solid var(--line);
 }
 .cal-wd {
   flex: 1;
   text-align: center;
-  font-size: 22rpx;
+  font-size: 26rpx;
   color: var(--ink-3);
   font-weight: 700;
 }
 .cal-grid {
   display: flex;
   flex-wrap: wrap;
-  padding: 0 20rpx 20rpx;
 }
 .cal-cell {
   width: calc(100% / 7);
   box-sizing: border-box;
-  height: 104rpx;
-  border-radius: 26rpx;
+  height: 128rpx;
+  border-radius: 12rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -171,18 +183,16 @@
 .cal-cell.other {
   color: #d8d5cc;
 }
+/* 今日=玫红细线+浅粉底(对齐 duty 日历与"选中态禁大面积填充"规范;不再墨色/渐变整体填充) */
 .cal-cell.today {
-  background: var(--ink);
-  color: #fff;
-  font-weight: 900;
+  border: 4rpx solid var(--rose);
+  color: var(--rose);
+  font-weight: 800;
+  box-sizing: border-box;
 }
+/* 有日子的格子=浅粉底(细彩线+浅底规范) */
 .cal-cell.has {
-  background: #fdf2f4;
-  box-shadow: inset 0 0 0 3rpx #ffd3dc;
-}
-.cal-cell.today.has {
-  background: var(--grad-sunset);
-  box-shadow: none;
+  background: rgba(255, 77, 109, 0.06);
 }
 .dots {
   display: flex;
