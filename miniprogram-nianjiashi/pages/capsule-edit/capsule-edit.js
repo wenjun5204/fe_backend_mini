@@ -104,7 +104,7 @@ Page(
        * 用户取消/上传失败(40300 每日 20 张/超限)→ 保持原状,纯文字封存继续,不强阻断
        */
       choosePhoto() {
-        chooseAndUploadPhoto(500, 'CAPSULE').then((res) => {
+        chooseAndUploadPhoto(200, 'CAPSULE').then((res) => {
           if (!res) {
             return
           }

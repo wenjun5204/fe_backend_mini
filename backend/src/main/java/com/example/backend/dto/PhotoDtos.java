@@ -4,8 +4,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * 照片管道契约模型(v1.8.0 tag=photos):base64 JSON 上传与免鉴权回图。
- * scene/mimeType 用 String 承接 + service 层枚举校验,非法值统一回 40000(不静默降级)。
+ * 照片管道契约模型(v1.9.2 tag=photos):multipart 主形态 + base64 JSON 兼容形态上传(校验序与错误码一致),
+ * 免鉴权回图。scene/mimeType 用 String 承接 + service 层枚举校验,非法值统一回 40000(不静默降级)。
+ * 本 DTO 只服务 JSON 兼容形态(云托管 callContainer 通道);multipart 形态走 @RequestParam,无 DTO。
  */
 public final class PhotoDtos {
 

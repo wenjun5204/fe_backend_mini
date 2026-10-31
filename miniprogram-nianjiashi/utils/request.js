@@ -26,6 +26,10 @@ const SELFDEPLOY_BASE_URL = 'https://api.example.com'
 const CLOUD_ENV = 'prod-d5g1qs6gjdabafaf6'
 const SERVICE_NAME = 'reganmini'
 
+/** 真机预览调试地址(develop 通道在手机上访问开发者本机后端的局域网地址,如 http://192.168.1.37:8080;
+ *  仅非 devtools 平台生效——模拟器仍走 127.0.0.1;空=不启用,预览版手机端将连不上本地后端) */
+const DEV_LAN_BASE_URL = ''
+
 // ===== 通道判定 =====
 /** 运行版本:develop 开发版 / trial 体验版 / release 正式版;取不到(异常兜底)按 release 处理 */
 const ENV_VERSION = (() => {
@@ -40,7 +44,16 @@ const CHANNEL =
   API_MODE !== 'auto' ? API_MODE : ENV_VERSION === 'develop' ? 'local' : 'cloud'
 /** 兼容既有消费方(photo.js 等):cloud 通道为真 */
 const USE_CLOUD = CHANNEL === 'cloud'
-const BASE_URL = CHANNEL === 'selfdeploy' ? SELFDEPLOY_BASE_URL : 'http://127.0.0.1:8080'
+/** devtools 平台判定(真机预览走 DEV_LAN_BASE_URL,模拟器走 127.0.0.1) */
+const IS_DEVTOOLS = (() => {
+  try {
+    return wx.getDeviceInfo().platform === 'devtools'
+  } catch (e) {
+    return false
+  }
+})()
+const BASE_URL = CHANNEL === 'selfdeploy' ? SELFDEPLOY_BASE_URL
+  : (CHANNEL === 'local' && !IS_DEVTOOLS && DEV_LAN_BASE_URL ? DEV_LAN_BASE_URL : 'http://127.0.0.1:8080')
 
 const TOKEN_KEY = 'njs_token'
 const USER_KEY = 'njs_user'

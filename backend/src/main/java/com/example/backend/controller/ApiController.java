@@ -63,6 +63,7 @@ import com.example.backend.dto.FestivalDtos.FestivalDueResponse;
 import com.example.backend.dto.FestivalDtos.FestivalReservation;
 import com.example.backend.dto.FestivalDtos.FestivalReservationRequest;
 import com.example.backend.dto.FestivalDtos.ReservationListResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -118,6 +119,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /** 契约路由(与 api/openapi.yaml 一一对应,60 个 operationId;/api/ping 为部署探活,不入契约) */
 @RestController
@@ -438,9 +440,22 @@ public class ApiController {
         return capsuleService.open(id);
     }
 
-    // ---- 念家时·照片管道(契约 v1.8.0,tag=photos;GET 回图免鉴权) ----
+    // ---- 念家时·照片管道(契约 v1.9.2,tag=photos;GET 回图免鉴权) ----
+    // 上传双形态(契约 requestBody 双 content):multipart 主形态(wx.uploadFile,local/selfdeploy 通道)
+    // + base64 JSON 兼容形态(云托管 callContainer 无文件直传能力,体验版/正式版通道)。
+    // 两方法同 path 同 method:springdoc 按 (path,httpMethod) 键控,JSON 形态 @Operation(hidden)
+    // 避免碰撞,api-docs 以 multipart 主形态呈现(契约文档两形态俱全)。
 
-    @PostMapping("/photos")
+    @PostMapping(value = "/photos", consumes = "multipart/form-data")
+    @Operation(operationId = "uploadPhoto")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = PhotoUploadResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "403", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public PhotoUploadResponse uploadPhotoMultipart(@RequestParam("image") MultipartFile image,
+                                                     @RequestParam(value = "scene", required = false) String scene) {
+        return photoService.upload(image, scene);
+    }
+
+    @PostMapping(value = "/photos", consumes = "application/json")
+    @Operation(hidden = true)
     @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = PhotoUploadResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "403", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
     public PhotoUploadResponse uploadPhoto(@RequestBody PhotoUploadRequest request) {
         return photoService.upload(request);

@@ -26,12 +26,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClient;
 
 /**
- * 照片管道集成测试(H2 内存库):上传校验序、免鉴权回图、日限、GC、40400 不泄露存在性。
- * 用例矩阵对齐 docs/design/v2.2-family-design.md §3 photos 组;照片字节用 ImageIO 真实 PNG 编码。
+ * 照片管道集成测试(H2 内存库):上传校验序(multipart 主形态 + base64 JSON 兼容形态)、
+ * 免鉴权回图、日限、GC、40400 不泄露存在性。
+ * 用例矩阵对齐 docs/design/v2.2-family-design.md §3 photos 组(v1.9.2 双形态扩展);照片字节用 ImageIO 真实 PNG 编码。
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class PhotosApiIntegrationTest {
@@ -118,7 +120,36 @@ class PhotosApiIntegrationTest {
         return data;
     }
 
+    /** multipart 主形态上传(v1.9.2:wx.uploadFile local/selfdeploy 通道)。
+     *  手工拼 multipart 请求体(RestClient 的 MultiValueMap 序列化对 HttpEntity part 不可靠,
+     *  手拼与 wx.uploadFile 线上 wire 格式逐字节一致,更贴近真实链路)。 */
     private JsonNode upload(String token, byte[] data, String scene) {
+        String boundary = "----testboundary" + System.nanoTime();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+            // scene 文本 part
+            out.write(("--" + boundary + "\r\n"
+                    + "Content-Disposition: form-data; name=\"scene\"\r\n\r\n"
+                    + scene + "\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            // image 二进制 part(文件名与 content-type 同 wx.uploadFile 形态)
+            out.write(("--" + boundary + "\r\n"
+                    + "Content-Disposition: form-data; name=\"image\"; filename=\"photo.jpg\"\r\n"
+                    + "Content-Type: application/octet-stream\r\n\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            out.write(data);
+            out.write(("\r\n--" + boundary + "--\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException(e);
+        }
+        RestClient.RequestBodySpec spec = rest.post().uri("/api/photos")
+                .contentType(MediaType.parseMediaType("multipart/form-data; boundary=" + boundary));
+        if (token != null) {
+            spec.header("Authorization", "Bearer " + token);
+        }
+        return parse(spec.body(out.toByteArray()).retrieve().body(String.class));
+    }
+
+    /** base64 JSON 兼容形态上传(v1.9.2:云托管 callContainer 通道) */
+    private JsonNode uploadJson(String token, byte[] data, String scene) {
         return post("/api/photos", token, Map.of(
                 "imageBase64", Base64.getEncoder().encodeToString(data),
                 "scene", scene));
@@ -166,12 +197,15 @@ class PhotosApiIntegrationTest {
     @Test
     void 字节头嗅探与mimeType交叉校验() {
         String token = login();
-        // mimeType 缺省:按嗅探 jpeg 通过
+        // mimeType 缺省:按嗅探 jpeg 通过(multipart 主形态不传 mimeType,嗅探即权威)
         JsonNode jpeg = upload(token, jpegHeaderBytes(16), "CAPSULE");
         assertEquals("image/jpeg", getPhotoBytes(jpeg.get("photoId").asText(), null)
                 .getHeaders().getContentType().toString());
         assertEquals(16, jpeg.get("sizeBytes").asInt());
-        // mimeType 与字节头不符 → 40000(PNG 数据谎报 jpeg)
+        // JSON 兼容形态同图同样通过(双形态行为一致)
+        JsonNode jpegJson = uploadJson(token, jpegHeaderBytes(16), "CAPSULE");
+        assertEquals(16, jpegJson.get("sizeBytes").asInt());
+        // mimeType 与字节头不符 → 40000(PNG 数据谎报 jpeg;仅 JSON 形态有此交叉校验)
         assertErrorCode(post("/api/photos", token, Map.of(
                 "imageBase64", Base64.getEncoder().encodeToString(new byte[] {(byte) 0x89, 'P', 'N', 'G', 0, 0}),
                 "scene", "MOMENT", "mimeType", "image/jpeg")), "40000");
@@ -179,18 +213,22 @@ class PhotosApiIntegrationTest {
         assertErrorCode(post("/api/photos", token, Map.of(
                 "imageBase64", Base64.getEncoder().encodeToString(jpegHeaderBytes(16)),
                 "scene", "MOMENT", "mimeType", "image/gif")), "40000");
-        // 字节头嗅不出 → 40000
+        // 字节头嗅不出 → 40000(双形态一致)
         assertErrorCode(upload(token, new byte[] {1, 2, 3, 4, 5}, "MOMENT"), "40000");
+        assertErrorCode(uploadJson(token, new byte[] {1, 2, 3, 4, 5}, "MOMENT"), "40000");
     }
 
     @Test
     void 超长base64不解码即拒绝_解码超限与非法base64被拒() {
         String token = login();
-        // >700k 字符:先验长度,不解码超大载荷
+        // >700k 字符:先验长度,不解码超大载荷(JSON 兼容形态 DoS 防线)
         assertErrorCode(post("/api/photos", token, Map.of(
                 "imageBase64", "A".repeat(700_001), "scene", "MOMENT")), "40000");
-        // 解码后 512001 字节 → 40000
+        // multipart 超限:512001 字节(应用层硬闸)与 >1MB(multipart 网关闸,MaxUploadSize 归一 40000)
         assertErrorCode(upload(token, jpegHeaderBytes(512_001), "MOMENT"), "40000");
+        assertErrorCode(upload(token, jpegHeaderBytes(1_200_000), "MOMENT"), "40000");
+        // JSON 兼容形态解码后 512001 字节 → 40000
+        assertErrorCode(uploadJson(token, jpegHeaderBytes(512_001), "MOMENT"), "40000");
         // 非法 base64 → 40000
         assertErrorCode(post("/api/photos", token, Map.of(
                 "imageBase64", "!!!not-base64!!!", "scene", "MOMENT")), "40000");
@@ -202,18 +240,34 @@ class PhotosApiIntegrationTest {
     @Test
     void scene非法与缺失被拒() {
         String token = login();
-        assertErrorCode(post("/api/photos", token, Map.of(
-                "imageBase64", Base64.getEncoder().encodeToString(jpegHeaderBytes(8)),
-                "scene", "FOO")), "40000");
+        // multipart:scene 非法 / 缺 scene part
+        assertErrorCode(upload(token, jpegHeaderBytes(8), "FOO"), "40000");
+        String boundary = "----testboundary-noscene";
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+            out.write(("--" + boundary + "\r\n"
+                    + "Content-Disposition: form-data; name=\"image\"; filename=\"photo.jpg\"\r\n"
+                    + "Content-Type: application/octet-stream\r\n\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            out.write(jpegHeaderBytes(8));
+            out.write(("\r\n--" + boundary + "--\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException(e);
+        }
+        assertErrorCode(parse(rest.post().uri("/api/photos")
+                .contentType(MediaType.parseMediaType("multipart/form-data; boundary=" + boundary))
+                .header("Authorization", "Bearer " + token)
+                .body(out.toByteArray()).retrieve().body(String.class)), "40000");
+        // JSON 兼容形态:scene 非法 / 缺 scene 字段
+        assertErrorCode(uploadJson(token, jpegHeaderBytes(8), "FOO"), "40000");
         assertErrorCode(post("/api/photos", token, Map.of(
                 "imageBase64", Base64.getEncoder().encodeToString(jpegHeaderBytes(8)))), "40000");
     }
 
     @Test
     void 未登录上传被拒_回图免鉴权() throws Exception {
-        assertErrorCode(post("/api/photos", null, Map.of(
-                "imageBase64", Base64.getEncoder().encodeToString(pngBytes()),
-                "scene", "MOMENT")), "40100");
+        // 双形态同码 40100
+        assertErrorCode(upload(null, pngBytes(), "MOMENT"), "40100");
+        assertErrorCode(uploadJson(null, pngBytes(), "MOMENT"), "40100");
     }
 
     @Test

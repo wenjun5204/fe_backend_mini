@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 全家福·接福气 API
-  version: 1.9.1
+  version: 1.9.2
   description: |
     家庭互动小程序「全家福·接福气」接口契约(唯一事实源)。
     v1.5.0 增量:八卦集福阵(只读进度)/转罗盘卦位(仅卡面主题)/解忧册文案下发(幂等)/订阅消息授权登记。
@@ -10,6 +10,7 @@ info:
     v1.8.0 增量(念家时 v2.2 家人空间):节日/上线预约登记与到期清单(/api/festivals/*)、照片上传与免鉴权回显(base64 JSON 解码后 ≤500KB,/api/photos/*)、家人瞬间时间线与真好/收藏互动(/api/moments/* 与 /api/days/{id}/moments 素材池);既有授权扩展:CardKind +BIRTHDAY_CARD(生日福卡,随时可生成,生日当天由提醒自然触达)、DayRecord +year 与周年称谓计算字段、时光胶囊 +photoId、访客端 BIRTHDAY_CARD 体面内容形态。
     v1.9.0 增量(念家时 v2.3 值班日历):个人视角值班记录与提醒(/api/duty/*)——月历班次查询、今日状态卡(今日班次+60 天下次值班扫描)、单日设置/清除、周期规则批量排班(5 预设,>365 天截断,覆盖已有排班)、提醒时机配置(advance_1d/same_day_08/advance_2h);提醒只存配置+订阅授权登记(复用既有 /api/notify/subscribe),真实推送下发属部署联调阶段。
     v1.9.1 增量(值班分享 P1):值班表分享场景码签发(幂等,存 UserEntity.dutyShareScene)与免鉴权只读月历(/api/duty/shared/{scene}——8 位 base62 高熵不可枚举,不要求登录 token;仅返回月份+日期×班次映射+分享者昵称,不含 userId/openid 等敏感字段)。
+    v1.9.2 增量(照片上传通道改造):/api/photos 上传主形态改为 multipart/form-data(image 二进制字段+scene 文本字段,消除 base64 ×4/3 传输放大);保留 application/json base64 兼容形态(云托管 callContainer 通道无文件直传能力,体验版/正式版走此通道);前端作主压缩入库 ≤200KB(减轻 MySQL blob 体积),服务端硬闸 512000 字节与日限 20 张不变;响应与回图形态不变。
     合规约束:文案禁用迷信词(见 .agents/docs/conventions.md,含 v1.5 追加:卦象/卦运/宜忌/生门/吉位/凶位/能成/不行/会有/注定/天意/预示/破财/有灾),错误 message 面向用户须过合规词表。
 tags:
   - name: days
@@ -23,7 +24,7 @@ tags:
   - name: festival
     description: 念家时 v2.2 节日与上线预约(/api/festivals/*)——「上线提醒我」与节日提醒共用登记(幂等)、我的预约清单、0-7 天窗口到期清单(首页节日横幅/节点倒计时数据源)
   - name: photos
-    description: 念家时 v2.2 照片管道(/api/photos/*)——base64 JSON 上传(解码后 ≤500KB,每日每人 ≤20 张)与免鉴权回显(photoId 高熵 capability URL,<image> 直挂;不要求登录 token)
+    description: 念家时 v2.2 照片管道(/api/photos/*)——multipart 主形态上传(v1.9.2 起二进制 image 字段;云托管通道走 application/json base64 兼容形态)与免鉴权回显(photoId 高熵 capability URL,<image> 直挂;不要求登录 token);前端作主压缩入库 ≤200KB,服务端硬闸 ≤512000 字节,每日每人 ≤20 张
   - name: moments
     description: 念家时 v2.2 家人瞬间(/api/moments/*)——照片+一句话家族时间线、真好(点赞,限 1 次)、收藏进日子(生日福卡素材池,含 /api/days/{id}/moments)
   - name: duty
@@ -1183,14 +1184,17 @@ paths:
     post:
       tags: [photos]
       operationId: uploadPhoto
-      summary: 照片上传(base64 JSON 请求体):校验解码后 ≤500KB 与 mime;每日每人 ≤20 张(40300);返回 photoId 与 capability 形态 photoUrl;photoId 为 16-20 位 base62 高熵随机串,全局唯一
+      summary: 照片上传(multipart/form-data 主形态 + application/json base64 兼容形态):校验二进制 ≤500KB 与 mime;前端作主压缩入库 ≤200KB;每日每人 ≤20 张(40300);返回 photoId 与 capability 形态 photoUrl;photoId 为 16-20 位 base62 高熵随机串,全局唯一
       requestBody:
         required: true
-        description: 请求体为 base64 JSON(解码后图片字节 ≤500KB=512000 字节,超限 40000)。注意:微信小程序 wx.request/callContainer 对 JSON 请求体有网关层大小上限(约 1MB 或更小,以网关配置为准;500KB 图片 base64 后约 680KB,仍在限内但需联调时以实测确认,勿放大图)
+        description: 双形态请求体。主形态 multipart/form-data(image 二进制字段,≤500KB=512000 字节,超限 40000;scene 文本字段)——消除 base64 ×4/3 传输放大,local/selfdeploy 通道走 wx.uploadFile;兼容形态 application/json(imageBase64 字段)——云托管 wx.cloud.callContainer 无文件直传能力,体验版/正式版走此通道。两种形态校验序与错误码完全一致,入库体积目标均为 ≤200KB(前端压缩保证),服务端硬闸 512000 字节
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PhotoUploadRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhotoUploadJsonRequest'
       responses:
         '200':
           description: 上传成功(photoId 即回图 capability URL 令牌;照片内容不可变,同 id 不复用)
@@ -1199,7 +1203,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PhotoUploadResponse'
         '400':
-          description: 参数错误(40000:imageBase64 缺失/解码失败/解码后超 512000 字节、scene 非法、mimeType 缺省时字节头无法嗅探)
+          description: 参数错误(40000:image 文件缺失/超 512000 字节、scene 非法、字节头无法嗅探/非 jpg-png-webp)
           content:
             application/json:
               schema:
@@ -2567,7 +2571,7 @@ components:
       properties:
         code:
           type: string
-          description: 业务错误码(字符串形式,与运行时序列化一致):"40000" 参数错误(imageBase64 超限/非法 mime、photoId 非本人或 scene 不符或已绑定、瞬间 text 超长或违禁、收藏目标非 BIRTHDAY、momentIds 不在素材池、blessingText 违禁、year 越界等)/"40100" 未登录或身份失效(免鉴权 /api/visitor/* 与 /api/photos/{photoId} 端点组不适用)/"40300" 硬频控超限(提醒发送 >3 条/人/天,仅真实下发链路;感恩信生成每日每人 >5 次,AI 与降级路径统一计数;瞬间发布每日每人 >10 条;照片上传每日每人 >20 张)/"40400" 不存在或越权(不泄露存在性)/"40900" 状态冲突(胶囊未到期开箱、访客未解锁取隐藏内容、未加入家族发瞬间、)/"42900" 软频控——访客点亮心过于频繁(单设备对单卡片 >3 次/分钟),提示稍后再点,不阻断解锁目标
+          description: 业务错误码(字符串形式,与运行时序列化一致):"40000" 参数错误(image 文件缺失或超 500KB/非 jpg-png-webp、photoId 非本人或 scene 不符或已绑定、瞬间 text 超长或违禁、收藏目标非 BIRTHDAY、momentIds 不在素材池、blessingText 违禁、year 越界等)/"40100" 未登录或身份失效(免鉴权 /api/visitor/* 与 /api/photos/{photoId} 端点组不适用)/"40300" 硬频控超限(提醒发送 >3 条/人/天,仅真实下发链路;感恩信生成每日每人 >5 次,AI 与降级路径统一计数;瞬间发布每日每人 >10 条;照片上传每日每人 >20 张)/"40400" 不存在或越权(不泄露存在性)/"40900" 状态冲突(胶囊未到期开箱、访客未解锁取隐藏内容、未加入家族发瞬间、)/"42900" 软频控——访客点亮心过于频繁(单设备对单卡片 >3 次/分钟),提示稍后再点,不阻断解锁目标
         message:
           type: string
           description: 面向用户的错误文案,须过合规词表
@@ -3160,18 +3164,23 @@ components:
       description: 照片 mime;上传可缺省(按字节头嗅探,无法识别 40000);回图端点 Content-Type 同源
     PhotoUploadRequest:
       type: object
+      required: [image, scene]
+      properties:
+        image:
+          type: string
+          format: binary
+          description: 图片二进制文件字段(multipart/form-data 主形态,local/selfdeploy 通道走 wx.uploadFile);1..512000 字节(≤500KB),超限 40000;支持 jpg/png/webp(按字节头嗅探,无法识别 40000);前端作主压缩入库 ≤200KB,服务端不做二次压缩
+        scene:
+          $ref: '#/components/schemas/PhotoScene'
+    PhotoUploadJsonRequest:
+      type: object
       required: [imageBase64, scene]
       properties:
         imageBase64:
           type: string
-          description: base64 编码的图片字节;解码后 1..512000 字节(≤500KB),超限 40000;base64 JSON 请求体,注意网关层(callContainer)请求体上限约 1MB 或更小,联调确认
+          description: base64 编码的图片字节(兼容形态,云托管 callContainer 通道——无文件直传能力,体验版/正式版走此通道);解码后 1..512000 字节,超限 40000;校验序与错误码与 multipart 主形态完全一致;前端压缩目标 ≤200KB(base64 后约 270KB,payload 小)
         scene:
           $ref: '#/components/schemas/PhotoScene'
-        mimeType:
-          allOf:
-            - $ref: '#/components/schemas/PhotoMimeType'
-          nullable: true
-          description: 可缺省;缺省按字节头嗅探,无法识别 40000
     PhotoUploadResponse:
       type: object
       required: [photoId, photoUrl, sizeBytes]
@@ -3186,7 +3195,7 @@ components:
           description: 恒 /api/photos/{photoId} 相对路径(客户端拼域名使用;留 OSS 迁移空间,迁移只换实现不改契约)
         sizeBytes:
           type: integer
-          description: 解码后字节数;回图响应 Content-Length 同源
+          description: 入库字节数(即上传字节,服务端不二次压缩);回图响应 Content-Length 同源
     FestivalReservationRequest:
       type: object
       required: [templateKey]
