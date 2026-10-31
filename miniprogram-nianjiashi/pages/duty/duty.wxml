@@ -12,9 +12,13 @@
       <view class="today-sub">{{todaySub}}</view>
       <view class="next-duty">{{nextDutyText}}</view>
     </view>
-    <view class="remind-entry" bindtap="openRemindSheet">
-      <view class="remind-bell {{remindOn ? 'on' : 'off'}}">{{remindOn ? '🔔' : '🔕'}}</view>
-      <view class="remind-text">{{remindOn ? '提醒中' : '提醒未开启'}}</view>
+    <view class="today-side">
+      <view class="remind-entry" bindtap="openRemindSheet">
+        <view class="remind-bell {{remindOn ? 'on' : 'off'}}">{{remindOn ? '🔔' : '🔕'}}</view>
+        <view class="remind-text">{{remindOn ? '提醒中' : '提醒未开启'}}</view>
+      </view>
+      <!-- 分享入口(PRD 5.7):share 面板只能由 open-type=share 按钮唤起 -->
+      <button class="share-entry" open-type="share">分享值班表</button>
     </view>
   </view>
 
@@ -148,7 +152,7 @@
       <text class="range-clear" bindtap="onClearRange">清空这段</text>
     </view>
     <view class="sheet-actions">
-      <button class="primary-btn sheet-btn" bindtap="onApplyRule">按这个规则排班</button>
+      <button class="primary-btn sheet-btn" bindtap="onApplyRule">这么排班</button>
       <button class="sheet-close" bindtap="closeBatchSheet">先不排了</button>
     </view>
   </view>

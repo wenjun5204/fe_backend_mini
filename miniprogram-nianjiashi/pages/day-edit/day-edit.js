@@ -102,7 +102,13 @@ Page({
     const dayRange = []
     for (let i = 1; i <= count; i++) dayRange.push(i + ' 日')
     const clamped = Math.min(dayIndex || 0, count - 1)
-    this.setData({ dayRange, dayIndex: clamped < 0 ? 0 : clamped })
+    this.setData({
+      dayRange,
+      dayIndex: clamped < 0 ? 0 : clamped,
+      // multiSelector 的 range/value([月列, 日列])
+      dateRange: [this.data.monthRange, dayRange],
+      dateValue: [this.data.monthIndex, clamped < 0 ? 0 : clamped],
+    })
     this.updateConv()
   },
 
@@ -131,13 +137,18 @@ Page({
     this.fillDays(this.data.dayIndex)
   },
 
-  onMonthChange(e) {
-    this.setData({ monthIndex: Number(e.detail.value) })
-    this.fillDays(this.data.dayIndex)
+  /** 滚动"月"列时实时联动"日"列天数(2 月/大小月/农历 30) */
+  onDateColumn(e) {
+    if (Number(e.detail.column) === 0) {
+      this.setData({ monthIndex: Number(e.detail.value) })
+      this.fillDays(this.data.dayIndex)
+    }
   },
 
-  onDayChange(e) {
-    this.setData({ dayIndex: Number(e.detail.value) })
+  /** 点确定:两列一起收 */
+  onDateChange(e) {
+    const [m, d] = e.detail.value.map(Number)
+    this.setData({ monthIndex: m, dayIndex: d, dateValue: [m, d] })
     this.updateConv()
   },
 

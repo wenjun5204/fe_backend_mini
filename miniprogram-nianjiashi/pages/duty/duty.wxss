@@ -37,10 +37,13 @@
   padding: 12rpx 20rpx;
   display: inline-block;
 }
-.remind-entry {
+.today-side {
   text-align: center;
   flex-shrink: 0;
   margin-left: 24rpx;
+}
+.remind-entry {
+  text-align: center;
 }
 .remind-bell {
   font-size: 56rpx;
@@ -54,6 +57,18 @@
   color: var(--ink-3);
   margin-top: 6rpx;
   font-weight: 600;
+}
+/* 分享值班表(PRD 5.7):share 面板只能由 button 唤起,样式压成弱文字链 */
+.share-entry {
+  margin: 16rpx auto 0;
+  padding: 6rpx 20rpx;
+  border: none;
+  background: transparent;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--ink-3);
+  line-height: 1.5;
+  width: auto;
 }
 
 /* ---------- ② 班次图例 ---------- */

@@ -1,7 +1,7 @@
 <view class="page-edit">
   <view class="form-block">
     <view class="f-label">这位家人是您的… <text class="f-small">也可以自己填</text></view>
-    <view class="pick-chips">
+    <view class="pick-chips chip-grid">
       <button
         wx:for="{{relations}}"
         wx:key="*this"
@@ -47,14 +47,15 @@
       </view>
 
       <view class="f-label">月和日</view>
-      <view class="date-pick">
-        <picker range="{{monthRange}}" value="{{monthIndex}}" bindchange="onMonthChange">
-          <view class="pick-box">{{monthRange[monthIndex]}}</view>
-        </picker>
-        <picker range="{{dayRange}}" value="{{dayIndex}}" bindchange="onDayChange">
-          <view class="pick-box">{{dayRange[dayIndex]}}</view>
-        </picker>
-      </view>
+      <picker
+        mode="multiSelector"
+        range="{{dateRange}}"
+        value="{{dateValue}}"
+        bindcolumnchange="onDateColumn"
+        bindchange="onDateChange"
+      >
+        <view class="pick-box">{{monthRange[monthIndex]}} · {{dayRange[dayIndex]}}</view>
+      </picker>
 
       <view class="conv-card">
         <view class="conv-kicker">{{conv.kicker}}</view>
@@ -83,7 +84,7 @@
     </view>
 
     <view class="f-label">谁可以看到？</view>
-    <view class="pick-chips">
+    <view class="pick-chips vis-chips">
       <button class="chip {{visibility === 'FAMILY' ? 'on' : ''}}" data-vis="FAMILY" bindtap="pickVis">家人可见</button>
       <button class="chip {{visibility === 'PRIVATE' ? 'on' : ''}}" data-vis="PRIVATE" bindtap="pickVis">只我可见</button>
     </view>

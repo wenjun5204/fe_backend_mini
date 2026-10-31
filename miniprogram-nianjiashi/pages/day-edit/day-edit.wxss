@@ -27,11 +27,29 @@
   margin-top: 8rpx;
 }
 
-/* 月日选择 */
-.date-pick {
-  display: flex;
-  gap: 20rpx;
+/* 关系标签:4 列等宽网格(9 个关系+自定义=10 项,3 行排齐,右边缘不参差) */
+.chip-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14rpx;
 }
+.chip-grid .chip {
+  width: 100%;
+  min-height: 76rpx;
+  line-height: 76rpx;
+  padding: 0 8rpx;
+  font-size: 27rpx;
+  border-radius: 20rpx;
+}
+
+/* 谁可以看到:两项等宽并排 */
+.vis-chips .chip {
+  flex: 1;
+  min-height: 76rpx;
+  line-height: 76rpx;
+}
+
+/* 月日选择(单条 multiSelector,两列联动) */
 .pick-box {
   flex: 1;
   min-height: 96rpx;

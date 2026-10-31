@@ -174,6 +174,18 @@ Page({
     }
   },
 
+  /**
+   * 转发分享(PRD 5.7 P1 第一步):标题带当前月,缩略图用默认页面截图。
+   * 被分享者先落首页;只读月历落地页属第二步,需先走契约 Stage 2。
+   */
+  onShareAppMessage() {
+    const m = this.data.month ? Number(this.data.month.split('-')[1]) : new Date().getMonth() + 1
+    return {
+      title: '我' + m + '月的值班表',
+      path: '/pages/days/days',
+    }
+  },
+
   /** 首屏:状态卡 + 当月/前月/后月 3 并发;任一失败不卡死 loading(遮罩会挡住整页点击) */
   refreshAll() {
     const now = new Date()
