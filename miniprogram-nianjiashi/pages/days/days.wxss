@@ -253,23 +253,25 @@
 }
 .es-chips {
   display: flex;
-  flex-direction: column;
   gap: 18rpx;
   margin-top: 40rpx;
 }
 .es-chip {
+  flex: 1;
   min-height: 104rpx;
   line-height: 104rpx;
   border: 3rpx solid var(--line);
   border-radius: 30rpx;
   background: var(--bg);
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: 800;
   color: var(--ink);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16rpx;
+  gap: 12rpx;
+  box-sizing: border-box;
+  padding: 0 8rpx;
 }
 .es-chip.primary {
   border: none;

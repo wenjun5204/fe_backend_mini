@@ -1,5 +1,5 @@
 <view class="page-alldays">
-  <view class="view-seg">
+  <view class="seg view-seg">
     <button class="seg-btn {{view === 'list' ? 'on' : ''}}" data-view="list" bindtap="switchView">📅 按时间线</button>
     <button class="seg-btn {{view === 'calendar' ? 'on' : ''}}" data-view="calendar" bindtap="switchView">🗓 按日历看</button>
   </view>

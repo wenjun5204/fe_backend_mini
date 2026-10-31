@@ -45,6 +45,8 @@ import com.example.backend.dto.DutyDtos.DutyShiftClearResponse;
 import com.example.backend.dto.DutyDtos.DutyShiftRangeClearResponse;
 import com.example.backend.dto.DutyDtos.DutyShiftRequest;
 import com.example.backend.dto.DutyDtos.DutyShiftView;
+import com.example.backend.dto.DutyDtos.DutyShareSceneResponse;
+import com.example.backend.dto.DutyDtos.DutySharedCalendarResponse;
 import com.example.backend.dto.DutyDtos.DutyTodayResponse;
 import com.example.backend.dto.ErrorDtos;
 import com.example.backend.dto.FamilyDtos.CreateFamilyRequest;
@@ -581,6 +583,22 @@ public class ApiController {
     @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DutyRemindConfig.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
     public DutyRemindConfig updateDutyRemindConfig(@RequestBody DutyRemindConfigRequest request) {
         return dutyService.updateRemindConfig(request);
+    }
+
+    // ---- 值班分享(契约 v1.9.1,PRD 5.7 P1;shared 为免鉴权只读端点) ----
+
+    @GetMapping("/duty/share/scene")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DutyShareSceneResponse.class))), @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public DutyShareSceneResponse getDutyShareScene() {
+        return dutyService.getShareScene();
+    }
+
+    /** 免鉴权(/api/duty/shared/* AuthInterceptor 排除);scene 无效 40400 不泄露存在性 */
+    @GetMapping("/duty/shared/{scene}")
+    @ApiResponses({@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DutySharedCalendarResponse.class))), @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class))), @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorDtos.ErrorResponse.class)))})
+    public DutySharedCalendarResponse getDutySharedCalendar(@PathVariable String scene,
+                                                           @RequestParam(required = false) String month) {
+        return dutyService.getSharedCalendar(scene, month);
     }
 
     // ---- 免鉴权访客组(/api/visitor/**,AuthInterceptor 排除,永不 40100) ----

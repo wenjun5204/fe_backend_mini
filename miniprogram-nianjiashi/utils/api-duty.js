@@ -68,6 +68,24 @@ function updateDutyRemindConfig(timing, enabled) {
   return request('/api/duty/remind-config', { method: 'PUT', data: { timing, enabled } })
 }
 
+// ===== 值班分享(契约 v1.9.1,PRD 5.7 P1) =====
+
+/**
+ * GET /api/duty/share/scene → DutyShareSceneResponse{scene,pagePath}
+ * (幂等:同用户恒同码;onShareAppMessage 时调用,path 用返回的 pagePath)
+ */
+function getDutyShareScene() {
+  return request('/api/duty/share/scene')
+}
+
+/**
+ * GET /api/duty/shared/{scene}?month=yyyy-MM → DutySharedCalendarResponse{month,ownerName,shifts,stats}
+ * (免鉴权端点:noAuth 不带 token;被分享者落地页数据源,窗口外月份空 shifts)
+ */
+function getDutySharedCalendar(scene, month) {
+  return request('/api/duty/shared/' + encodeURIComponent(scene) + '?month=' + month, { noAuth: true })
+}
+
 module.exports = {
   getDutyCalendar,
   getDutyToday,
@@ -77,4 +95,6 @@ module.exports = {
   getDutyRule,
   applyDutyRule,
   updateDutyRemindConfig,
+  getDutyShareScene,
+  getDutySharedCalendar,
 }

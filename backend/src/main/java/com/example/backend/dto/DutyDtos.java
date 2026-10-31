@@ -155,6 +155,34 @@ public final class DutyDtos {
         public void setRemind(DutyRemindConfig remind) { this.remind = remind; }
     }
 
+    // ---- 分享(契约 v1.9.1,PRD 5.7 P1) ----
+
+    public static class DutyShareSceneResponse {
+        private String scene;
+        private String pagePath;
+
+        public String getScene() { return scene; }
+        public void setScene(String scene) { this.scene = scene; }
+        public String getPagePath() { return pagePath; }
+        public void setPagePath(String pagePath) { this.pagePath = pagePath; }
+    }
+
+    public static class DutySharedCalendarResponse {
+        private String month;
+        private String ownerName;
+        private List<DutyShiftView> shifts;
+        private DutyMonthStats stats;
+
+        public String getMonth() { return month; }
+        public void setMonth(String month) { this.month = month; }
+        public String getOwnerName() { return ownerName; }
+        public void setOwnerName(String ownerName) { this.ownerName = ownerName; }
+        public List<DutyShiftView> getShifts() { return shifts; }
+        public void setShifts(List<DutyShiftView> shifts) { this.shifts = shifts; }
+        public DutyMonthStats getStats() { return stats; }
+        public void setStats(DutyMonthStats stats) { this.stats = stats; }
+    }
+
     // ---- 周期规则 ----
 
     public static class DutyRuleView {

@@ -16,7 +16,9 @@ public class WebConfig implements WebMvcConfigurer {
                 // "/api/photos/*" Ant 单段:放行 /api/photos/{photoId}(回图免鉴权),
                 // 不放行 /api/photos 本身(POST 上传仍鉴权)
                 .excludePathPatterns("/api/auth/login", "/api/invite/info", "/api/ping",
-                        "/api/visitor/**", "/api/photos/*");
+                        "/api/visitor/**", "/api/photos/*",
+                        // 值班分享只读月历(契约 v1.9.1):/api/duty/shared/{scene} 免鉴权
+                        "/api/duty/shared/*");
     }
 
     @Override

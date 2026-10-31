@@ -526,19 +526,21 @@
 }
 
 /* ---------- 提醒设置弹层 ---------- */
+/* 提醒时机:三列并排(按钮组一律横排,desc 收窄自然换行) */
 .timing-options {
   margin-top: 24rpx;
   display: flex;
-  flex-direction: column;
   gap: 14rpx;
 }
 .timing-option {
+  flex: 1;
   border-radius: 16rpx;
   border: 4rpx solid var(--line);
-  padding: 22rpx 28rpx;
+  padding: 18rpx 12rpx;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
   box-sizing: border-box;
 }
 .timing-option.active {
@@ -546,12 +548,14 @@
   background: rgba(255, 77, 109, 0.06);
 }
 .timing-name {
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: 700;
   color: var(--ink);
 }
 .timing-desc {
-  font-size: 26rpx;
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  line-height: 1.4;
   color: var(--ink-3);
 }
 .night-hint {

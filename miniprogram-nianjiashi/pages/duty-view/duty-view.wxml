@@ -1,0 +1,58 @@
+<!--
+  值班表只读落地页(PRD 5.7 P1):被分享者视角
+  ①顶部「来自 XX 的值班表」 ②只读月历(可翻月,不可编辑) ③「我也记值班」转化按钮
+-->
+<view class="page">
+
+  <!-- ① 来自谁的值班表 -->
+  <view class="owner-card">
+    <view class="owner-kicker">来自</view>
+    <view class="owner-name">{{ownerName}} 的值班表</view>
+  </view>
+
+  <!-- scene 无效兜底 -->
+  <view wx:if="{{invalid}}" class="invalid-card">
+    <view class="invalid-main">这份值班表暂时打不开</view>
+    <view class="invalid-sub">可能分享已失效,让您家人重新分享一次</view>
+    <button class="btn-main" bindtap="goDuty">我也记值班</button>
+  </view>
+
+  <!-- ② 只读月历 -->
+  <view wx:else class="calendar-card">
+    <view class="cal-head">
+      <view class="cal-arrow" bindtap="prevMonth">‹</view>
+      <view class="cal-title">{{monthTitle}}</view>
+      <view class="cal-arrow" bindtap="nextMonth">›</view>
+    </view>
+    <view class="week-row">
+      <view class="week-cell" wx:for="{{weekHeads}}" wx:key="*this">{{item}}</view>
+    </view>
+    <view class="grid">
+      <view
+        wx:for="{{cells}}"
+        wx:key="date"
+        class="cell {{item.inMonth ? '' : 'cell-dim'}} {{item.isToday ? 'cell-today' : ''}}"
+      >
+        <view class="cell-day">{{item.day}}</view>
+        <view wx:if="{{item.tagLabel}}" class="cell-tag {{item.tagClass}}">{{item.tagLabel}}</view>
+      </view>
+    </view>
+    <view class="month-loading" wx:if="{{loading}}">
+      <text>加载中…</text>
+    </view>
+  </view>
+
+  <!-- 班次图例 -->
+  <view wx:if="{{!invalid}}" class="legend">
+    <view class="legend-item"><view class="dot dot-early"></view>早班 08:00-17:00</view>
+    <view class="legend-item"><view class="dot dot-mid"></view>中班 12:00-24:00</view>
+    <view class="legend-item"><view class="dot dot-night"></view>夜班 20:00-次日08:00</view>
+    <view class="legend-item"><view class="dot dot-rest"></view>休</view>
+  </view>
+
+  <!-- ③ 转化按钮(冷启动拉新核心链路) -->
+  <view wx:if="{{!invalid}}" class="cta-row">
+    <button class="btn-main" bindtap="goDuty">我也记值班</button>
+    <view class="cta-sub">免费记自己的排班,家人一看就知道</view>
+  </view>
+</view>

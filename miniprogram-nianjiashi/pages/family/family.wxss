@@ -242,9 +242,14 @@
   border: 3rpx dashed #e3ddce;
   border-radius: 52rpx;
 }
+/* retry 单按钮不在 es-chips flex 容器内,需显式宽度(否则原生 button 184px 默认宽) */
+.retry-card .es-chip {
+  display: block;
+  width: 80%;
+  margin: 32rpx auto 0;
+}
 .es-chips {
   display: flex;
-  flex-direction: column;
   gap: 18rpx;
   margin-top: 40rpx;
 }
@@ -252,14 +257,17 @@
   margin: 32rpx 40rpx 0;
 }
 .es-chip {
+  flex: 1;
   min-height: 104rpx;
   line-height: 104rpx;
   border: 3rpx solid var(--line);
   border-radius: 30rpx;
   background: var(--bg);
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: 800;
   color: var(--ink);
+  box-sizing: border-box;
+  padding: 0 8rpx;
 }
 .es-chip.primary {
   border: none;

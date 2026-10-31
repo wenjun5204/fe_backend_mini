@@ -2,6 +2,7 @@
   "pages": [
     "pages/days/days",
     "pages/duty/duty",
+    "pages/duty-view/duty-view",
     "pages/tpl/tpl",
     "pages/me/me",
     "pages/day-edit/day-edit",

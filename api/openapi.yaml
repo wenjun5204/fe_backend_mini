@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 全家福·接福气 API
-  version: 1.9.0
+  version: 1.9.1
   description: |
     家庭互动小程序「全家福·接福气」接口契约(唯一事实源)。
     v1.5.0 增量:八卦集福阵(只读进度)/转罗盘卦位(仅卡面主题)/解忧册文案下发(幂等)/订阅消息授权登记。
@@ -9,6 +9,7 @@ info:
     v1.7.0 增量(念家时 v2.1 模板馆引擎):模板馆清单(服务端配置驱动)、感恩信 AI 生成(逐句备选)、三类卡片定稿存档/详情/删除/分享场景码、时光胶囊封存/开箱、免鉴权访客落地/点亮心/解锁内容(/api/visitor/* 不要求登录 token)。
     v1.8.0 增量(念家时 v2.2 家人空间):节日/上线预约登记与到期清单(/api/festivals/*)、照片上传与免鉴权回显(base64 JSON 解码后 ≤500KB,/api/photos/*)、家人瞬间时间线与真好/收藏互动(/api/moments/* 与 /api/days/{id}/moments 素材池);既有授权扩展:CardKind +BIRTHDAY_CARD(生日福卡,随时可生成,生日当天由提醒自然触达)、DayRecord +year 与周年称谓计算字段、时光胶囊 +photoId、访客端 BIRTHDAY_CARD 体面内容形态。
     v1.9.0 增量(念家时 v2.3 值班日历):个人视角值班记录与提醒(/api/duty/*)——月历班次查询、今日状态卡(今日班次+60 天下次值班扫描)、单日设置/清除、周期规则批量排班(5 预设,>365 天截断,覆盖已有排班)、提醒时机配置(advance_1d/same_day_08/advance_2h);提醒只存配置+订阅授权登记(复用既有 /api/notify/subscribe),真实推送下发属部署联调阶段。
+    v1.9.1 增量(值班分享 P1):值班表分享场景码签发(幂等,存 UserEntity.dutyShareScene)与免鉴权只读月历(/api/duty/shared/{scene}——8 位 base62 高熵不可枚举,不要求登录 token;仅返回月份+日期×班次映射+分享者昵称,不含 userId/openid 等敏感字段)。
     合规约束:文案禁用迷信词(见 .agents/docs/conventions.md,含 v1.5 追加:卦象/卦运/宜忌/生门/吉位/凶位/能成/不行/会有/注定/天意/预示/破财/有灾),错误 message 面向用户须过合规词表。
 tags:
   - name: days
@@ -26,7 +27,7 @@ tags:
   - name: moments
     description: 念家时 v2.2 家人瞬间(/api/moments/*)——照片+一句话家族时间线、真好(点赞,限 1 次)、收藏进日子(生日福卡素材池,含 /api/days/{id}/moments)
   - name: duty
-    description: 念家时 v2.3 值班日历(/api/duty/*)——个人视角值班记录与提醒:月历班次、今日状态卡(下次值班 60 天扫描)、单日设置/清除、周期规则批量排班、提醒时机配置(真实推送下发属部署联调阶段,本组仅数据与配置)
+    description: 念家时 v2.3 值班日历(/api/duty/*)——个人视角值班记录与提醒:月历班次、今日状态卡(下次值班 60 天扫描)、单日设置/清除、周期规则批量排班、提醒时机配置(真实推送下发属部署联调阶段,本组仅数据与配置);v1.9.1 增值班分享场景码与免鉴权只读月历(/api/duty/shared/*,AuthInterceptor 排除)
 paths:
   /api/auth/login:
     post:
@@ -1786,6 +1787,63 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/duty/share/scene:
+    get:
+      tags: [duty]
+      operationId: getDutyShareScene
+      summary: 签发值班表分享场景码(幂等:同一用户恒返回同一 scene)并下发只读落地页路径;scene 存 UserEntity.dutyShareScene,8 位 base62 SecureRandom 唯一索引兜底;前端 onShareAppMessage 时调用,path 带 scene 指向只读月历页
+      responses:
+        '200':
+          description: scene 与落地页路径(首次调用生成,后续恒定;场景码不失效,场景语义=该用户全部值班数据)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyShareSceneResponse'
+        '401':
+          description: 未登录或身份失效(40100)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/duty/shared/{scene}:
+    get:
+      tags: [duty]
+      operationId: getDutySharedCalendar
+      summary: 免鉴权只读值班月历(PRD 5.7 被分享者落地页数据源);scene 为 8 位 base62 高熵随机串,不可枚举;scene 无效返回 40400(不泄露存在性);出参仅月份+班次映射+分享者昵称,绝不含 userId/openid
+      parameters:
+        - name: scene
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-zA-Z]{8}$'
+          description: 分享场景码(由 /api/duty/share/scene 签发)
+        - name: month
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}$'
+          description: 目标月份 yyyy-MM;缺省=当月;非法格式 40000;范围外月份(近 12 个月外)返回空 shifts
+      responses:
+        '200':
+          description: 只读月历数据(shifts 按 date 升序;ownerName 为分享者昵称,无昵称回退「家人」)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutySharedCalendarResponse'
+        '400':
+          description: 参数错误(40000:month 非法)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: scene 无效或用户已注销(40400,不泄露存在性)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
     LoginRequest:
@@ -3463,6 +3521,35 @@ components:
           type: integer
           minimum: 1
           description: 距今天数(≥1;今天不参与倒计时)
+    DutyShareSceneResponse:
+      type: object
+      required: [scene, pagePath]
+      properties:
+        scene:
+          type: string
+          pattern: '^[0-9a-zA-Z]{8}$'
+          description: 8 位 base62 分享场景码(幂等:同用户恒同码)
+        pagePath:
+          type: string
+          description: 只读月历落地页路径(带 scene,如 /pages/duty-view/duty-view?scene=xxx;前端转发 path 直接使用)
+    DutySharedCalendarResponse:
+      type: object
+      required: [month, ownerName, shifts, stats]
+      properties:
+        month:
+          type: string
+          pattern: '^\d{4}-\d{2}$'
+          description: 回显目标月份 yyyy-MM
+        ownerName:
+          type: string
+          description: 分享者昵称(隐私脱敏:无昵称回退「家人」;绝不含 userId/openid)
+        shifts:
+          type: array
+          description: 该月有排班的日期列表(按 date 升序;近 12 个月外返回空数组)
+          items:
+            $ref: '#/components/schemas/DutyShiftView'
+        stats:
+          $ref: '#/components/schemas/DutyMonthStats'
     DutyRemindConfig:
       type: object
       required: [timing, enabled]

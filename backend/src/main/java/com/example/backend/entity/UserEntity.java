@@ -28,6 +28,10 @@ public class UserEntity {
     @Column(length = 16)
     private String pendant;
 
+    /** 值班表分享场景码(契约 v1.9.1;8 位 base62,幂等签发,同用户恒同码;全局唯一) */
+    @Column(length = 16, unique = true)
+    private String dutyShareScene;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getOpenid() { return openid; }
@@ -38,4 +42,6 @@ public class UserEntity {
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
     public String getPendant() { return pendant; }
     public void setPendant(String pendant) { this.pendant = pendant; }
+    public String getDutyShareScene() { return dutyShareScene; }
+    public void setDutyShareScene(String dutyShareScene) { this.dutyShareScene = dutyShareScene; }
 }

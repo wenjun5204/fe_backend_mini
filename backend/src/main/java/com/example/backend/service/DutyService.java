@@ -14,13 +14,18 @@ import com.example.backend.dto.DutyDtos.DutyShiftClearResponse;
 import com.example.backend.dto.DutyDtos.DutyShiftRangeClearResponse;
 import com.example.backend.dto.DutyDtos.DutyShiftRequest;
 import com.example.backend.dto.DutyDtos.DutyShiftView;
+import com.example.backend.dto.DutyDtos.DutyShareSceneResponse;
+import com.example.backend.dto.DutyDtos.DutySharedCalendarResponse;
 import com.example.backend.dto.DutyDtos.DutyTodayResponse;
 import com.example.backend.entity.DutyRemindEntity;
 import com.example.backend.entity.DutyRuleEntity;
 import com.example.backend.entity.DutyShiftEntity;
+import com.example.backend.entity.UserEntity;
 import com.example.backend.repository.DutyRemindRepository;
 import com.example.backend.repository.DutyRuleRepository;
 import com.example.backend.repository.DutyShiftRepository;
+import com.example.backend.repository.UserRepository;
+import java.security.SecureRandom;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,7 +36,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,16 +76,28 @@ public class DutyService {
     /** 规则应用跨度上限:超过截断至 365 天(含首尾) */
     private static final int MAX_SPAN_DAYS = 365;
 
+    /** 分享场景码:8 位 base62(SecureRandom;62^8≈218 万亿,高熵不可枚举,同 CardService 先例) */
+    private static final String BASE62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final int SCENE_LENGTH = 8;
+    private static final String SHARED_PAGE_PREFIX = "/pages/duty-view/duty-view?scene=";
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    /** 只读月历可见窗口:当月 ±12 个月(窗口外返回空 shifts,不暴露多年历史) */
+    private static final int SHARED_MONTH_WINDOW = 12;
+
     private final DutyShiftRepository shiftRepository;
     private final DutyRuleRepository ruleRepository;
     private final DutyRemindRepository remindRepository;
+    private final UserRepository userRepository;
 
     public DutyService(DutyShiftRepository shiftRepository,
                        DutyRuleRepository ruleRepository,
-                       DutyRemindRepository remindRepository) {
+                       DutyRemindRepository remindRepository,
+                       UserRepository userRepository) {
         this.shiftRepository = shiftRepository;
         this.ruleRepository = ruleRepository;
         this.remindRepository = remindRepository;
+        this.userRepository = userRepository;
     }
 
     // ---- 月历 ----
@@ -110,6 +129,88 @@ public class DutyService {
         response.setShifts(shifts);
         response.setStats(stats);
         return response;
+    }
+
+    // ---- 分享(契约 v1.9.1,PRD 5.7 P1) ----
+
+    /**
+     * scene 签发幂等:同用户恒同码;8 位 base62 SecureRandom,唯一索引兜底撞码重生成(≤5 次)。
+     * 注意:本方法有写库,不得被任何 readOnly 事务调用(MySQL 严格模式铁律)。
+     */
+    @Transactional
+    public DutyShareSceneResponse getShareScene() {
+        Long userId = CurrentUser.get();
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> ApiException.notFound("用户不存在"));
+        if (user.getDutyShareScene() == null) {
+            for (int attempt = 0; attempt < 5; attempt++) {
+                String candidate = randomScene();
+                if (userRepository.existsByDutyShareScene(candidate)) {
+                    continue;
+                }
+                try {
+                    user.setDutyShareScene(candidate);
+                    userRepository.saveAndFlush(user);
+                    break;
+                } catch (DataIntegrityViolationException e) {
+                    user.setDutyShareScene(null);
+                }
+            }
+            if (user.getDutyShareScene() == null) {
+                throw new IllegalStateException("分享码签发失败,请稍后再试");
+            }
+        }
+        DutyShareSceneResponse response = new DutyShareSceneResponse();
+        response.setScene(user.getDutyShareScene());
+        response.setPagePath(SHARED_PAGE_PREFIX + user.getDutyShareScene());
+        return response;
+    }
+
+    /**
+     * 免鉴权只读月历(被分享者落地页数据源):按 scene 反查分享者 → 该月排班 + 昵称;
+     * scene 无效 40400 不泄露存在性;窗口外月份返回空 shifts;出参绝不落 userId/openid。
+     */
+    @Transactional(readOnly = true)
+    public DutySharedCalendarResponse getSharedCalendar(String scene, String month) {
+        if (scene == null || !scene.matches("[0-9a-zA-Z]{8,12}")) {
+            throw ApiException.notFound("没有找到这份值班表");
+        }
+        UserEntity owner = userRepository.findByDutyShareScene(scene)
+                .orElseThrow(() -> ApiException.notFound("没有找到这份值班表"));
+        YearMonth target = parseMonth(month);
+
+        List<DutyShiftView> shifts = new ArrayList<>();
+        DutyMonthStats stats = new DutyMonthStats();
+        if (Math.abs(YearMonth.now().until(target, ChronoUnit.MONTHS)) <= SHARED_MONTH_WINDOW) {
+            LocalDate from = target.atDay(1);
+            LocalDate to = target.atEndOfMonth();
+            for (DutyShiftEntity row : shiftRepository
+                    .findByUserIdAndDutyDateBetweenOrderByDutyDateAsc(owner.getId(), from, to)) {
+                shifts.add(toView(row));
+                switch (row.getShift()) {
+                    case "early" -> stats.setEarly(stats.getEarly() + 1);
+                    case "mid" -> stats.setMid(stats.getMid() + 1);
+                    case "night" -> stats.setNight(stats.getNight() + 1);
+                    case "rest" -> stats.setRest(stats.getRest() + 1);
+                    default -> { /* 值域外的历史脏行不计入统计 */ }
+                }
+            }
+        }
+        DutySharedCalendarResponse response = new DutySharedCalendarResponse();
+        response.setMonth(target.toString());
+        response.setOwnerName(owner.getNickname() == null || owner.getNickname().isBlank()
+                ? "家人" : owner.getNickname());
+        response.setShifts(shifts);
+        response.setStats(stats);
+        return response;
+    }
+
+    private static String randomScene() {
+        StringBuilder builder = new StringBuilder(SCENE_LENGTH);
+        for (int i = 0; i < SCENE_LENGTH; i++) {
+            builder.append(BASE62.charAt(RANDOM.nextInt(BASE62.length())));
+        }
+        return builder.toString();
     }
 
     // ---- 今日状态卡 ----

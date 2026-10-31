@@ -30,6 +30,7 @@
 4. 文案口语化、用「您」、禁英文术语：「授权」→「允许」，「提交」→「完成」
 5. 动画 ≤ 2.5 秒，提供跳过；所有操作有明确的成功反馈（toast/震动/动画）
 6. 主操作（渐变胶囊按钮）视觉权重最高，次操作用暖白底细线弱化
+7. **按钮组一律左右（横排）布局，严禁一行一个竖排**：所有类 radio/segmented 的按钮组（关系/可见性选项 chips、视图切换「按时间线/按日历看」、提醒时机、班次选择等）必须横排——选项多时 grid 等宽分列（参考 `day-edit` 的 `.chip-grid` 4 列网格）、两项时 `flex:1` 等宽并排、分段切换挂全局 `.seg`。踩坑根因：微信原生 `button` 默认 184px 固定宽 + auto margin，容器忘了挂 flex 布局类（`seg`/`pick-chips`/`reminder-options`）时 `flex:1` 失效、按钮必然叠成一列；`app.wxss` 的 `.chip`/`.seg-btn` 已重置宽与 margin，但**新增按钮组必须检查容器有 `display:flex`**（历史上 `days-list` 视图切换、`day-edit` 关系 chips 两次踩同一坑）
 
 ## 三、视觉规范（v2 暖白体系，实际生效于 `miniprogram-nianjiashi/app.wxss` 视觉令牌）
 

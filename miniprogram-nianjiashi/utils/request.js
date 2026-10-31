@@ -12,7 +12,7 @@
  * ⚠ 新旧小程序共用同一 AppID 即共用同一 wx storage:
  *   本目录 token/user key 一律 njs_ 前缀,与旧目录的 qjf_* 互相隔离。
  */
-const USE_CLOUD = true
+const USE_CLOUD = false
 const CLOUD_ENV = 'prod-d5g1qs6gjdabafaf6'
 const SERVICE_NAME = 'reganmini'
 

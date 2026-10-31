@@ -502,4 +502,68 @@ class DutyApiIntegrationTest {
         JsonNode calA = calendar(tokenA, NOV);
         assertEquals("early", shiftOf(calA, "2026-11-15"));
     }
+
+    // ---- 分享(契约 v1.9.1,PRD 5.7 P1) ----
+
+    private JsonNode shareScene(String token) {
+        return get("/api/duty/share/scene", token);
+    }
+
+    private JsonNode shared(String scene, String month) {
+        return get("/api/duty/shared/" + scene + "?month=" + month, null);
+    }
+
+    @Test
+    void 分享场景码幂等_免鉴权只读月历可见且不带敏感字段() {
+        String token = login();
+        setShift(token, "2026-11-03", "early");
+        setShift(token, "2026-11-05", "rest");
+
+        // 签发幂等:两次调用同 scene
+        JsonNode first = shareScene(token);
+        String scene = first.get("scene").asText();
+        assertEquals(8, scene.length());
+        assertTrue(first.get("pagePath").asText().endsWith(scene));
+        assertEquals(scene, shareScene(token).get("scene").asText());
+
+        // 免鉴权(no token)只读月历:出参含昵称与班次,绝不含 userId
+        JsonNode resp = shared(scene, NOV);
+        assertEquals(NOV, resp.get("month").asText());
+        assertFalse(resp.get("ownerName").asText().isBlank());
+        assertEquals(2, resp.get("shifts").size());
+        assertEquals("early", shiftOf(resp, "2026-11-03"));
+        assertEquals(1, resp.get("stats").get("early").asInt());
+        assertNull(resp.get("userId"));
+        assertNull(resp.get("openid"));
+    }
+
+    @Test
+    void 分享scene无效_40400不泄露存在性() {
+        String token = login();
+        // 未签发过的用户先登录占位,再用乱码 scene 打免鉴权端点
+        assertErrorCode(shared("!!!!!!!!", NOV), "40400");
+        assertErrorCode(shared("abcd1234", NOV), "40400");
+        // 签发过的人用别人的 token 也拿不到 scene 端点(401 路径不在此断言,只测免鉴权端点)
+        String scene = shareScene(token).get("scene").asText();
+        assertErrorCode(shared(scene, "bad-month"), "40000");
+    }
+
+    @Test
+    void 分享只读月历_窗口外月份空shifts_用户隔离() {
+        String tokenA = login();
+        String tokenB = login();
+        setShift(tokenA, "2026-11-03", "early");
+        setShift(tokenB, "2026-11-04", "night");
+
+        // A 的 scene 只能看到 A 的排班
+        String sceneA = shareScene(tokenA).get("scene").asText();
+        JsonNode resp = shared(sceneA, NOV);
+        assertEquals(1, resp.get("shifts").size());
+        assertEquals("early", shiftOf(resp, "2026-11-03"));
+
+        // 远超 12 个月窗口的月份:空 shifts,不报错
+        JsonNode far = shared(sceneA, "2010-01");
+        assertEquals(0, far.get("shifts").size());
+        assertEquals(0, far.get("stats").get("early").asInt());
+    }
 }

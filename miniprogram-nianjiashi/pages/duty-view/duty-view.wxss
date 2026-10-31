@@ -1,0 +1,177 @@
+/*
+  值班表只读落地页(PRD 5.7 P1):月历视觉复用 duty 页,
+  但本页一屏唯一视觉焦点=「我也记值班」转化主按钮;owner 卡走浅色块克制处理。
+*/
+.page {
+  padding: 32rpx 32rpx 60rpx;
+}
+
+/* ---------- ① 来自谁的值班表(浅底色块,非描边填充) ---------- */
+.owner-card {
+  background: rgba(255, 122, 89, 0.08);
+  border-radius: var(--radius);
+  padding: 32rpx 36rpx;
+}
+.owner-kicker {
+  font-size: 26rpx;
+  color: var(--ink-3);
+}
+.owner-name {
+  margin-top: 8rpx;
+  font-size: 40rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+/* ---------- scene 无效兜底 ---------- */
+.invalid-card {
+  margin-top: 48rpx;
+  padding: 0 32rpx;
+  text-align: center;
+}
+.invalid-main {
+  font-size: 34rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+.invalid-sub {
+  margin-top: 16rpx;
+  font-size: 28rpx;
+  color: var(--ink-3);
+  line-height: 1.6;
+}
+.invalid-card .btn-main {
+  margin-top: 56rpx;
+}
+
+/* ---------- ② 只读月历(视觉对齐 duty 页,去掉一切 :active 反馈) ---------- */
+.calendar-card {
+  margin-top: 24rpx;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 28rpx 24rpx 32rpx;
+  box-shadow: 0 6rpx 30rpx rgba(28, 28, 40, 0.05);
+}
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12rpx 20rpx;
+}
+.cal-title {
+  font-size: 38rpx;
+  font-weight: 800;
+  color: var(--ink);
+}
+.cal-arrow {
+  width: 88rpx;
+  height: 88rpx;
+  line-height: 84rpx;
+  text-align: center;
+  font-size: 52rpx;
+  color: var(--ink-2);
+  border-radius: 50%;
+}
+.cal-arrow:active {
+  background: var(--line);
+}
+.week-row {
+  display: flex;
+  padding-bottom: 12rpx;
+  border-bottom: 2rpx solid var(--line);
+}
+.week-cell {
+  flex: 1;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--ink-3);
+  font-weight: 700;
+}
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+.cell {
+  width: 14.28%;
+  height: 128rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  box-sizing: border-box;
+  border-radius: 12rpx;
+}
+.cell-dim {
+  opacity: 0.28;
+}
+.cell-day {
+  font-size: 30rpx;
+  color: var(--ink);
+  font-weight: 600;
+}
+.cell-today {
+  border: 4rpx solid var(--rose);
+}
+.cell-today .cell-day {
+  color: var(--rose);
+  font-weight: 800;
+}
+.cell-tag {
+  min-width: 44rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+}
+.tag-early { background: #ff4d6d; }
+.tag-mid { background: #e8943a; }
+.tag-night { background: #3d4a5c; }
+.tag-rest { background: #c8cdd3; color: #55555f; }
+
+.month-loading {
+  padding: 48rpx 0 24rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: var(--ink-3);
+}
+
+/* ---------- 班次图例 ---------- */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx 28rpx;
+  padding: 28rpx 12rpx 0;
+}
+.legend-item {
+  font-size: 26rpx;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+.dot {
+  width: 22rpx;
+  height: 22rpx;
+  border-radius: 8rpx;
+}
+.dot-early { background: #ff4d6d; }
+.dot-mid { background: #e8943a; }
+.dot-night { background: #3d4a5c; }
+.dot-rest { background: #c8cdd3; }
+
+/* ---------- ③ 转化按钮(一屏唯一视觉焦点) ---------- */
+.cta-row {
+  margin-top: 56rpx;
+}
+.cta-row .btn-main {
+  width: 100%;
+}
+.cta-sub {
+  margin-top: 20rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--ink-3);
+}
