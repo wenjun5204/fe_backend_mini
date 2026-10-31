@@ -1,18 +1,28 @@
 /**
  * 统一网络层:自动携带 token,统一处理业务错误码(契约错误码 40000/40100/40300/40400/40900)
- * 实现逻辑照抄旧 miniprogram/utils/request.js,常量独立维护。
  *
- * 双通道:
- * - USE_CLOUD=false(当前):wx.request 直连本地后端(开发者工具需勾选「不校验合法域名」)
- * - USE_CLOUD=true:wx.cloud.callContainer 走微信云托管(无需配置合法域名,
- *   平台自动注入 X-WX-OPENID,后端据此识别用户身份)
+ * 双通道(按运行环境自动选择,无需手动切开关):
+ * - 开发者工具/开发版(develop):wx.request 直连本地后端 http://127.0.0.1:8080
+ *   (工具端需勾选「不校验合法域名」)
+ * - 体验版(trial)/正式版(release):wx.cloud.callContainer 走微信云托管
+ *   (无需配置合法域名,平台自动注入 X-WX-OPENID,后端据此识别用户身份)
+ * 判定依据 wx.getAccountInfoSync().envVersion;取不到时兜底走云托管(线上安全侧)。
  * 云托管环境 ID:控制台「环境信息」页获取
- * 部署念家时后端到云托管后再切回 true;期间本地预览一律 false。
  *
  * ⚠ 新旧小程序共用同一 AppID 即共用同一 wx storage:
  *   本目录 token/user key 一律 njs_ 前缀,与旧目录的 qjf_* 互相隔离。
  */
-const USE_CLOUD = false
+/** 运行版本:develop 开发版 / trial 体验版 / release 正式版;取不到(异常兜底)按 release 处理 */
+const ENV_VERSION = (() => {
+  try {
+    const info = wx.getAccountInfoSync()
+    return (info && info.miniProgram && info.miniProgram.envVersion) || 'release'
+  } catch (e) {
+    return 'release'
+  }
+})()
+/** 本地开发版直连;体验版/正式版走云托管 */
+const USE_CLOUD = ENV_VERSION !== 'develop'
 const CLOUD_ENV = 'prod-d5g1qs6gjdabafaf6'
 const SERVICE_NAME = 'reganmini'
 

@@ -331,7 +331,7 @@
   display: flex;
   gap: 20rpx;
   margin-top: 28rpx;
-  margin-bottom: 10rpx；
+  margin-bottom: 10rpx;
   align-items: stretch;
 }
 .sheet-actions .sheet-btn {
