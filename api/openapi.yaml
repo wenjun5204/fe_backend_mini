@@ -32,7 +32,7 @@ paths:
   /api/auth/login:
     post:
       operationId: login
-      summary: 微信登录(MVP 用 code 换取用户身份,返回 token)
+      summary: 微信登录(返回 token;身份来源三态:云托管链路 X-WX-OPENID 头注入/自部署链路 code 经 code2Session 换 openid/开发态 auth.dev-code-enabled 开启时 code 即 openid)
       requestBody:
         required: true
         content:
@@ -1852,7 +1852,7 @@ components:
       properties:
         code:
           type: string
-          description: 微信登录凭证;开发态允许直接传 openid
+          description: wx.login 登录凭证,服务端经 code2Session 换取 openid(自部署链路);云托管链路由平台注入 X-WX-OPENID 头鉴权,可不传;开发态(auth.dev-code-enabled 开启,仅本地/测试)允许直接传 openid
     LoginResponse:
       type: object
       required: [token, userId, nickname]

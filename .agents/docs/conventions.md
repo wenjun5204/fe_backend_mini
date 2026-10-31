@@ -70,8 +70,15 @@
 
 - 原生框架，不引入 UI 库（保持包体小、低端机流畅）
 - 家人模块传参用家族邀请码（inviteCode）；各页面 onLoad 里处理分享进入场景
-- 网络层统一封装 `utils/request.js`，双通道开关 USE_CLOUD（true=云托管 callContainer/false=本地 wx.request），环境 ID/服务名在文件顶部常量；错误 toast 文案过合规词表
+- 网络层统一封装 `utils/request.js`，三通道由顶部 `API_MODE` 常量选择（'auto'=develop→local/trial+release→cloud；'selfdeploy'=自部署域名 wx.request+wx.login），环境 ID/服务名/自部署域名在文件顶部常量；错误 toast 文案过合规词表
 - 分享卡片标题随分享物走（值班表/生日福卡/时光胶囊各有模板，见各页面 share 配置）；分享 title 属用户可见文案，同样须过合规词表
+
+### 鉴权与密钥安全（双部署形态）
+
+- **密钥三禁令**：`wx.secret`（WX_APP_SECRET）、`AUTH_TOKEN_SECRET`、code2Session 响应中的 `session_key` —— 一律**禁止落日志、禁止入异常消息、禁止回传前端**；code2Session 响应只取 openid
+- **信任边界由 profile 决定，新增鉴权相关配置必须内嵌 profile 文件带安全默认**：cloud 才可 trust X-WX-OPENID；selfdeploy 文件层写死 trust=false/dev-code=false；默认/测试显式 dev-code=true（**test resources 整体遮蔽主配置，主文件与测试文件要各写一行**，漏写=登录走 code2Session 而 mock 不存在，204 条存量测试全挂）
+- token 机制：secret 空=legacy 明文 userId（仅限云托管存量/内网演示）；**任何公网部署必须配 AUTH_TOKEN_SECRET（HMAC 签名）**——明文 userId token 可被 `Bearer 1..N` 遍历冒充全部用户；selfdeploy 由 AuthModeGuard 启动 fail-fast 强制
+- 前端 401 处理：网络层自动清 token → 重登 → 重放一次（`_retried` 防死循环）；登录请求自身与 noAuth 请求跳过重试
 
 ## 六、Git 与提交
 

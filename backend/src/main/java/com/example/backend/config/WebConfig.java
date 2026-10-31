@@ -1,5 +1,7 @@
 package com.example.backend.config;
 
+import com.example.backend.service.TokenService;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -9,9 +11,21 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    private final TokenService tokenService;
+
+    /** bean 化以注入 TokenService(token 校验从 Long.parseLong 演示态升级) */
+    @Bean
+    public AuthInterceptor authInterceptor() {
+        return new AuthInterceptor(tokenService);
+    }
+
+    public WebConfig(TokenService tokenService) {
+        this.tokenService = tokenService;
+    }
+
     @Override
     public void addInterceptors(@NonNull InterceptorRegistry registry) {
-        registry.addInterceptor(new AuthInterceptor())
+        registry.addInterceptor(authInterceptor())
                 .addPathPatterns("/api/**")
                 // "/api/photos/*" Ant 单段:放行 /api/photos/{photoId}(回图免鉴权),
                 // 不放行 /api/photos 本身(POST 上传仍鉴权)

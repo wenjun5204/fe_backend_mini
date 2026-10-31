@@ -7,21 +7,25 @@
 
 ```
 微信小程序 (miniprogram-nianjiashi/, 原生框架)
-        │  wx.cloud.callContainer(生产) / wx.request(本地联调)
-        │  生产链路自动注入 X-WX-OPENID(平台验签,不可伪造)
+        │  三通道(utils/request.js 顶部 API_MODE):
+        │  · cloud: wx.cloud.callContainer → 注入 X-WX-OPENID(平台验签,不可伪造)
+        │  · selfdeploy: wx.request HTTPS → wx.login code → 后端 code2Session
+        │  · local: wx.request 直连 127.0.0.1:8080(dev code)
         ▼
-微信云托管容器 (backend/, Spring Boot + Java 21, 监听 80)
-        │  JPA (cloud profile → 云托管 MySQL / 默认 → H2)
+后端容器 (backend/, Spring Boot + Java 21, 监听 80)
+   ├─ 微信云托管(profile=cloud: trust X-WX-OPENID / legacy 明文 token)
+   └─ 自部署服务器(profile=selfdeploy: code2Session 鉴权 + HMAC token / docker-compose+nginx)
+        │  JPA (cloud/selfdeploy profile → MySQL / 默认 → H2)
         ▼
-云托管 MySQL(生产,MYSQL_ADDRESS 注入) / H2(本地与测试)
+云托管 MySQL 或 自部署 MySQL(MYSQL_ADDRESS 注入) / H2(本地与测试)
 ```
 
 - 前端为原生微信小程序（非框架），**3 个 Tab：日子（首页，含家人们入口）/ 值班（排班日历）/ 我的**；家人、模板馆为二级页（navigateTo）
 - 页面全景（15 页）：days（日子首页）/ days-list / day-edit / day-detail（日子四件套）、duty（值班日历+三弹层）、family（家人空间）/ moment 相关、tpl（模板馆）、letter-edit / letter-preview（感恩信）、days-card-edit / birthday-card-edit（卡片制作）、capsule-edit / capsule-open（时光胶囊）、mycards（我的卡片墙）、visitor（访客落地，免鉴权）
 - 旧前端 `miniprogram/`（别点这个签）已停止迭代，仅作参考；`frontend/`（React）为早期演示端
 - 后端单服务，接口前缀 `/api`；本地端口 8080（`server.port=${PORT:8080}`），云托管容器 80
-- 网络层双通道：`utils/request.js` 的 `USE_CLOUD` 开关（true=callContainer / false=本地 wx.request）；存储 key 一律 `njs_` 前缀与旧前端隔离
-- 登录身份：X-WX-OPENID(优先,生产) / body code(回退,本地联调) → 建用户 → Bearer token(即 userId)
+- 网络层三通道：`utils/request.js` 顶部 `API_MODE` 常量（'auto'=develop→local/trial+release→cloud；'selfdeploy'=发版连自部署域名）；401 自动清 token 重登重放一次；存储 key 一律 `njs_` 前缀与旧前端隔离
+- 登录身份三态（信任边界由 profile 决定，安全默认内嵌 profile 文件）：cloud=信任 X-WX-OPENID（前提：不开公网路径）/ selfdeploy=code2Session + HMAC token（明文 userId 可被遍历冒充，AuthModeGuard 强制三要素）/ 默认+测试=dev code 即 openid（test resources 整体遮蔽主配置，两处都要写 `auth.dev-code-enabled=true`）
 
 ## 后端分层
 
@@ -61,14 +65,18 @@ com.example.backend
 ## 部署与运行
 
 - 本地后端：`cd backend && ./mvnw spring-boot:run`（默认 profile → H2 文件库）
-- 测试：`src/test/resources` 独立配置 → H2 内存库 + create-drop；当前 204 条全绿
-- 生产部署：微信云托管，代码仓库方式，构建目录 `backend/`，Dockerfile `backend/Dockerfile`，
-  ENTRYPOINT 自带 `--spring.profiles.active=cloud`（MySQL 环境变量三件套缺失时 fail-fast）
+- 测试：`src/test/resources` 独立配置 → H2 内存库 + create-drop；当前 224 条全绿
+- 生产部署（双形态并存）：
+  - **微信云托管**：代码仓库方式，构建目录 `backend/`，Dockerfile 默认 `cloud` profile
+    （信任 X-WX-OPENID / MySQL 三件套 fail-fast；AUTH_TOKEN_SECRET 不配即 legacy token，存量零迁移）
+  - **自部署服务器**：仓库根 `docker-compose.yml`（默认 `selfdeploy` profile + MySQL + 可选 nginx TLS），
+    鉴权三要素（WX_APP_ID/WX_APP_SECRET/AUTH_TOKEN_SECRET）AuthModeGuard 启动校验；
+    完整部署门禁/验证清单见 `docs/deploy/selfdeploy-deployment.md`（含防伪造 curl 负面用例）
 - 部署后验证：`curl <服务域名>/api/ping` → `{"status":"ok"}`；
   运行时契约校验：harness `contract cli live <契约> --url <域名>/v3/api-docs`（本地联调用；
   Pendant/PhotoMimeType 两项 wire 等价豁免见各 consistency-report）
-- ⚠️ 服务不得开启公网访问路径（X-WX-OPENID 信任前提）；springdoc 已在生产 profile 关闭
-- 小程序：微信开发者工具导入 `miniprogram-nianjiashi/`；切云端前确认 `utils/request.js` 顶部环境 ID/服务名常量
+- ⚠️ 云托管服务不得开启公网访问路径（X-WX-OPENID 信任前提）；自部署天然公网，信任模型已重设计（trust=false）；springdoc 已在生产 profile 关闭
+- 小程序：微信开发者工具导入 `miniprogram-nianjiashi/`；发版连自部署时改 `utils/request.js` 顶部 `API_MODE='selfdeploy'` + 域名
 - 契约：OpenAPI 契约（`api/openapi.yaml`，v1.9.0）由 fe-be-contract-harness 管理（12 阶段流水线，
   状态文件 `.harness-run/state-njs-*.json`），改接口先改契约再走 Stage 2 checkpoint
 

@@ -6,7 +6,7 @@
  *
  * 场景枚举 PhotoScene:MOMENT(家人瞬间,本批)/ CAPSULE(时光胶囊,下批接线)。
  */
-const { request, BASE_URL, USE_CLOUD } = require('./request')
+const { request, BASE_URL, USE_CLOUD, CHANNEL } = require('./request')
 
 /** 云托管公网回图域名(部署后填,与 request.js 的 SERVICE_NAME 同处维护;设计 §2.3 部署 checklist) */
 const CLOUD_PHOTO_BASE = ''
@@ -16,10 +16,15 @@ const QUALITY_START = 80
 const QUALITY_STEP = 20
 const QUALITY_MIN = 20
 
-/** 相对路径 photoUrl(契约恒 /api/photos/{photoId})→ <image> 可用的绝对地址 */
+/** 相对路径 photoUrl(契约恒 /api/photos/{photoId})→ <image> 可用的绝对地址
+ *  selfdeploy:/api/photos/* 免鉴权,自部署域名直接回图(天然可用);
+ *  local:本地直连;cloud:CLOUD_PHOTO_BASE 公网回图域名(部署后填)。 */
 function photoUrl(idOrPath) {
   const path = String(idOrPath || '')
   const rel = path.indexOf('/') === 0 ? path : '/api/photos/' + path
+  if (CHANNEL === 'selfdeploy' || CHANNEL === 'local') {
+    return BASE_URL + rel
+  }
   return (USE_CLOUD && CLOUD_PHOTO_BASE ? CLOUD_PHOTO_BASE : BASE_URL) + rel
 }
 

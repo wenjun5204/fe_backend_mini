@@ -35,13 +35,15 @@ fe_backend_mini/
 - 后端接口统一前缀 `/api`，本地端口 8080；云托管容器监听 80（`server.port=${PORT:8080}`）
 - 数据库：本地开发/测试用 H2（测试为内存库）；生产走微信云托管 MySQL（`cloud` profile，环境变量 `MYSQL_ADDRESS`/`MYSQL_USERNAME`/`MYSQL_PASSWORD`，由 `CloudEnvPostProcessor` 拆分注入，缺失时 fail-fast）
 
-## 部署与鉴权（微信云托管）
+## 部署与鉴权（双形态：微信云托管 + 自部署服务器）
 
-- `backend/Dockerfile`：多阶段构建，`ENV PORT=80`，ENTRYPOINT 激活 `--spring.profiles.active=cloud`
-- 登录身份链路：小程序 `wx.cloud.callContainer` → 平台注入 `X-WX-OPENID`（不可伪造）→ `AuthService` 落库建用户 → 后续请求 `Authorization: Bearer {userId}`
-- **服务不得开启公网访问路径**，否则 `X-WX-OPENID` 可被外部伪造
-- 小程序网络层双通道：`miniprogram-nianjiashi/utils/request.js` 的 `USE_CLOUD` 开关（true=云托管/false=本地 wx.request），环境 ID/服务名同文件顶部常量
-- 部署后验证：`curl <服务域名>/api/ping` 返回 `{"status":"ok"}`；契约校验用 harness 的 `contract cli live`（`/api/ping` 已默认豁免）
+- `backend/Dockerfile`：多阶段构建，`ENV PORT=80`，ENTRYPOINT 激活 `--spring.profiles.active=${SPRING_PROFILES_ACTIVE:-cloud}`（云托管构建默认 cloud，自部署 compose 指定 selfdeploy）
+- **信任边界由 profile 决定**（安全默认值内嵌在 profile 文件，不靠运维记忆）：
+  - `cloud`（云托管）：`auth.trust-wx-header=true`——信任平台注入的 `X-WX-OPENID`；**前提仍是服务不得开启公网访问路径**；token 默认 legacy 明文 userId（`AUTH_TOKEN_SECRET` 不配即零影响）
+  - `selfdeploy`（自部署公网）：`trust=false`/`dev-code=false` 写死在 profile 文件——`X-WX-OPENID` 可被任意客户端伪造，身份只能来自 `wx.login` code → code2Session（`WeChatCode2SessionClient`）；token 强制 HMAC 签名（`TokenService`，明文 userId 在公网可被 `Bearer 1..N` 遍历冒充）；三要素（`WX_APP_ID`/`WX_APP_SECRET`/`AUTH_TOKEN_SECRET`）缺失由 `AuthModeGuard` 启动即死
+  - 默认/测试 profile：`trust=false` + `dev-code=true`（code 即 openid，本地/集成测试依赖此回退——test resources 会整体遮蔽主配置，两处都要写）
+- 小程序网络层三通道：`miniprogram-nianjiashi/utils/request.js` 顶部 `API_MODE`（`'auto'`=develop→local/trial+release→cloud；`'selfdeploy'`=发版连自部署域名）；401 自动清 token 重登重放一次；图片回显 `photo.js` 按 `CHANNEL` 取基址
+- 部署后验证：`curl <服务域名>/api/ping` 返回 `{"status":"ok"}`；自部署另有防伪造负面用例清单（`docs/deploy/selfdeploy-deployment.md` §2）；契约校验用 harness 的 `contract cli live`（`/api/ping` 已默认豁免）
 - **踩坑教训**：MySQL 严格拒绝只读事务内写库（H2 不拒绝，本地测试发现不了）——`@Transactional(readOnly=true)` 的方法内不得调用任何兜底 save；兑底异常处理器必须打全量堆栈日志，禁止吞异常
 
 ## 开发规范摘要

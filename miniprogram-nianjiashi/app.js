@@ -16,7 +16,7 @@ App({
         // 环境未就绪时不阻塞启动,网络层会走本地通道兜底
       }
     }
-    // 登录态尽早建立(X-WX-OPENID / dev-openid → POST /api/auth/login → njs_token)
+    // 登录态尽早建立(通道相关:X-WX-OPENID 注入 / dev code / wx.login code → POST /api/auth/login → njs_token)
     // 失败静默重试一次;页面 onShow 的 ensureLogin 再兜底(有 token 时零开销)
     ensureLogin().catch(() => {
       setTimeout(() => {
