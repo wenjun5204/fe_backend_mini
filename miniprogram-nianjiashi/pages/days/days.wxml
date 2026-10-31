@@ -44,7 +44,7 @@
   <!-- 所有日子 -->
   <view wx:if="{{!isEmpty}}" class="section-head">
     <text class="section-title">所有日子</text>
-    <text class="section-more" bindtap="goAllDays">查看全部 ›</text>
+    <text class="section-more link" bindtap="goAllDays">查看全部 ›</text>
   </view>
   <view class="day-feed">
     <view

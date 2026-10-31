@@ -56,6 +56,14 @@ button {
   color: var(--ink-3);
   font-weight: 600;
 }
+/* 可跳转的入口(如「查看全部 ›」):玫红胶囊,一眼可点;纯提示语不加此类 */
+.section-more.link {
+  color: var(--rose);
+  font-weight: 700;
+  padding: 8rpx 22rpx;
+  background: #fff3f5;
+  border-radius: 999rpx;
+}
 
 /* 表单标签 */
 .f-label {
@@ -115,6 +123,8 @@ button {
   color: var(--ink-3);
   font-weight: 800;
   font-size: 29rpx;
+  /* view 承载时默认左对齐(button 原生居中),统一居中 */
+  text-align: center;
 }
 .seg-btn.on {
   background: var(--ink);
